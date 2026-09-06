@@ -1,10 +1,11 @@
-const express = require("express");
+﻿const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const requestLogger = require("./utils/logger");
 const cookieParser = require("cookie-parser");
 const ApiError = require("./utils/ApiError");
 const errorHandler = require("./middleware/errorHandler");
+const authRoutes = require("./modules/auth/auth.routes");
 const healthRoutes = require("./modules/health/health.routes");
 
 const app = express();
@@ -25,6 +26,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/v1/health", healthRoutes);
+app.use("/api/v1/auth", authRoutes);
 
 app.use((req, res, next) => {
   next(new ApiError(404, `Route ${req.path} not found`));
@@ -33,4 +35,5 @@ app.use((req, res, next) => {
 app.use(errorHandler);
 
 module.exports = app;
+
 
