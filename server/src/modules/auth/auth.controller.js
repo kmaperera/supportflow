@@ -1,8 +1,9 @@
 ﻿const asyncHandler = require("../../utils/asyncHandler");
-const { rotateRefreshToken } = require("./refreshToken.service");
+const { rotateRefreshToken, revokeRefreshToken } = require("./refreshToken.service");
 const {
   REFRESH_TOKEN_COOKIE_NAME,
   getRefreshTokenCookieOptions,
+  getClearRefreshTokenCookieOptions,
 } = require("../../utils/authCookie");
 
 const refresh = asyncHandler(async (req, res) => {
@@ -19,4 +20,18 @@ const refresh = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { refresh };
+const logout = asyncHandler(async (req, res) => {
+  const rawToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
+  if (rawToken) {
+    await revokeRefreshToken(rawToken);
+  }
+
+  res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, getClearRefreshTokenCookieOptions());
+  return res.status(200).json({
+    success: true,
+    message: "Logged out successfully",
+  });
+});
+
+module.exports = { refresh, logout };
+
