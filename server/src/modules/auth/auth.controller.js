@@ -1,4 +1,5 @@
-﻿const asyncHandler = require("../../utils/asyncHandler");
+﻿const authService = require("./auth.service");
+const asyncHandler = require("../../utils/asyncHandler");
 const ApiError = require("../../utils/ApiError");
 const {
   rotateRefreshToken, revokeRefreshToken,
@@ -61,7 +62,18 @@ const getCurrentUser = (req, res) => {
   });
 };
 
-module.exports = { refresh, logout, logoutAll, getCurrentUser };
+const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword, confirmPassword } = req.body;
+  await authService.changePassword(req.user.id, currentPassword, newPassword, confirmPassword);
+  res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, getClearRefreshTokenCookieOptions());
+  return res.status(200).json({
+    success: true,
+    message: "Password changed successfully. Please log in again.",
+  });
+});
+
+module.exports = { refresh, logout, logoutAll, getCurrentUser, changePassword };
+
 
 
 

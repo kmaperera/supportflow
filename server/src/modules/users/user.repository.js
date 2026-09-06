@@ -59,7 +59,7 @@ async function updateLastLogin(id) {
 
 async function updatePassword(id, passwordHash) {
   const [result] = await pool.execute(
-    "UPDATE users SET password_hash = ? WHERE id = ?",
+    "UPDATE users SET password_hash = ?, must_change_password = FALSE WHERE id = ?",
     [passwordHash, id]
   );
   return result.affectedRows;
@@ -90,3 +90,4 @@ module.exports = {
   updateStatus,
   updateRole,
 };
+

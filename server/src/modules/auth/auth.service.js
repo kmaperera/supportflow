@@ -1,4 +1,5 @@
-const { comparePassword } = require("../../utils/password");
+﻿const { revokeAllUserRefreshTokens } = require("./refreshToken.service");
+const { comparePassword, hashPassword } = require("../../utils/password");
 const userRepository = require("../users/user.repository");
 const ApiError = require("../../utils/ApiError");
 
@@ -48,4 +49,30 @@ async function login(email, password) {
   };
 }
 
-module.exports = { login };
+async function changePassword(userId, currentPassword, newPassword, confirmPassword) {
+  if (!userId || [currentPassword, newPassword, confirmPassword].some(
+    (value) => typeof value !== "string" || !value
+  )) {
+    throw new ApiError(400, "User ID and all password fields are required");
+  }
+  if (newPassword !== confirmPassword) {
+    throw new ApiError(400, "New password and confirmation do not match");
+  }
+
+  const user = await userRepository.findById(userId);
+  if (!user) throw new ApiError(401, "User account no longer exists");
+  if (!(await comparePassword(currentPassword, user.password_hash))) {
+    throw new ApiError(400, "Current password is incorrect");
+  }
+  if (await comparePassword(newPassword, user.password_hash)) {
+    throw new ApiError(400, "New password must be different from the current password");
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+  await userRepository.updatePassword(userId, passwordHash);
+  await revokeAllUserRefreshTokens(userId);
+  return { success: true };
+}
+
+module.exports = { login, changePassword };
+
