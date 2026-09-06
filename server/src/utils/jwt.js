@@ -41,4 +41,45 @@ function verifyAccessToken(token) {
   });
 }
 
-module.exports = { generateAccessToken, verifyAccessToken };
+function validateRefreshTokenConfig(requireExpiry = true) {
+  const required = ["JWT_REFRESH_SECRET"];
+  if (requireExpiry) required.push("JWT_REFRESH_EXPIRES_IN");
+  const missing = required.filter((name) => !process.env[name]?.trim());
+  if (missing.length) {
+    throw new Error(`Missing JWT configuration: ${missing.join(", ")}`);
+  }
+}
+
+function generateRefreshToken(userId) {
+  const validId =
+    (typeof userId === "number" && Number.isSafeInteger(userId) && userId > 0) ||
+    (typeof userId === "string" && /^[1-9]\d*$/.test(userId)) ||
+    (typeof userId === "bigint" && userId > 0n);
+  if (!validId) throw new TypeError("A valid user id is required");
+
+  validateRefreshTokenConfig();
+  return jwt.sign({ type: "refresh" }, process.env.JWT_REFRESH_SECRET, {
+    subject: String(userId),
+    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
+    algorithm: "HS256",
+    // Distinguish tokens issued to the same user within the same second.
+    jwtid: require("node:crypto").randomUUID(),
+  });
+}
+
+function verifyRefreshToken(token) {
+  validateRefreshTokenConfig(false);
+  const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET, {
+    algorithms: ["HS256"],
+  });
+  if (decoded.type !== "refresh") {
+    throw new jwt.JsonWebTokenError("Invalid refresh token type");
+  }
+  return decoded;
+}
+
+module.exports = {
+  generateAccessToken, verifyAccessToken,
+  generateRefreshToken, verifyRefreshToken,
+};
+
