@@ -1,5 +1,9 @@
 ﻿const asyncHandler = require("../../utils/asyncHandler");
-const { rotateRefreshToken, revokeRefreshToken } = require("./refreshToken.service");
+const ApiError = require("../../utils/ApiError");
+const {
+  rotateRefreshToken, revokeRefreshToken,
+  validateStoredRefreshToken, revokeAllUserRefreshTokens,
+} = require("./refreshToken.service");
 const {
   REFRESH_TOKEN_COOKIE_NAME,
   getRefreshTokenCookieOptions,
@@ -33,5 +37,22 @@ const logout = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { refresh, logout };
+const logoutAll = asyncHandler(async (req, res) => {
+  const rawToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
+  if (!rawToken) {
+    throw new ApiError(401, "Refresh token is required");
+  }
+
+  const { decoded } = await validateStoredRefreshToken(rawToken);
+  await revokeAllUserRefreshTokens(decoded.sub);
+
+  res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, getClearRefreshTokenCookieOptions());
+  return res.status(200).json({
+    success: true,
+    message: "Logged out from all sessions successfully",
+  });
+});
+
+module.exports = { refresh, logout, logoutAll };
+
 
