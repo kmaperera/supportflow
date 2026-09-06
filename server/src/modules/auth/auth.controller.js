@@ -53,6 +53,15 @@ const logoutAll = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { refresh, logout, logoutAll };
+const getCurrentUser = (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: "Current user retrieved successfully",
+    data: { user: req.user },
+  });
+};
+
+module.exports = { refresh, logout, logoutAll, getCurrentUser };
+
 
 
