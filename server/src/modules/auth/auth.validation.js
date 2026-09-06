@@ -13,4 +13,13 @@ const changePasswordValidation = [
     .bail().notEmpty().withMessage("Password confirmation is required"),
 ];
 
-module.exports = { changePasswordValidation };
+const loginValidation = [
+  body("email").isString().withMessage("Email is required")
+    .bail().trim().notEmpty().withMessage("Email is required")
+    .bail().isEmail().withMessage("A valid email is required"),
+  body("password").isString().withMessage("Password is required")
+    .bail().notEmpty().withMessage("Password is required"),
+];
+
+module.exports = { changePasswordValidation, loginValidation };
+

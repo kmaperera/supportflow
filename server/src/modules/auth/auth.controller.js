@@ -1,8 +1,9 @@
-﻿const authService = require("./auth.service");
+﻿const { generateAccessToken, verifyRefreshToken } = require("../../utils/jwt");
+const authService = require("./auth.service");
 const asyncHandler = require("../../utils/asyncHandler");
 const ApiError = require("../../utils/ApiError");
 const {
-  rotateRefreshToken, revokeRefreshToken,
+  rotateRefreshToken, revokeRefreshToken, createRefreshToken,
   validateStoredRefreshToken, revokeAllUserRefreshTokens,
 } = require("./refreshToken.service");
 const {
@@ -72,7 +73,27 @@ const changePassword = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { refresh, logout, logoutAll, getCurrentUser, changePassword };
+const login = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  const user = await authService.login(email, password);
+  const accessToken = generateAccessToken(user);
+  const refreshToken = await createRefreshToken(user.id);
+  const decoded = verifyRefreshToken(refreshToken);
+
+  res.cookie(
+    REFRESH_TOKEN_COOKIE_NAME,
+    refreshToken,
+    getRefreshTokenCookieOptions(new Date(decoded.exp * 1000))
+  );
+  return res.status(200).json({
+    success: true,
+    message: "Login successful",
+    data: { accessToken, user },
+  });
+});
+
+module.exports = { refresh, logout, logoutAll, getCurrentUser, changePassword, login };
+
 
 
 
