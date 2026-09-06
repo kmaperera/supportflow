@@ -130,5 +130,21 @@ async function updateUserStatus(id, isActive, currentAdminId) {
   return getUserById(id);
 }
 
-module.exports = { createUser, getUsers, getUserById, updateUser, updateUserStatus };
+async function updateUserRole(id, role, currentAdminId) {
+  const user = await getUserById(id);
+  if (!Object.values(USER_ROLES).includes(role)) {
+    throw new ApiError(400, "Invalid role");
+  }
+  if (Number(id) === Number(currentAdminId)) {
+    throw new ApiError(400, "You cannot change your own role");
+  }
+  if (user.role === role) return user;
+
+  await repository.updateRole(id, role);
+  await revokeAllUserRefreshTokens(id);
+  return getUserById(id);
+}
+
+module.exports = { createUser, getUsers, getUserById, updateUser, updateUserStatus, updateUserRole };
+
 

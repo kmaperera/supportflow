@@ -51,5 +51,12 @@ const updateUserStatusValidation = [
     .withMessage("isActive must be a boolean"),
 ];
 
-module.exports = { createUserValidation, updateUserValidation, userIdValidation, updateUserStatusValidation };
+const updateUserRoleValidation = [
+  ...userIdValidation,
+  body("role").isString().withMessage("Role is required")
+    .bail().isIn(Object.values(USER_ROLES)).withMessage("Invalid role"),
+];
+
+module.exports = { createUserValidation, updateUserValidation, userIdValidation, updateUserStatusValidation, updateUserRoleValidation };
+
 

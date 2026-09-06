@@ -27,5 +27,15 @@ const updateUserStatus = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { createUser, getUsers, getUserById, updateUser, updateUserStatus };
+const updateUserRole = asyncHandler(async (req, res) => {
+  const user = await service.updateUserRole(req.params.id, req.body.role, req.user.id);
+  res.status(200).json({
+    success: true,
+    message: "User role updated successfully",
+    data: { user },
+  });
+});
+
+module.exports = { createUser, getUsers, getUserById, updateUser, updateUserStatus, updateUserRole };
+
 
