@@ -18,4 +18,14 @@ const updateUser = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "User updated successfully", data: { user } });
 });
 
-module.exports = { createUser, getUsers, getUserById, updateUser };
+const updateUserStatus = asyncHandler(async (req, res) => {
+  const user = await service.updateUserStatus(req.params.id, req.body.isActive, req.user.id);
+  res.status(200).json({
+    success: true,
+    message: "User status updated successfully",
+    data: { user },
+  });
+});
+
+module.exports = { createUser, getUsers, getUserById, updateUser, updateUserStatus };
+

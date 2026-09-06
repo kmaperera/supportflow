@@ -45,4 +45,11 @@ const userIdValidation = [
   }),
 ];
 
-module.exports = { createUserValidation, updateUserValidation, userIdValidation };
+const updateUserStatusValidation = [
+  ...userIdValidation,
+  body("isActive").custom((value) => typeof value === "boolean")
+    .withMessage("isActive must be a boolean"),
+];
+
+module.exports = { createUserValidation, updateUserValidation, userIdValidation, updateUserStatusValidation };
+

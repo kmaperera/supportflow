@@ -1,4 +1,5 @@
-﻿const repository = require("./user.repository");
+﻿const { revokeAllUserRefreshTokens } = require("../auth/refreshToken.service");
+const repository = require("./user.repository");
 const { hashPassword } = require("../../utils/password");
 const ApiError = require("../../utils/ApiError");
 const { USER_ROLES } = require("../../constants/roles");
@@ -113,4 +114,21 @@ async function updateUser(id, userData) {
   return getUserById(id);
 }
 
-module.exports = { createUser, getUsers, getUserById, updateUser };
+async function updateUserStatus(id, isActive, currentAdminId) {
+  await getUserById(id);
+  if (typeof isActive !== "boolean") {
+    throw new ApiError(400, "isActive must be a boolean");
+  }
+  if (Number(id) === Number(currentAdminId) && isActive === false) {
+    throw new ApiError(400, "You cannot deactivate your own account");
+  }
+
+  await repository.updateStatus(id, isActive);
+  if (isActive === false) {
+    await revokeAllUserRefreshTokens(id);
+  }
+  return getUserById(id);
+}
+
+module.exports = { createUser, getUsers, getUserById, updateUser, updateUserStatus };
+
