@@ -1,4 +1,4 @@
-﻿const bcrypt = require("bcryptjs");
+const { comparePassword } = require("../../utils/password");
 const userRepository = require("../users/user.repository");
 const ApiError = require("../../utils/ApiError");
 
@@ -24,7 +24,7 @@ async function login(email, password) {
     );
   }
 
-  const passwordMatches = await bcrypt.compare(password, user.password_hash);
+  const passwordMatches = await comparePassword(password, user.password_hash);
   if (!passwordMatches) {
     throw new ApiError(401, "Invalid email or password");
   }

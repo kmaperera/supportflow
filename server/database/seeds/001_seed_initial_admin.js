@@ -1,6 +1,6 @@
-﻿require("dotenv").config();
+require("dotenv").config();
 
-const bcrypt = require("bcryptjs");
+const { hashPassword } = require("../../src/utils/password");
 const pool = require("../../src/config/database");
 
 async function seedInitialAdmin() {
@@ -36,7 +36,7 @@ async function seedInitialAdmin() {
       return;
     }
 
-    const passwordHash = await bcrypt.hash(password, 12);
+    const passwordHash = await hashPassword(password);
 
     await pool.execute(
       `INSERT INTO users
