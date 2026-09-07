@@ -54,6 +54,28 @@ async function createInternalNote(ticketId, content, currentUser) {
   return createComment(ticketId, content, currentUser.id, COMMENT_TYPES.INTERNAL);
 }
 
+async function getTicketComments(ticketId, currentUser) {
+  if (!validId(ticketId)) throw new ApiError(400, "Ticket ID must be a positive integer");
+  if (!currentUser || !validId(currentUser.id) || typeof currentUser.role !== "string" || !currentUser.role) {
+    throw new ApiError(401, "Authentication required");
+  }
+  if (!Object.values(USER_ROLES).includes(currentUser.role)) {
+    throw new ApiError(403, "You do not have permission to access this resource");
+  }
+  const ticket = await ticketRepository.findById(ticketId);
+  if (!ticket) throw new ApiError(404, "Ticket not found");
+  const userId = String(currentUser.id);
+  const allowed = currentUser.role === USER_ROLES.ADMIN ||
+    (currentUser.role === USER_ROLES.EMPLOYEE && String(ticket.created_by) === userId) ||
+    (currentUser.role === USER_ROLES.TECHNICIAN &&
+      (ticket.assigned_to === null || String(ticket.assigned_to) === userId));
+  if (!allowed) throw new ApiError(404, "Ticket not found");
+
+  const includeInternal = [USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN].includes(currentUser.role);
+  const rows = await ticketCommentRepository.findByTicketId(ticketId, { includeInternal });
+  return rows.map(mapComment);
+}
+
 async function createComment(ticketId, content, userId, commentType) {
   if (typeof content !== "string") throw new ApiError(400, "Content must be a string");
   const trimmedContent = content.trim();
@@ -64,6 +86,10 @@ async function createComment(ticketId, content, userId, commentType) {
   });
   const row = await ticketCommentRepository.findById(commentId);
   if (!row) throw new ApiError(500, "Created comment could not be retrieved");
+  return mapComment(row);
+}
+
+function mapComment(row) {
   return {
     id: row.id, ticketId: row.ticket_id, commentType: row.comment_type, content: row.content,
     createdAt: row.created_at, updatedAt: row.updated_at,
@@ -74,4 +100,4 @@ async function createComment(ticketId, content, userId, commentType) {
   };
 }
 
-module.exports = { createPublicComment, createInternalNote };
+module.exports = { createPublicComment, createInternalNote, getTicketComments };

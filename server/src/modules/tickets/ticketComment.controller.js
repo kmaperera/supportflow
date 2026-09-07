@@ -15,4 +15,11 @@ const createInternalNote = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { createPublicComment, createInternalNote };
+const getTicketComments = asyncHandler(async (req, res) => {
+  const comments = await service.getTicketComments(req.params.id, req.user);
+  res.status(200).json({
+    success: true, message: "Ticket comments retrieved successfully", data: { comments },
+  });
+});
+
+module.exports = { createPublicComment, createInternalNote, getTicketComments };

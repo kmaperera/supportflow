@@ -12,8 +12,8 @@ const { unassignTicketByAdmin } = require("./ticket.controller");
 const { assignedTicketsValidation } = require("./ticket.validation");
 const { getAssignedTicketsForTechnician } = require("./ticket.controller");
 const { getAssignmentWorkflowSummary } = require("./ticket.controller");
-const { createPublicCommentValidation, createInternalNoteValidation } = require("./ticketComment.validation");
-const { createPublicComment, createInternalNote } = require("./ticketComment.controller");
+const { createPublicCommentValidation, createInternalNoteValidation, getTicketCommentsValidation } = require("./ticketComment.validation");
+const { createPublicComment, createInternalNote, getTicketComments } = require("./ticketComment.controller");
 router.get("/my", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE), getMyTicketsValidation, validate, getMyTickets);
 router.post("/", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE), createTicketValidation, validate, createTicket);
 
@@ -24,6 +24,7 @@ router.get("/assigned-to-me", authenticate, authorizeRoles(USER_ROLES.TECHNICIAN
 router.get("/workflow-summary", authenticate, authorizeRoles(USER_ROLES.ADMIN), getAssignmentWorkflowSummary);
 
 router.get("/:id", authenticate, ticketIdValidation, validate, getTicketById);
+router.get("/:id/comments", authenticate, getTicketCommentsValidation, validate, getTicketComments);
 router.post("/:id/comments", authenticate, createPublicCommentValidation, validate, createPublicComment);
 router.post("/:id/internal-notes", authenticate, authorizeRoles(USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN), createInternalNoteValidation, validate, createInternalNote);
 

@@ -1,4 +1,4 @@
-const { body } = require("express-validator");
+const { body, query } = require("express-validator");
 const { ticketIdValidation } = require("./ticket.validation");
 
 const createPublicCommentValidation = [
@@ -16,4 +16,12 @@ const createPublicCommentValidation = [
 
 const createInternalNoteValidation = [...createPublicCommentValidation];
 
-module.exports = { createPublicCommentValidation, createInternalNoteValidation };
+const getTicketCommentsValidation = [
+  ...ticketIdValidation,
+  query().custom((value) => {
+    if (Object.keys(value).length) throw new Error("Query parameters are not supported");
+    return true;
+  }),
+];
+
+module.exports = { createPublicCommentValidation, createInternalNoteValidation, getTicketCommentsValidation };
