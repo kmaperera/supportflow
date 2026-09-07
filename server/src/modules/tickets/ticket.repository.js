@@ -295,6 +295,15 @@ async function updateWorkingStatus(ticketId, newStatus, setFirstResponse, db = p
   return result.affectedRows;
 }
 
+async function setFirstResponseIfUnset(ticketId, db = pool) {
+  const [result] = await db.query(
+    `UPDATE tickets SET first_response_at = CURRENT_TIMESTAMP
+     WHERE id = ? AND first_response_at IS NULL`,
+    [ticketId]
+  );
+  return result.affectedRows;
+}
+
 async function updatePriority(ticketId, priorityId, db = pool) {
   const [result] = await db.query(
     "UPDATE tickets SET priority_id = ? WHERE id = ?",
@@ -327,7 +336,7 @@ async function reopenTicket(ticketId, db = pool) {
   return result.affectedRows;
 }
 
-module.exports = { reopenTicket, closeTicket, resolveTicket, updatePriority, updateWorkingStatus,
+module.exports = { reopenTicket, closeTicket, resolveTicket, updatePriority, updateWorkingStatus, setFirstResponseIfUnset,
   lockById, updateAssignment, unassignTicket,
   assignTechnician,
   findQueue, countQueue, findAssignedToTechnician, countAssignedToTechnician,

@@ -39,6 +39,11 @@ test("malformed tickets and users fail closed", () => {
 });
 
 test("technicians can read unassigned conversations but cannot create comments", async (t) => {
+  const pool = require("../src/config/database");
+  t.mock.method(pool, "getConnection", async () => ({
+    async beginTransaction() {}, async rollback() {}, release() {},
+  }));
+  t.mock.method(ticketRepository, "lockById", async () => ({ id: 5 }));
   const ticket = { id: 5, created_by: 3, assigned_to: null, status: "OPEN" };
   const user = { id: 7, role: "TECHNICIAN" };
   t.mock.method(ticketRepository, "findById", async () => ticket);

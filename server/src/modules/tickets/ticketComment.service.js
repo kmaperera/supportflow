@@ -5,6 +5,7 @@ const { USER_ROLES } = require("../../constants/roles");
 const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
 const { COMMENT_TYPES } = require("../../constants/commentTypes");
 const ApiError = require("../../utils/ApiError");
+const pool = require("../../config/database");
 
 function validId(value) {
   if (!["string", "number"].includes(typeof value) ||
@@ -21,18 +22,41 @@ async function createPublicComment(ticketId, content, currentUser) {
   if (!Object.values(USER_ROLES).includes(currentUser.role)) {
     throw new ApiError(403, "You do not have permission to access this resource");
   }
-  const ticket = await ticketRepository.findById(ticketId);
-  if (!ticket) throw new ApiError(404, "Ticket not found");
-  const userId = String(currentUser.id);
-  const allowed = currentUser.role === USER_ROLES.ADMIN ||
-    (currentUser.role === USER_ROLES.EMPLOYEE && String(ticket.created_by) === userId) ||
-    (currentUser.role === USER_ROLES.TECHNICIAN && String(ticket.assigned_to) === userId);
-  if (!allowed) throw new ApiError(404, "Ticket not found");
-  if (![TICKET_STATUSES.OPEN, TICKET_STATUSES.ASSIGNED, TICKET_STATUSES.IN_PROGRESS,
-    TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.REOPENED].includes(ticket.status)) {
-    throw new ApiError(409, "Comments cannot be added in the ticket's current status");
+  const connection = await pool.getConnection();
+  let commentId;
+  try {
+    await connection.beginTransaction();
+    // Keep assignment and status checks valid until the reply commits.
+    if (!(await ticketRepository.lockById(ticketId, connection))) {
+      throw new ApiError(404, "Ticket not found");
+    }
+    const ticket = await ticketRepository.findById(ticketId, connection);
+    if (!ticket) throw new ApiError(404, "Ticket not found");
+    const userId = String(currentUser.id);
+    const allowed = currentUser.role === USER_ROLES.ADMIN ||
+      (currentUser.role === USER_ROLES.EMPLOYEE && String(ticket.created_by) === userId) ||
+      (currentUser.role === USER_ROLES.TECHNICIAN && String(ticket.assigned_to) === userId);
+    if (!allowed) throw new ApiError(404, "Ticket not found");
+    if (![TICKET_STATUSES.OPEN, TICKET_STATUSES.ASSIGNED, TICKET_STATUSES.IN_PROGRESS,
+      TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.REOPENED].includes(ticket.status)) {
+      throw new ApiError(409, "Comments cannot be added in the ticket's current status");
+    }
+    commentId = await insertComment(ticketId, content, currentUser.id, COMMENT_TYPES.PUBLIC, connection);
+    if ([USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN].includes(currentUser.role)) {
+      await ticketRepository.setFirstResponseIfUnset(ticketId, connection);
+    }
+    await connection.commit();
+  } catch (error) {
+    try {
+      await connection.rollback();
+    } catch {
+      // Preserve the original error if rollback also fails.
+    }
+    throw error;
+  } finally {
+    connection.release();
   }
-  return createComment(ticketId, content, currentUser.id, COMMENT_TYPES.PUBLIC);
+  return getCreatedComment(commentId);
 }
 
 async function createInternalNote(ticketId, content, currentUser) {
@@ -70,13 +94,21 @@ async function getTicketComments(ticketId, currentUser) {
 }
 
 async function createComment(ticketId, content, userId, commentType) {
+  const commentId = await insertComment(ticketId, content, userId, commentType);
+  return getCreatedComment(commentId);
+}
+
+async function insertComment(ticketId, content, userId, commentType, db = pool) {
   if (typeof content !== "string") throw new ApiError(400, "Content must be a string");
   const trimmedContent = content.trim();
   const length = Array.from(trimmedContent).length;
   if (length < 1 || length > 5000) throw new ApiError(400, "Content must be 1 to 5000 characters");
-  const commentId = await ticketCommentRepository.createComment({
+  return ticketCommentRepository.createComment({
     ticketId, userId, commentType, content: trimmedContent,
-  });
+  }, db);
+}
+
+async function getCreatedComment(commentId) {
   const row = await ticketCommentRepository.findById(commentId);
   if (!row) throw new ApiError(500, "Created comment could not be retrieved");
   return mapComment(row);
