@@ -177,7 +177,10 @@ function queueFilters(options) {
 }
 
 async function findQueue(options) {
-  const { where, values } = queueFilters(options);
+  return findTicketList(queueFilters(options), options);
+}
+
+async function findTicketList({ where, values }, options) {
   const limit = options.limit ?? DEFAULT_LIMIT;
   const offset = options.offset ?? 0;
   const order = String(options.order ?? "desc").toLowerCase();
@@ -195,6 +198,24 @@ async function findQueue(options) {
     [...values, limit, offset]
   );
   return rows;
+}
+
+function assignedTechnicianFilters(technicianId, options) {
+  const conditions = ["t.assigned_to = ?", "t.status IN (?, ?, ?, ?)"];
+  const values = [technicianId, TICKET_STATUSES.ASSIGNED, TICKET_STATUSES.IN_PROGRESS,
+    TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.REOPENED];
+  buildTicketFilters(options, conditions, values);
+  return { where: " WHERE " + conditions.join(" AND "), values };
+}
+
+async function findAssignedToTechnician(technicianId, options = {}) {
+  return findTicketList(assignedTechnicianFilters(technicianId, options), options);
+}
+
+async function countAssignedToTechnician(technicianId, options = {}) {
+  const { where, values } = assignedTechnicianFilters(technicianId, options);
+  const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM tickets AS t${where}`, values);
+  return Number(rows[0].total);
 }
 
 async function countQueue(options) {
@@ -281,7 +302,7 @@ async function reopenTicket(ticketId, db = pool) {
 module.exports = { reopenTicket, closeTicket, resolveTicket, updatePriority, updateWorkingStatus,
   lockById, updateAssignment, unassignTicket,
   assignTechnician,
-  findQueue, countQueue,
+  findQueue, countQueue, findAssignedToTechnician, countAssignedToTechnician,
   updateEmployeeDetails,
   findByCreator, countByCreator,
   create, assignTicketNumber, findById, findByTicketNumber,

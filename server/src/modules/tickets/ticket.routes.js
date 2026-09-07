@@ -9,10 +9,14 @@ const { getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeT
 const router = express.Router();
 const { unassignTicketValidation } = require("./ticket.validation");
 const { unassignTicketByAdmin } = require("./ticket.controller");
+const { assignedTicketsValidation } = require("./ticket.validation");
+const { getAssignedTicketsForTechnician } = require("./ticket.controller");
 router.get("/my", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE), getMyTicketsValidation, validate, getMyTickets);
 router.post("/", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE), createTicketValidation, validate, createTicket);
 
 router.get("/queue", authenticate, authorizeRoles(USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN), ticketQueueValidation, validate, getTicketQueue);
+
+router.get("/assigned-to-me", authenticate, authorizeRoles(USER_ROLES.TECHNICIAN), assignedTicketsValidation, validate, getAssignedTicketsForTechnician);
 
 router.get("/:id", authenticate, ticketIdValidation, validate, getTicketById);
 

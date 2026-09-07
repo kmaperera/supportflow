@@ -212,6 +212,41 @@ async function updateEmployeeTicket(ticketId, currentUserId, updateData) {
   return mapTicket(updated);
 }
 
+async function getAssignedTicketsForTechnician(technicianId, query = {}) {
+  if (!isValidTicketUserId(technicianId)) throw new ApiError(400, "Technician ID must be a positive integer");
+  const allowed = ["page", "limit", "search", "status", "categoryId", "priorityId", "fromDate", "toDate", "sortBy", "order"];
+  if (Object.keys(query).some((key) => !allowed.includes(key))) {
+    throw new ApiError(400, "Unsupported assigned tickets query parameter");
+  }
+  validateTicketQuery(query);
+  if (query.status !== undefined && ![TICKET_STATUSES.ASSIGNED, TICKET_STATUSES.IN_PROGRESS,
+    TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.REOPENED].includes(query.status)) {
+    throw new ApiError(400, "Invalid workload status");
+  }
+  const page = Number(query.page ?? DEFAULT_PAGE);
+  const limit = Number(query.limit ?? DEFAULT_LIMIT);
+  const offset = (page - 1) * limit;
+  if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(limit) ||
+      limit < 1 || limit > MAX_LIMIT || !Number.isSafeInteger(offset)) {
+    throw new ApiError(400, "Invalid pagination options");
+  }
+  const options = {
+    search: query.search?.trim(), status: query.status,
+    categoryId: query.categoryId, priorityId: query.priorityId,
+    fromDate: query.fromDate, toDate: query.toDate,
+    sortBy: query.sortBy, order: (query.order ?? "desc").toLowerCase(), limit, offset,
+  };
+  const [rows, totalRecords] = await Promise.all([
+    ticketRepository.findAssignedToTechnician(technicianId, options),
+    ticketRepository.countAssignedToTechnician(technicianId, options),
+  ]);
+  const totalPages = Math.ceil(totalRecords / limit);
+  return {
+    tickets: rows.map(mapTicket),
+    pagination: { currentPage: page, limit, totalRecords, totalPages, hasNext: page < totalPages, hasPrevious: page > 1 },
+  };
+}
+
 async function getTicketQueue(currentUser, query = {}) {
   if (!currentUser || !isValidTicketUserId(currentUser.id) || !currentUser.role) {
     throw new ApiError(401, "Authentication required");
@@ -704,7 +739,7 @@ async function getTicketStatusHistory(ticketId, currentUser) {
   }));
 }
 
-module.exports = { unassignTicketByAdmin, getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+module.exports = { getAssignedTicketsForTechnician, unassignTicketByAdmin, getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
 
 
 

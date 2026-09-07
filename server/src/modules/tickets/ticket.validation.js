@@ -62,6 +62,14 @@ const getMyTicketsValidation = [
   query("order").optional().isString().bail().toLowerCase().isIn(TICKET_SORT_DIRECTIONS),
 ];
 
+const assignedTicketsValidation = [
+  ...getMyTicketsValidation,
+  query("status").optional().isString().bail().isIn([
+    TICKET_STATUSES.ASSIGNED, TICKET_STATUSES.IN_PROGRESS,
+    TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.REOPENED,
+  ]).withMessage("Invalid workload status"),
+];
+
 const ticketIdValidation = [
   param("id").custom(positiveId).withMessage("Ticket ID must be a positive integer"),
 ];
@@ -177,7 +185,7 @@ const reopenTicketValidation = [
   }),
 ];
 
-module.exports = { unassignTicketValidation, reopenTicketValidation, closeTicketValidation, resolveTicketValidation, updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
+module.exports = { assignedTicketsValidation, unassignTicketValidation, reopenTicketValidation, closeTicketValidation, resolveTicketValidation, updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
 
 
 
