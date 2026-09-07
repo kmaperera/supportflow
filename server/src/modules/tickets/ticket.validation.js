@@ -90,7 +90,13 @@ const ticketQueueValidation = [
   query("order").optional().isString().bail().toLowerCase().isIn(["asc", "desc"]),
 ];
 
-module.exports = { ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
+const adminAssignTicketValidation = [
+  ...ticketIdValidation,
+  body("technicianId").custom(positiveId).withMessage("Technician ID must be a positive integer"),
+];
+
+module.exports = { adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
+
 
 
 

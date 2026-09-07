@@ -207,7 +207,21 @@ async function assignTechnician(ticketId, technicianId, status, db = pool) {
   return result.affectedRows;
 }
 
+async function lockById(id, db = pool) {
+  const [rows] = await db.query("SELECT id FROM tickets WHERE id = ? FOR UPDATE", [id]);
+  return rows[0] || null;
+}
+
+async function updateAssignment(ticketId, technicianId, status, db = pool) {
+  const [result] = await db.query(
+    "UPDATE tickets SET assigned_to = ?, status = ? WHERE id = ?",
+    [technicianId, status, ticketId]
+  );
+  return result.affectedRows;
+}
+
 module.exports = {
+  lockById, updateAssignment,
   assignTechnician,
   findQueue, countQueue,
   updateEmployeeDetails,
@@ -215,6 +229,7 @@ module.exports = {
   create, assignTicketNumber, findById, findByTicketNumber,
   findCategoryById, findPriorityById,
 };
+
 
 
 

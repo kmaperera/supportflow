@@ -3,8 +3,8 @@ const authenticate = require("../../middleware/authenticate");
 const authorizeRoles = require("../../middleware/authorize");
 const validate = require("../../middleware/validate");
 const { USER_ROLES } = require("../../constants/roles");
-const { ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation } = require("./ticket.validation");
-const { selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket } = require("./ticket.controller");
+const { adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation } = require("./ticket.validation");
+const { assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket } = require("./ticket.controller");
 
 const router = express.Router();
 router.get("/my", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE), getMyTicketsValidation, validate, getMyTickets);
@@ -18,7 +18,10 @@ router.patch("/:id", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE), updateEm
 
 router.post("/:id/self-assign", authenticate, authorizeRoles(USER_ROLES.TECHNICIAN), ticketIdValidation, validate, selfAssignTicket);
 
+router.patch("/:id/assign", authenticate, authorizeRoles(USER_ROLES.ADMIN), adminAssignTicketValidation, validate, assignTicketByAdmin);
+
 module.exports = router;
+
 
 
 

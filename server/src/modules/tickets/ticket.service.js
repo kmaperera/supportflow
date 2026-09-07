@@ -1,4 +1,5 @@
-﻿const ticketAssignmentRepository = require("./ticketAssignment.repository");
+﻿const userRepository = require("../users/user.repository");
+const ticketAssignmentRepository = require("./ticketAssignment.repository");
 const { USER_ROLES } = require("../../constants/roles");
 const pool = require("../../config/database");
 const ticketRepository = require("./ticket.repository");
@@ -241,7 +242,68 @@ async function selfAssignTicket(ticketId, currentUser) {
   }
 }
 
-module.exports = { selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+async function assignTicketByAdmin(ticketId, technicianId, currentAdmin) {
+  if (!isValidTicketUserId(ticketId) || !isValidTicketUserId(technicianId)) {
+    throw new ApiError(400, "Ticket ID and technician ID must be positive integers");
+  }
+  if (!currentAdmin || !isValidTicketUserId(currentAdmin.id) || !currentAdmin.role) {
+    throw new ApiError(401, "Authentication required");
+  }
+  if (currentAdmin.role !== USER_ROLES.ADMIN) {
+    throw new ApiError(403, "You do not have permission to access this resource");
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    // Lock before any snapshot reads; concurrent claims/assignments must wait.
+    if (!(await ticketRepository.lockById(ticketId, connection))) {
+      throw new ApiError(404, "Ticket not found");
+    }
+    const ticket = await ticketRepository.findById(ticketId, connection);
+    if (!ticket) throw new ApiError(404, "Ticket not found");
+    if (["RESOLVED", "CLOSED"].includes(ticket.status)) {
+      throw new ApiError(409, "Ticket cannot be assigned in its current status");
+    }
+    const technician = await userRepository.findById(technicianId, connection);
+    if (!technician) throw new ApiError(404, "Technician not found");
+    if (technician.role !== USER_ROLES.TECHNICIAN) {
+      throw new ApiError(400, "Selected user is not a technician");
+    }
+    if (!technician.is_active) throw new ApiError(400, "Selected technician is inactive");
+    if (String(ticket.assigned_to) === String(technicianId)) {
+      const result = mapTicket(ticket);
+      await connection.commit();
+      return result;
+    }
+
+    const active = await ticketAssignmentRepository.findActiveByTicketId(ticketId, connection);
+    if (active) await ticketAssignmentRepository.closeActiveAssignment(ticketId, connection);
+    const nextStatus = ticket.status === "OPEN" ? "ASSIGNED" : ticket.status;
+    const affectedRows = await ticketRepository.updateAssignment(ticketId, technicianId, nextStatus, connection);
+    if (affectedRows !== 1) throw new Error("Unexpected assignment update count");
+    await ticketAssignmentRepository.createAssignment({
+      ticketId, technicianId, assignedBy: currentAdmin.id, assignmentType: "ADMIN",
+    }, connection);
+    const updated = await ticketRepository.findById(ticketId, connection);
+    if (!updated) throw new Error("Assigned ticket could not be retrieved");
+    const result = mapTicket(updated);
+    await connection.commit();
+    return result;
+  } catch (error) {
+    try {
+      await connection.rollback();
+    } catch {
+      // Preserve the original error if rollback also fails.
+    }
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+module.exports = { assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+
 
 
 

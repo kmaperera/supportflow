@@ -14,8 +14,8 @@ async function findByEmail(email) {
   return rows[0] || null;
 }
 
-async function findById(id) {
-  const [rows] = await pool.execute(
+async function findById(id, db = pool) {
+  const [rows] = await db.execute(
     `SELECT ${USER_FIELDS} FROM users WHERE id = ? LIMIT 1`,
     [id]
   );
@@ -151,5 +151,7 @@ module.exports = {
   updateStatus,
   updateRole,
 };
+
+
 
 

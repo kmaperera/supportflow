@@ -45,7 +45,15 @@ const selfAssignTicket = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+const assignTicketByAdmin = asyncHandler(async (req, res) => {
+  const ticket = await service.assignTicketByAdmin(req.params.id, req.body.technicianId, req.user);
+  res.status(200).json({
+    success: true, message: "Ticket assigned successfully", data: { ticket },
+  });
+});
+
+module.exports = { assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+
 
 
 
