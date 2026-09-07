@@ -1,3 +1,4 @@
+const ticketStatusHistoryRepository = require("./ticketStatusHistory.repository");
 const { TICKET_SORT_FIELDS, TICKET_SORT_DIRECTIONS, DEFAULT_PAGE, DEFAULT_LIMIT, MAX_LIMIT } = require("../../constants/ticketQuery");
 const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
 const { assertTicketStatusTransition } = require("../../utils/ticketStatus");
@@ -255,6 +256,9 @@ async function selfAssignTicket(ticketId, currentUser) {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
+    if (!(await ticketRepository.lockById(ticketId, connection))) {
+      throw new ApiError(404, "Ticket not found");
+    }
     const ticket = await ticketRepository.findById(ticketId, connection);
     if (!ticket) throw new ApiError(404, "Ticket not found");
     if (ticket.assigned_to !== null) throw new ApiError(409, "Ticket is already assigned");
@@ -270,6 +274,9 @@ async function selfAssignTicket(ticketId, currentUser) {
 
     await ticketAssignmentRepository.createAssignment({
       ticketId, technicianId: currentUser.id, assignedBy: currentUser.id, assignmentType: "SELF",
+    }, connection);
+    await ticketStatusHistoryRepository.createHistory({
+      ticketId, fromStatus: ticket.status, toStatus: TICKET_STATUSES.ASSIGNED, changedBy: currentUser.id,
     }, connection);
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Assigned ticket could not be retrieved");
@@ -331,6 +338,11 @@ async function assignTicketByAdmin(ticketId, technicianId, currentAdmin) {
     await ticketAssignmentRepository.createAssignment({
       ticketId, technicianId, assignedBy: currentAdmin.id, assignmentType: "ADMIN",
     }, connection);
+    if (ticket.status !== nextStatus) {
+      await ticketStatusHistoryRepository.createHistory({
+        ticketId, fromStatus: ticket.status, toStatus: nextStatus, changedBy: currentAdmin.id,
+      }, connection);
+    }
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Assigned ticket could not be retrieved");
     const result = mapTicket(updated);
@@ -382,6 +394,9 @@ async function updateTicketStatus(ticketId, newStatus, currentUser) {
       newStatus === TICKET_STATUSES.IN_PROGRESS;
     const affectedRows = await ticketRepository.updateWorkingStatus(ticketId, newStatus, setFirstResponse, connection);
     if (affectedRows !== 1) throw new Error("Unexpected ticket status update count");
+    await ticketStatusHistoryRepository.createHistory({
+      ticketId, fromStatus: ticket.status, toStatus: newStatus, changedBy: currentUser.id,
+    }, connection);
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Updated ticket could not be retrieved");
     const result = mapTicket(updated);
@@ -492,6 +507,9 @@ async function resolveTicket(ticketId, resolutionSummary, currentUser) {
     }
     const affectedRows = await ticketRepository.resolveTicket(ticketId, summary, connection);
     if (affectedRows !== 1) throw new Error("Unexpected ticket resolution update count");
+    await ticketStatusHistoryRepository.createHistory({
+      ticketId, fromStatus: ticket.status, toStatus: TICKET_STATUSES.RESOLVED, changedBy: currentUser.id,
+    }, connection);
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Resolved ticket could not be retrieved");
     const result = mapTicket(updated);
@@ -535,6 +553,9 @@ async function closeTicket(ticketId, currentUser) {
     assertTicketStatusTransition(ticket.status, TICKET_STATUSES.CLOSED);
     const affectedRows = await ticketRepository.closeTicket(ticketId, connection);
     if (affectedRows !== 1) throw new Error("Unexpected ticket closure update count");
+    await ticketStatusHistoryRepository.createHistory({
+      ticketId, fromStatus: ticket.status, toStatus: TICKET_STATUSES.CLOSED, changedBy: currentUser.id,
+    }, connection);
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Closed ticket could not be retrieved");
     const result = mapTicket(updated);
@@ -578,6 +599,9 @@ async function reopenTicket(ticketId, currentUser) {
     assertTicketStatusTransition(ticket.status, TICKET_STATUSES.REOPENED);
     const affectedRows = await ticketRepository.reopenTicket(ticketId, connection);
     if (affectedRows !== 1) throw new Error("Unexpected ticket reopening update count");
+    await ticketStatusHistoryRepository.createHistory({
+      ticketId, fromStatus: ticket.status, toStatus: TICKET_STATUSES.REOPENED, changedBy: currentUser.id,
+    }, connection);
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Reopened ticket could not be retrieved");
     const result = mapTicket(updated);
@@ -595,7 +619,22 @@ async function reopenTicket(ticketId, currentUser) {
   }
 }
 
-module.exports = { reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+async function getTicketStatusHistory(ticketId, currentUser) {
+  // Reuse detail authorization so visibility stays identical across endpoints.
+  await getTicketById(ticketId, currentUser);
+  const rows = await ticketStatusHistoryRepository.findByTicketId(ticketId);
+  return rows.map((row) => ({
+    id: row.id, fromStatus: row.from_status, toStatus: row.to_status,
+    changedAt: row.changed_at,
+    changedBy: {
+      id: row.changed_by, firstName: row.changed_by_first_name,
+      lastName: row.changed_by_last_name, email: row.changed_by_email,
+      role: row.changed_by_role,
+    },
+  }));
+}
+
+module.exports = { getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
 
 
 

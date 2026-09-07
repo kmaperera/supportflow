@@ -87,7 +87,14 @@ const reopenTicket = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+const getTicketStatusHistory = asyncHandler(async (req, res) => {
+  const history = await service.getTicketStatusHistory(req.params.id, req.user);
+  res.status(200).json({
+    success: true, message: "Ticket status history retrieved successfully", data: { history },
+  });
+});
+
+module.exports = { getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
 
 
 
