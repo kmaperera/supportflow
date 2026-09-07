@@ -1,3 +1,5 @@
+const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
+const { assertTicketStatusTransition } = require("../../utils/ticketStatus");
 ﻿const userRepository = require("../users/user.repository");
 const ticketAssignmentRepository = require("./ticketAssignment.repository");
 const { USER_ROLES } = require("../../constants/roles");
@@ -302,7 +304,58 @@ async function assignTicketByAdmin(ticketId, technicianId, currentAdmin) {
   }
 }
 
-module.exports = { assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+async function updateTicketStatus(ticketId, newStatus, currentUser) {
+  if (!isValidTicketUserId(ticketId)) throw new ApiError(400, "Ticket ID must be a positive integer");
+  if (!currentUser || !isValidTicketUserId(currentUser.id) ||
+      typeof currentUser.role !== "string" || !currentUser.role) {
+    throw new ApiError(401, "Authentication required");
+  }
+  if (![USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN].includes(currentUser.role)) {
+    throw new ApiError(403, "You do not have permission to access this resource");
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    // Keep assignment and lifecycle checks valid until the update commits.
+    if (!(await ticketRepository.lockById(ticketId, connection))) {
+      throw new ApiError(404, "Ticket not found");
+    }
+    const ticket = await ticketRepository.findById(ticketId, connection);
+    if (!ticket) throw new ApiError(404, "Ticket not found");
+    if (ticket.assigned_to === null) {
+      throw new ApiError(409, "Ticket must be assigned before its status can be updated");
+    }
+    if (currentUser.role === USER_ROLES.TECHNICIAN &&
+        String(ticket.assigned_to) !== String(currentUser.id)) {
+      throw new ApiError(404, "Ticket not found");
+    }
+    if (![TICKET_STATUSES.IN_PROGRESS, TICKET_STATUSES.WAITING_FOR_USER].includes(newStatus)) {
+      throw new ApiError(400, "Status must be IN_PROGRESS or WAITING_FOR_USER");
+    }
+    assertTicketStatusTransition(ticket.status, newStatus);
+    const setFirstResponse = ticket.status === TICKET_STATUSES.ASSIGNED &&
+      newStatus === TICKET_STATUSES.IN_PROGRESS;
+    const affectedRows = await ticketRepository.updateWorkingStatus(ticketId, newStatus, setFirstResponse, connection);
+    if (affectedRows !== 1) throw new Error("Unexpected ticket status update count");
+    const updated = await ticketRepository.findById(ticketId, connection);
+    if (!updated) throw new Error("Updated ticket could not be retrieved");
+    const result = mapTicket(updated);
+    await connection.commit();
+    return result;
+  } catch (error) {
+    try {
+      await connection.rollback();
+    } catch {
+      // Preserve the original error if rollback also fails.
+    }
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+module.exports = { updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
 
 
 

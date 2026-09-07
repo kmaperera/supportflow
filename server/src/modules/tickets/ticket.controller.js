@@ -52,7 +52,14 @@ const assignTicketByAdmin = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+const updateTicketStatus = asyncHandler(async (req, res) => {
+  const ticket = await service.updateTicketStatus(req.params.id, req.body.status, req.user);
+  res.status(200).json({
+    success: true, message: "Ticket status updated successfully", data: { ticket },
+  });
+});
+
+module.exports = { updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
 
 
 

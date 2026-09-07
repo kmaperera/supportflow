@@ -220,7 +220,18 @@ async function updateAssignment(ticketId, technicianId, status, db = pool) {
   return result.affectedRows;
 }
 
-module.exports = {
+async function updateWorkingStatus(ticketId, newStatus, setFirstResponse, db = pool) {
+  const firstResponse = setFirstResponse === true
+    ? ", first_response_at = COALESCE(first_response_at, CURRENT_TIMESTAMP)"
+    : "";
+  const [result] = await db.query(
+    `UPDATE tickets SET status = ?${firstResponse} WHERE id = ?`,
+    [newStatus, ticketId]
+  );
+  return result.affectedRows;
+}
+
+module.exports = { updateWorkingStatus,
   lockById, updateAssignment,
   assignTechnician,
   findQueue, countQueue,

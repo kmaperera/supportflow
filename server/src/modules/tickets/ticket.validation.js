@@ -1,3 +1,4 @@
+const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
 ﻿const { body, query, param } = require("express-validator");
 
 const positiveId = (value) => {
@@ -95,7 +96,21 @@ const adminAssignTicketValidation = [
   body("technicianId").custom(positiveId).withMessage("Technician ID must be a positive integer"),
 ];
 
-module.exports = { adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
+const updateTicketStatusValidation = [
+  ...ticketIdValidation,
+  body().custom((value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value) ||
+        Object.keys(value).some((key) => key !== "status")) {
+      throw new Error("Only status is allowed");
+    }
+    return true;
+  }),
+  body("status").isString().withMessage("Status is required and must be a string").bail()
+    .isIn([TICKET_STATUSES.IN_PROGRESS, TICKET_STATUSES.WAITING_FOR_USER])
+    .withMessage("Status must be IN_PROGRESS or WAITING_FOR_USER"),
+];
+
+module.exports = { updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
 
 
 
