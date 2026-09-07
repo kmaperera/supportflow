@@ -1,3 +1,4 @@
+const { TICKET_SORT_FIELDS, TICKET_SORT_DIRECTIONS, DEFAULT_PAGE, DEFAULT_LIMIT, MAX_LIMIT } = require("../../constants/ticketQuery");
 const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
 const { assertTicketStatusTransition } = require("../../utils/ticketStatus");
 ﻿const userRepository = require("../users/user.repository");
@@ -71,6 +72,45 @@ async function createTicket(userId, ticketData) {
   }
 }
 
+function validateTicketQuery(query) {
+  for (const field of ["page", "limit", "categoryId", "priorityId", "assignedTo"]) {
+    if (query[field] !== undefined && !isValidTicketUserId(query[field])) {
+      throw new ApiError(400, field + " must be a positive integer");
+    }
+  }
+  if (query.search !== undefined &&
+      (typeof query.search !== "string" || Array.from(query.search.trim()).length > 200)) {
+    throw new ApiError(400, "Search must be at most 200 characters");
+  }
+  if (query.status !== undefined && !Object.values(TICKET_STATUSES).includes(query.status)) {
+    throw new ApiError(400, "Invalid ticket status");
+  }
+  if (query.sortBy !== undefined && !TICKET_SORT_FIELDS.includes(query.sortBy)) {
+    throw new ApiError(400, "Invalid ticket sort field");
+  }
+  if (query.order !== undefined && (typeof query.order !== "string" ||
+      !TICKET_SORT_DIRECTIONS.includes(query.order.toLowerCase()))) {
+    throw new ApiError(400, "Invalid ticket sort direction");
+  }
+  if (query.assignment !== undefined && !["unassigned", "assigned", "mine"].includes(query.assignment)) {
+    throw new ApiError(400, "Invalid assignment filter");
+  }
+  for (const field of ["fromDate", "toDate"]) {
+    const value = query[field];
+    if (value === undefined) continue;
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      throw new ApiError(400, "Date must be a valid YYYY-MM-DD date");
+    }
+    const date = new Date(value + "T00:00:00.000Z");
+    if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+      throw new ApiError(400, "Date must be a valid YYYY-MM-DD date");
+    }
+  }
+  if (query.fromDate !== undefined && query.toDate !== undefined && query.fromDate > query.toDate) {
+    throw new ApiError(400, "fromDate cannot be later than toDate");
+  }
+}
+
 async function getMyTickets(userId, query = {}) {
   const id = String(userId);
   if (!["string", "number"].includes(typeof userId) ||
@@ -78,16 +118,18 @@ async function getMyTickets(userId, query = {}) {
       !/^[1-9]\d*$/.test(id) || id.length > 20 || BigInt(id) > 18446744073709551615n) {
     throw new ApiError(400, "User ID must be a positive integer");
   }
-  const page = Number(query.page ?? 1);
-  const limit = Number(query.limit ?? 10);
+  validateTicketQuery(query);
+  const page = Number(query.page ?? DEFAULT_PAGE);
+  const limit = Number(query.limit ?? DEFAULT_LIMIT);
   const offset = (page - 1) * limit;
   if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(limit) ||
-      limit < 1 || limit > 100 || !Number.isSafeInteger(offset)) {
+      limit < 1 || limit > MAX_LIMIT || !Number.isSafeInteger(offset)) {
     throw new ApiError(400, "Invalid pagination options");
   }
   const options = {
     search: query.search?.trim(), status: query.status,
     categoryId: query.categoryId, priorityId: query.priorityId,
+    fromDate: query.fromDate, toDate: query.toDate,
     sortBy: query.sortBy ?? "created_at", order: (query.order ?? "desc").toLowerCase(),
     limit, offset,
   };
@@ -175,17 +217,19 @@ async function getTicketQueue(currentUser, query = {}) {
   if (![USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN].includes(currentUser.role)) {
     throw new ApiError(403, "You do not have permission to access this resource");
   }
-  const page = Number(query.page ?? 1);
-  const limit = Number(query.limit ?? 10);
+  validateTicketQuery(query);
+  const page = Number(query.page ?? DEFAULT_PAGE);
+  const limit = Number(query.limit ?? DEFAULT_LIMIT);
   const offset = (page - 1) * limit;
   if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(limit) ||
-      limit < 1 || limit > 100 || !Number.isSafeInteger(offset)) {
+      limit < 1 || limit > MAX_LIMIT || !Number.isSafeInteger(offset)) {
     throw new ApiError(400, "Invalid pagination options");
   }
   const options = {
     currentUserId: currentUser.id, currentUserRole: currentUser.role,
     search: query.search?.trim(), status: query.status,
     categoryId: query.categoryId, priorityId: query.priorityId,
+    fromDate: query.fromDate, toDate: query.toDate,
     assignedTo: query.assignedTo, assignment: query.assignment,
     sortBy: query.sortBy, order: (query.order ?? "desc").toLowerCase(), limit, offset,
   };

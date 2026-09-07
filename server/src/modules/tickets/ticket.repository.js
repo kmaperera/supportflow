@@ -1,3 +1,4 @@
+const { TICKET_SORT_COLUMNS, TICKET_SORT_DIRECTIONS, DEFAULT_LIMIT, MAX_LIMIT } = require("../../constants/ticketQuery");
 const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
 ﻿const { USER_ROLES } = require("../../constants/roles");
 const pool = require("../../config/database");
@@ -74,15 +75,9 @@ async function findPriorityById(priorityId, db = pool) {
   return rows[0] || null;
 }
 
-const CREATOR_SORT_COLUMNS = {
-  created_at: "t.created_at", updated_at: "t.updated_at",
-  ticket_number: "t.ticket_number", title: "t.title",
-  status: "t.status", priority: "p.sort_order",
-};
 
-function creatorFilters(userId, filters) {
-  const conditions = ["t.created_by = ?"];
-  const values = [userId];
+// Shared by employee and queue list/count queries; LIKE uses the database collation.
+function buildTicketFilters(filters, conditions, values) {
   if (filters.search) {
     conditions.push("(t.ticket_number LIKE ? OR t.title LIKE ? OR t.description LIKE ?)");
     values.push(...Array(3).fill(`%${filters.search}%`));
@@ -93,6 +88,20 @@ function creatorFilters(userId, filters) {
       values.push(filters[key]);
     }
   }
+  if (filters.fromDate !== undefined) {
+    conditions.push("t.created_at >= ?");
+    values.push(filters.fromDate);
+  }
+  if (filters.toDate !== undefined) {
+    conditions.push("t.created_at < DATE_ADD(?, INTERVAL 1 DAY)");
+    values.push(filters.toDate);
+  }
+}
+
+function creatorFilters(userId, filters) {
+  const conditions = ["t.created_by = ?"];
+  const values = [userId];
+  buildTicketFilters(filters, conditions, values);
   return { where: conditions.join(" AND "), values };
 }
 
@@ -100,16 +109,16 @@ async function findByCreator(userId, options = {}) {
   const { where, values } = creatorFilters(userId, options);
   const sortBy = options.sortBy ?? "created_at";
   const order = String(options.order ?? "desc").toLowerCase();
-  const limit = options.limit ?? 10;
+  const limit = options.limit ?? DEFAULT_LIMIT;
   const offset = options.offset ?? 0;
-  if (!Object.hasOwn(CREATOR_SORT_COLUMNS, sortBy) || !["asc", "desc"].includes(order) ||
-      !Number.isSafeInteger(limit) || limit < 1 || limit > 100 ||
+  if (!Object.hasOwn(TICKET_SORT_COLUMNS, sortBy) || !TICKET_SORT_DIRECTIONS.includes(order) ||
+      !Number.isSafeInteger(limit) || limit < 1 || limit > MAX_LIMIT ||
       !Number.isSafeInteger(offset) || offset < 0) {
     throw new TypeError("Invalid ticket listing options");
   }
   const [rows] = await pool.query(
     `${TICKET_SELECT} WHERE ${where}
-     ORDER BY ${CREATOR_SORT_COLUMNS[sortBy]} ${order}, t.id ${order} LIMIT ? OFFSET ?`,
+     ORDER BY ${TICKET_SORT_COLUMNS[sortBy]} ${order.toUpperCase()}, t.id ${order.toUpperCase()} LIMIT ? OFFSET ?`,
     [...values, limit, offset]
   );
   return rows;
@@ -150,15 +159,10 @@ function queueFilters(options) {
   } else if (options.currentUserRole !== USER_ROLES.ADMIN) {
     throw new TypeError("Queue requires a technician or administrator");
   }
-  if (options.search) {
-    conditions.push("(t.ticket_number LIKE ? OR t.title LIKE ? OR t.description LIKE ?)");
-    values.push(...Array(3).fill(`%${options.search}%`));
-  }
-  for (const [key, column] of [["status", "t.status"], ["categoryId", "t.category_id"], ["priorityId", "t.priority_id"], ["assignedTo", "t.assigned_to"]]) {
-    if (options[key] !== undefined) {
-      conditions.push(`${column} = ?`);
-      values.push(options[key]);
-    }
+  buildTicketFilters(options, conditions, values);
+  if (options.assignedTo !== undefined) {
+    conditions.push("t.assigned_to = ?");
+    values.push(options.assignedTo);
   }
   if (options.assignment !== undefined) {
     if (options.assignment === "unassigned") conditions.push("t.assigned_to IS NULL");
@@ -174,17 +178,17 @@ function queueFilters(options) {
 
 async function findQueue(options) {
   const { where, values } = queueFilters(options);
-  const limit = options.limit ?? 10;
+  const limit = options.limit ?? DEFAULT_LIMIT;
   const offset = options.offset ?? 0;
   const order = String(options.order ?? "desc").toLowerCase();
-  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100 ||
-      !Number.isSafeInteger(offset) || offset < 0 || !["asc", "desc"].includes(order)) {
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > MAX_LIMIT ||
+      !Number.isSafeInteger(offset) || offset < 0 || !TICKET_SORT_DIRECTIONS.includes(order)) {
     throw new TypeError("Invalid queue options");
   }
   let sorting = "p.sort_order DESC, t.created_at ASC, t.id ASC";
   if (options.sortBy !== undefined) {
-    if (!Object.hasOwn(CREATOR_SORT_COLUMNS, options.sortBy)) throw new TypeError("Invalid queue sort column");
-    sorting = `${CREATOR_SORT_COLUMNS[options.sortBy]} ${order}, t.id ${order}`;
+    if (!Object.hasOwn(TICKET_SORT_COLUMNS, options.sortBy)) throw new TypeError("Invalid queue sort column");
+    sorting = `${TICKET_SORT_COLUMNS[options.sortBy]} ${order.toUpperCase()}, t.id ${order.toUpperCase()}`;
   }
   const [rows] = await pool.query(
     `${TICKET_SELECT}${where} ORDER BY ${sorting} LIMIT ? OFFSET ?`,

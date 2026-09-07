@@ -1,3 +1,4 @@
+const { TICKET_SORT_FIELDS, TICKET_SORT_DIRECTIONS, MAX_LIMIT } = require("../../constants/ticketQuery");
 const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
 ﻿const { body, query, param } = require("express-validator");
 
@@ -25,9 +26,22 @@ const createTicketValidation = [
     .trim().isLength({ min: 10, max: 5000 }).withMessage("Description must be 10 to 5000 characters"),
 ];
 
+function ticketDateValidation() {
+  return [
+    ...["fromDate", "toDate"].map((field) => query(field).optional().isString().bail()
+      .matches(/^\d{4}-\d{2}-\d{2}$/).bail().isISO8601({ strict: true })
+      .withMessage("Date must be a valid YYYY-MM-DD date")),
+    query().custom((value) => {
+      if (typeof value.fromDate === "string" && typeof value.toDate === "string" &&
+          value.fromDate > value.toDate) throw new Error("fromDate cannot be later than toDate");
+      return true;
+    }),
+  ];
+}
+
 const getMyTicketsValidation = [
   query().custom((value) => {
-    const allowed = ["page", "limit", "search", "status", "categoryId", "priorityId", "sortBy", "order"];
+    const allowed = ["page", "limit", "search", "status", "categoryId", "priorityId", "fromDate", "toDate", "sortBy", "order"];
     if (Object.keys(value).some((key) => !allowed.includes(key))) {
       throw new Error("Unsupported ticket query parameter");
     }
@@ -35,16 +49,17 @@ const getMyTicketsValidation = [
   }),
   query("page").optional().custom((value) => positiveId(value) && Number.isSafeInteger(Number(value)))
     .withMessage("Page must be a positive integer"),
-  query("limit").optional().custom((value) => positiveId(value) && Number(value) <= 100)
+  query("limit").optional().custom((value) => positiveId(value) && Number(value) <= MAX_LIMIT)
     .withMessage("Limit must be between 1 and 100"),
   query("search").optional().isString().bail().trim().isLength({ max: 200 }),
   query("categoryId").optional().custom(positiveId).withMessage("Invalid category ID"),
   query("priorityId").optional().custom(positiveId).withMessage("Invalid priority ID"),
   query("status").optional().isString().bail()
-    .isIn(["OPEN", "ASSIGNED", "IN_PROGRESS", "WAITING_FOR_USER", "RESOLVED", "CLOSED", "REOPENED"]),
+    .isIn(Object.values(TICKET_STATUSES)),
+  ...ticketDateValidation(),
   query("sortBy").optional().isString().bail()
-    .isIn(["created_at", "updated_at", "ticket_number", "title", "status", "priority"]),
-  query("order").optional().isString().bail().toLowerCase().isIn(["asc", "desc"]),
+    .isIn(TICKET_SORT_FIELDS),
+  query("order").optional().isString().bail().toLowerCase().isIn(TICKET_SORT_DIRECTIONS),
 ];
 
 const ticketIdValidation = [
@@ -71,24 +86,25 @@ const updateEmployeeTicketValidation = [
 
 const ticketQueueValidation = [
   query().custom((value) => {
-    const allowed = ["page", "limit", "search", "status", "categoryId", "priorityId", "assignedTo", "assignment", "sortBy", "order"];
+    const allowed = ["page", "limit", "search", "status", "categoryId", "priorityId", "assignedTo", "assignment", "fromDate", "toDate", "sortBy", "order"];
     if (Object.keys(value).some((key) => !allowed.includes(key))) throw new Error("Unsupported queue query parameter");
     return true;
   }),
   query("page").optional().custom((value) => positiveId(value) && Number.isSafeInteger(Number(value)))
     .withMessage("Page must be a positive integer"),
-  query("limit").optional().custom((value) => positiveId(value) && Number(value) <= 100)
+  query("limit").optional().custom((value) => positiveId(value) && Number(value) <= MAX_LIMIT)
     .withMessage("Limit must be between 1 and 100"),
   query("search").optional().isString().bail().trim().isLength({ max: 200 }),
   query("categoryId").optional().custom(positiveId),
   query("priorityId").optional().custom(positiveId),
   query("assignedTo").optional().custom(positiveId),
   query("status").optional().isString().bail()
-    .isIn(["OPEN", "ASSIGNED", "IN_PROGRESS", "WAITING_FOR_USER", "RESOLVED", "CLOSED", "REOPENED"]),
+    .isIn(Object.values(TICKET_STATUSES)),
   query("assignment").optional().isString().bail().isIn(["unassigned", "assigned", "mine"]),
+  ...ticketDateValidation(),
   query("sortBy").optional().isString().bail()
-    .isIn(["created_at", "updated_at", "ticket_number", "title", "status", "priority"]),
-  query("order").optional().isString().bail().toLowerCase().isIn(["asc", "desc"]),
+    .isIn(TICKET_SORT_FIELDS),
+  query("order").optional().isString().bail().toLowerCase().isIn(TICKET_SORT_DIRECTIONS),
 ];
 
 const adminAssignTicketValidation = [
