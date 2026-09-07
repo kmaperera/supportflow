@@ -8,4 +8,11 @@ const createPublicComment = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { createPublicComment };
+const createInternalNote = asyncHandler(async (req, res) => {
+  const comment = await service.createInternalNote(req.params.id, req.body.content, req.user);
+  res.status(201).json({
+    success: true, message: "Internal note added successfully", data: { comment },
+  });
+});
+
+module.exports = { createPublicComment, createInternalNote };

@@ -31,12 +31,36 @@ async function createPublicComment(ticketId, content, currentUser) {
     TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.REOPENED].includes(ticket.status)) {
     throw new ApiError(409, "Comments cannot be added in the ticket's current status");
   }
+  return createComment(ticketId, content, currentUser.id, COMMENT_TYPES.PUBLIC);
+}
+
+async function createInternalNote(ticketId, content, currentUser) {
+  if (!validId(ticketId)) throw new ApiError(400, "Ticket ID must be a positive integer");
+  if (!currentUser || !validId(currentUser.id) || typeof currentUser.role !== "string" || !currentUser.role) {
+    throw new ApiError(401, "Authentication required");
+  }
+  if (![USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN].includes(currentUser.role)) {
+    throw new ApiError(403, "You do not have permission to access this resource");
+  }
+  const ticket = await ticketRepository.findById(ticketId);
+  if (!ticket) throw new ApiError(404, "Ticket not found");
+  if (currentUser.role === USER_ROLES.TECHNICIAN &&
+      String(ticket.assigned_to) !== String(currentUser.id)) {
+    throw new ApiError(404, "Ticket not found");
+  }
+  if (ticket.status === TICKET_STATUSES.CLOSED) {
+    throw new ApiError(409, "Internal notes cannot be added to a closed ticket");
+  }
+  return createComment(ticketId, content, currentUser.id, COMMENT_TYPES.INTERNAL);
+}
+
+async function createComment(ticketId, content, userId, commentType) {
   if (typeof content !== "string") throw new ApiError(400, "Content must be a string");
   const trimmedContent = content.trim();
   const length = Array.from(trimmedContent).length;
   if (length < 1 || length > 5000) throw new ApiError(400, "Content must be 1 to 5000 characters");
   const commentId = await ticketCommentRepository.createComment({
-    ticketId, userId: currentUser.id, commentType: COMMENT_TYPES.PUBLIC, content: trimmedContent,
+    ticketId, userId, commentType, content: trimmedContent,
   });
   const row = await ticketCommentRepository.findById(commentId);
   if (!row) throw new ApiError(500, "Created comment could not be retrieved");
@@ -50,4 +74,4 @@ async function createPublicComment(ticketId, content, currentUser) {
   };
 }
 
-module.exports = { createPublicComment };
+module.exports = { createPublicComment, createInternalNote };

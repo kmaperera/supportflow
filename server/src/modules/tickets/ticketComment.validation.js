@@ -14,4 +14,6 @@ const createPublicCommentValidation = [
     .bail().trim().isLength({ min: 1, max: 5000 }).withMessage("Content must be 1 to 5000 characters"),
 ];
 
-module.exports = { createPublicCommentValidation };
+const createInternalNoteValidation = [...createPublicCommentValidation];
+
+module.exports = { createPublicCommentValidation, createInternalNoteValidation };
