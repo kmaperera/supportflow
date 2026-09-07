@@ -84,6 +84,21 @@ async function getUsers(query = {}) {
   };
 }
 
+async function getAssignableTechnicians(query = {}) {
+  if (Object.keys(query).some((key) => key !== "search")) {
+    throw new ApiError(400, "Only search is supported");
+  }
+  if (query.search !== undefined && (typeof query.search !== "string" ||
+      Array.from(query.search.trim()).length > 100)) {
+    throw new ApiError(400, "Search must be a string of at most 100 characters");
+  }
+  const rows = await repository.findAssignableTechnicians({ search: query.search?.trim() });
+  return rows.map((row) => ({
+    id: row.id, firstName: row.first_name, lastName: row.last_name,
+    email: row.email, department: row.department, profileImageUrl: row.profile_image_url,
+  }));
+}
+
 async function getUserById(id) {
   validateId(id);
   const user = await repository.findById(id);
@@ -145,6 +160,6 @@ async function updateUserRole(id, role, currentAdminId) {
   return getUserById(id);
 }
 
-module.exports = { createUser, getUsers, getUserById, updateUser, updateUserStatus, updateUserRole };
+module.exports = { getAssignableTechnicians, createUser, getUsers, getUserById, updateUser, updateUserStatus, updateUserRole };
 
 

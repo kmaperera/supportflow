@@ -1,5 +1,23 @@
 ﻿const pool = require("../../config/database");
 
+const { USER_ROLES } = require("../../constants/roles");
+
+async function findAssignableTechnicians(options = {}) {
+  const values = [USER_ROLES.TECHNICIAN];
+  let searchClause = "";
+  if (options.search) {
+    searchClause = " AND (first_name LIKE ? OR last_name LIKE ? OR email LIKE ? OR department LIKE ?)";
+    values.push(...Array(4).fill(`%${options.search}%`));
+  }
+  const [rows] = await pool.execute(
+    `SELECT id, first_name, last_name, email, department, profile_image_url
+     FROM users WHERE role = ? AND is_active = TRUE${searchClause}
+     ORDER BY first_name ASC, last_name ASC`,
+    values
+  );
+  return rows;
+}
+
 const USER_FIELDS = `
   id, first_name, last_name, email, password_hash, phone, role,
   department, profile_image_url, is_active, must_change_password,
@@ -142,6 +160,7 @@ async function updateDetails(id, userData) {
 }
 
 module.exports = {
+  findAssignableTechnicians,
   findAll, countAll, updateDetails,
   findByEmail,
   findById,

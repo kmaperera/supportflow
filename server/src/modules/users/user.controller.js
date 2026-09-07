@@ -9,6 +9,12 @@ const getUsers = asyncHandler(async (req, res) => {
   const { users, pagination } = await service.getUsers(req.query);
   res.status(200).json({ success: true, message: "Users retrieved successfully", data: { users }, pagination });
 });
+const getAssignableTechnicians = asyncHandler(async (req, res) => {
+  const technicians = await service.getAssignableTechnicians(req.query);
+  res.status(200).json({
+    success: true, message: "Assignable technicians retrieved successfully", data: { technicians },
+  });
+});
 const getUserById = asyncHandler(async (req, res) => {
   const user = await service.getUserById(req.params.id);
   res.status(200).json({ success: true, message: "User retrieved successfully", data: { user } });
@@ -36,6 +42,6 @@ const updateUserRole = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { createUser, getUsers, getUserById, updateUser, updateUserStatus, updateUserRole };
+module.exports = { getAssignableTechnicians, createUser, getUsers, getUserById, updateUser, updateUserStatus, updateUserRole };
 
 

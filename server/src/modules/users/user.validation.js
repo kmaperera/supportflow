@@ -1,5 +1,6 @@
 ﻿const { body, param } = require("express-validator");
 const { USER_ROLES } = require("../../constants/roles");
+const { query } = require("express-validator");
 
 function profileValidation(optional) {
   const field = (name) => optional ? body(name).optional() : body(name);
@@ -13,6 +14,17 @@ function profileValidation(optional) {
       .isURL({ protocols: ["http", "https"], require_protocol: true }),
   ];
 }
+
+const assignableTechniciansValidation = [
+  query().custom((value) => {
+    if (Object.keys(value).some((key) => key !== "search")) {
+      throw new Error("Only search is supported");
+    }
+    return true;
+  }),
+  query("search").optional().isString().withMessage("Search must be a string")
+    .bail().trim().isLength({ max: 100 }).withMessage("Search must be at most 100 characters"),
+];
 
 const createUserValidation = [
   ...profileValidation(false),
@@ -57,6 +69,6 @@ const updateUserRoleValidation = [
     .bail().isIn(Object.values(USER_ROLES)).withMessage("Invalid role"),
 ];
 
-module.exports = { createUserValidation, updateUserValidation, userIdValidation, updateUserStatusValidation, updateUserRoleValidation };
+module.exports = { assignableTechniciansValidation, createUserValidation, updateUserValidation, userIdValidation, updateUserStatusValidation, updateUserRoleValidation };
 
 
