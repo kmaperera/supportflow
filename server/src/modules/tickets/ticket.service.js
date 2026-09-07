@@ -4,6 +4,7 @@ const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
 const { assertTicketStatusTransition } = require("../../utils/ticketStatus");
 ﻿const userRepository = require("../users/user.repository");
 const ticketAssignmentRepository = require("./ticketAssignment.repository");
+const ticketAssignmentService = require("./ticketAssignment.service");
 const { USER_ROLES } = require("../../constants/roles");
 const pool = require("../../config/database");
 const ticketRepository = require("./ticket.repository");
@@ -261,12 +262,10 @@ async function selfAssignTicket(ticketId, currentUser) {
     }
     const ticket = await ticketRepository.findById(ticketId, connection);
     if (!ticket) throw new ApiError(404, "Ticket not found");
-    if (ticket.assigned_to !== null) throw new ApiError(409, "Ticket is already assigned");
+    await ticketAssignmentService.assertCanCreateAssignment(ticket, connection);
     if (ticket.status !== "OPEN") {
       throw new ApiError(409, "Ticket cannot be self-assigned in its current status");
     }
-    const activeAssignment = await ticketAssignmentRepository.findActiveByTicketId(ticketId, connection);
-    if (activeAssignment) throw new Error("Unassigned ticket has active assignment history");
 
     const affectedRows = await ticketRepository.assignTechnician(ticketId, currentUser.id, "ASSIGNED", connection);
     if (affectedRows === 0) throw new ApiError(409, "Ticket is already assigned");
@@ -314,18 +313,14 @@ async function unassignTicketByAdmin(ticketId, currentAdmin) {
     }
     const ticket = await ticketRepository.findById(ticketId, connection);
     if (!ticket) throw new ApiError(404, "Ticket not found");
-    if (ticket.assigned_to === null) throw new ApiError(409, "Ticket is already unassigned");
+    await ticketAssignmentService.assertCanUnassign(ticket, connection);
     if (![TICKET_STATUSES.ASSIGNED, TICKET_STATUSES.IN_PROGRESS,
       TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.REOPENED].includes(ticket.status)) {
       throw new ApiError(409, "Ticket cannot be unassigned in its current status");
     }
     const fromStatus = ticket.status;
-    const active = await ticketAssignmentRepository.findActiveByTicketId(ticketId, connection);
-    if (!active || String(active.technician_id) !== String(ticket.assigned_to)) {
-      throw new Error("Assigned ticket has no matching active assignment history");
-    }
     const closedRows = await ticketAssignmentRepository.closeActiveAssignment(ticketId, connection);
-    if (closedRows !== 1) throw new Error("Expected exactly one active assignment to be closed");
+    if (closedRows !== 1) throw new ApiError(500, "Ticket assignment data is inconsistent");
     const affectedRows = await ticketRepository.unassignTicket(ticketId, connection);
     if (affectedRows !== 1) throw new Error("Unexpected ticket unassignment update count");
     await ticketStatusHistoryRepository.createHistory({
@@ -368,6 +363,7 @@ async function assignTicketByAdmin(ticketId, technicianId, currentAdmin) {
     }
     const ticket = await ticketRepository.findById(ticketId, connection);
     if (!ticket) throw new ApiError(404, "Ticket not found");
+    const active = await ticketAssignmentService.assertCanChangeAssignment(ticket, connection);
     if (["RESOLVED", "CLOSED"].includes(ticket.status)) {
       throw new ApiError(409, "Ticket cannot be assigned in its current status");
     }
@@ -383,9 +379,11 @@ async function assignTicketByAdmin(ticketId, technicianId, currentAdmin) {
       return result;
     }
 
-    const active = await ticketAssignmentRepository.findActiveByTicketId(ticketId, connection);
-    if (active) await ticketAssignmentRepository.closeActiveAssignment(ticketId, connection);
-    const nextStatus = ticket.status === "OPEN" ? "ASSIGNED" : ticket.status;
+    if (active) {
+      const closedRows = await ticketAssignmentRepository.closeActiveAssignment(ticketId, connection);
+      if (closedRows !== 1) throw new ApiError(500, "Ticket assignment data is inconsistent");
+    }
+    const nextStatus = ticket.status === TICKET_STATUSES.OPEN ? TICKET_STATUSES.ASSIGNED : ticket.status;
     const affectedRows = await ticketRepository.updateAssignment(ticketId, technicianId, nextStatus, connection);
     if (affectedRows !== 1) throw new Error("Unexpected assignment update count");
     await ticketAssignmentRepository.createAssignment({

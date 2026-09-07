@@ -20,6 +20,16 @@ async function closeActiveAssignment(ticketId, db = pool) {
   return result.affectedRows;
 }
 
+async function findActiveAssignmentsByTicketId(ticketId, db = pool) {
+  const [rows] = await db.query(
+    `SELECT id, ticket_id, technician_id, assigned_by, assignment_type, assigned_at, unassigned_at
+     FROM ticket_assignments WHERE ticket_id = ? AND unassigned_at IS NULL
+     ORDER BY id ASC`,
+    [ticketId]
+  );
+  return rows;
+}
+
 async function findActiveByTicketId(ticketId, db = pool) {
   const [rows] = await db.query(
     `SELECT id, ticket_id, technician_id, assigned_by, assignment_type, assigned_at, unassigned_at
@@ -52,5 +62,6 @@ async function findHistoryByTicketId(ticketId, db = pool) {
 }
 
 module.exports = {
+  findActiveAssignmentsByTicketId,
   createAssignment, closeActiveAssignment, findActiveByTicketId, findHistoryByTicketId,
 };
