@@ -619,6 +619,25 @@ async function reopenTicket(ticketId, currentUser) {
   }
 }
 
+async function getTicketAssignmentHistory(ticketId, currentUser) {
+  // Reuse detail validation and authorization to keep visibility identical.
+  await getTicketById(ticketId, currentUser);
+  const rows = await ticketAssignmentRepository.findHistoryByTicketId(ticketId);
+  return rows.map((row) => ({
+    id: row.id, assignmentType: row.assignment_type,
+    assignedAt: row.assigned_at, unassignedAt: row.unassigned_at,
+    technician: {
+      id: row.technician_id, firstName: row.technician_first_name,
+      lastName: row.technician_last_name, email: row.technician_email,
+    },
+    assignedBy: {
+      id: row.assigned_by, firstName: row.assigned_by_first_name,
+      lastName: row.assigned_by_last_name, email: row.assigned_by_email,
+      role: row.assigned_by_role,
+    },
+  }));
+}
+
 async function getTicketStatusHistory(ticketId, currentUser) {
   // Reuse detail authorization so visibility stays identical across endpoints.
   await getTicketById(ticketId, currentUser);
@@ -634,7 +653,7 @@ async function getTicketStatusHistory(ticketId, currentUser) {
   }));
 }
 
-module.exports = { getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+module.exports = { getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
 
 
 

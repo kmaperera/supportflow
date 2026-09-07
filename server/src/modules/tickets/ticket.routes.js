@@ -4,7 +4,7 @@ const authorizeRoles = require("../../middleware/authorize");
 const validate = require("../../middleware/validate");
 const { USER_ROLES } = require("../../constants/roles");
 const { reopenTicketValidation, closeTicketValidation, resolveTicketValidation, updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation } = require("./ticket.validation");
-const { getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket } = require("./ticket.controller");
+const { getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket } = require("./ticket.controller");
 
 const router = express.Router();
 router.get("/my", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE), getMyTicketsValidation, validate, getMyTickets);
@@ -31,6 +31,7 @@ router.patch("/:id/close", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE, USE
 router.patch("/:id/reopen", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE, USER_ROLES.ADMIN), reopenTicketValidation, validate, reopenTicket);
 
 router.get("/:id/status-history", authenticate, ticketIdValidation, validate, getTicketStatusHistory);
+router.get("/:id/assignment-history", authenticate, ticketIdValidation, validate, getTicketAssignmentHistory);
 
 module.exports = router;
 

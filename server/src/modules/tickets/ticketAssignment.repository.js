@@ -37,14 +37,15 @@ async function findHistoryByTicketId(ticketId, db = pool) {
        technician.first_name AS technician_first_name,
        technician.last_name AS technician_last_name,
        technician.email AS technician_email,
-       assigner.first_name AS assigner_first_name,
-       assigner.last_name AS assigner_last_name,
-       assigner.email AS assigner_email
+       actor.first_name AS assigned_by_first_name,
+       actor.last_name AS assigned_by_last_name,
+       actor.email AS assigned_by_email,
+       actor.role AS assigned_by_role
      FROM ticket_assignments AS a
      INNER JOIN users AS technician ON technician.id = a.technician_id
-     INNER JOIN users AS assigner ON assigner.id = a.assigned_by
+     INNER JOIN users AS actor ON actor.id = a.assigned_by
      WHERE a.ticket_id = ?
-     ORDER BY a.assigned_at DESC, a.id DESC`,
+     ORDER BY a.assigned_at ASC, a.id ASC`,
     [ticketId]
   );
   return rows;
