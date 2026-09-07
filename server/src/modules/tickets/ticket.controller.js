@@ -31,6 +31,13 @@ const updateEmployeeTicket = asyncHandler(async (req, res) => {
   });
 });
 
+const getAssignmentWorkflowSummary = asyncHandler(async (req, res) => {
+  const summary = await service.getAssignmentWorkflowSummary();
+  res.status(200).json({
+    success: true, message: "Assignment and workflow summary retrieved successfully", data: summary,
+  });
+});
+
 const getAssignedTicketsForTechnician = asyncHandler(async (req, res) => {
   const { tickets, pagination } = await service.getAssignedTicketsForTechnician(req.user.id, req.query);
   res.status(200).json({
@@ -115,7 +122,7 @@ const getTicketStatusHistory = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { getAssignedTicketsForTechnician, unassignTicketByAdmin, getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+module.exports = { getAssignmentWorkflowSummary, getAssignedTicketsForTechnician, unassignTicketByAdmin, getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
 
 
 

@@ -26,6 +26,34 @@ const TICKET_SELECT = `
   LEFT JOIN users AS assignee ON assignee.id = t.assigned_to
 `;
 
+async function getWorkflowSummary(db = pool) {
+  const activeStatuses = [TICKET_STATUSES.ASSIGNED, TICKET_STATUSES.IN_PROGRESS,
+    TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.REOPENED];
+  const [ticketRows] = await db.query(
+    `SELECT COUNT(*) AS total,
+       COALESCE(SUM(CASE WHEN assigned_to IS NULL AND status = ? THEN 1 ELSE 0 END), 0) AS unassigned,
+       COALESCE(SUM(CASE WHEN assigned_to IS NOT NULL AND status IN (?, ?, ?, ?) THEN 1 ELSE 0 END), 0) AS assigned_active,
+       COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS assigned_count,
+       COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS in_progress_count,
+       COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS waiting_for_user_count,
+       COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS reopened_count,
+       COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS resolved_count,
+       COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS closed_count
+     FROM tickets`,
+    [TICKET_STATUSES.OPEN, ...activeStatuses, ...activeStatuses, TICKET_STATUSES.RESOLVED, TICKET_STATUSES.CLOSED]
+  );
+  const [technicianRows] = await db.query(
+    `SELECT COUNT(DISTINCT u.id) AS active_technicians,
+       COUNT(DISTINCT CASE WHEN t.id IS NOT NULL THEN u.id END) AS technicians_with_active_workload,
+       COUNT(DISTINCT u.id) - COUNT(DISTINCT CASE WHEN t.id IS NOT NULL THEN u.id END) AS technicians_without_active_workload
+     FROM users AS u
+     LEFT JOIN tickets AS t ON t.assigned_to = u.id AND t.status IN (?, ?, ?, ?)
+     WHERE u.role = ? AND u.is_active = TRUE`,
+    [...activeStatuses, USER_ROLES.TECHNICIAN]
+  );
+  return { ...ticketRows[0], ...technicianRows[0] };
+}
+
 async function create(ticketData, db = pool) {
   const { createdBy, categoryId, priorityId, title, description } = ticketData;
   const [result] = await db.query(
@@ -305,7 +333,7 @@ module.exports = { reopenTicket, closeTicket, resolveTicket, updatePriority, upd
   findQueue, countQueue, findAssignedToTechnician, countAssignedToTechnician,
   updateEmployeeDetails,
   findByCreator, countByCreator,
-  create, assignTicketNumber, findById, findByTicketNumber,
+  getWorkflowSummary, create, assignTicketNumber, findById, findByTicketNumber,
   findCategoryById, findPriorityById,
 };
 

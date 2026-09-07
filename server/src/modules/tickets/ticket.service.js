@@ -212,6 +212,23 @@ async function updateEmployeeTicket(ticketId, currentUserId, updateData) {
   return mapTicket(updated);
 }
 
+async function getAssignmentWorkflowSummary() {
+  const row = await ticketRepository.getWorkflowSummary();
+  return {
+    tickets: {
+      total: Number(row.total), unassigned: Number(row.unassigned),
+      assignedActive: Number(row.assigned_active), assigned: Number(row.assigned_count),
+      inProgress: Number(row.in_progress_count), waitingForUser: Number(row.waiting_for_user_count),
+      reopened: Number(row.reopened_count), resolved: Number(row.resolved_count), closed: Number(row.closed_count),
+    },
+    technicians: {
+      activeTechnicians: Number(row.active_technicians),
+      techniciansWithActiveWorkload: Number(row.technicians_with_active_workload),
+      techniciansWithoutActiveWorkload: Number(row.technicians_without_active_workload),
+    },
+  };
+}
+
 async function getAssignedTicketsForTechnician(technicianId, query = {}) {
   if (!isValidTicketUserId(technicianId)) throw new ApiError(400, "Technician ID must be a positive integer");
   const allowed = ["page", "limit", "search", "status", "categoryId", "priorityId", "fromDate", "toDate", "sortBy", "order"];
@@ -739,7 +756,7 @@ async function getTicketStatusHistory(ticketId, currentUser) {
   }));
 }
 
-module.exports = { getAssignedTicketsForTechnician, unassignTicketByAdmin, getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+module.exports = { getAssignmentWorkflowSummary, getAssignedTicketsForTechnician, unassignTicketByAdmin, getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
 
 
 
