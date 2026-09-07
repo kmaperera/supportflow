@@ -73,7 +73,14 @@ const resolveTicket = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+const closeTicket = asyncHandler(async (req, res) => {
+  const ticket = await service.closeTicket(req.params.id, req.user);
+  res.status(200).json({
+    success: true, message: "Ticket closed successfully", data: { ticket },
+  });
+});
+
+module.exports = { closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
 
 
 

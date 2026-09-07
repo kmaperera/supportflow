@@ -137,7 +137,18 @@ const resolveTicketValidation = [
     .withMessage("Resolution summary must be 10 to 5000 characters"),
 ];
 
-module.exports = { resolveTicketValidation, updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
+const closeTicketValidation = [
+  ...ticketIdValidation,
+  body().custom((value) => {
+    if (value !== undefined &&
+        (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length)) {
+      throw new Error("Request body must be empty");
+    }
+    return true;
+  }),
+];
+
+module.exports = { closeTicketValidation, resolveTicketValidation, updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
 
 
 
