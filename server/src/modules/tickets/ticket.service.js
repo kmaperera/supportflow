@@ -1,4 +1,5 @@
-﻿const { USER_ROLES } = require("../../constants/roles");
+﻿const ticketAssignmentRepository = require("./ticketAssignment.repository");
+const { USER_ROLES } = require("../../constants/roles");
 const pool = require("../../config/database");
 const ticketRepository = require("./ticket.repository");
 const { generateTicketNumber } = require("../../utils/ticketNumber");
@@ -195,7 +196,53 @@ async function getTicketQueue(currentUser, query = {}) {
   };
 }
 
-module.exports = { getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+async function selfAssignTicket(ticketId, currentUser) {
+  if (!isValidTicketUserId(ticketId)) throw new ApiError(400, "Ticket ID must be a positive integer");
+  if (!currentUser || !isValidTicketUserId(currentUser.id) || !currentUser.role) {
+    throw new ApiError(401, "Authentication required");
+  }
+  if (currentUser.role !== USER_ROLES.TECHNICIAN) {
+    throw new ApiError(403, "You do not have permission to access this resource");
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const ticket = await ticketRepository.findById(ticketId, connection);
+    if (!ticket) throw new ApiError(404, "Ticket not found");
+    if (ticket.assigned_to !== null) throw new ApiError(409, "Ticket is already assigned");
+    if (ticket.status !== "OPEN") {
+      throw new ApiError(409, "Ticket cannot be self-assigned in its current status");
+    }
+    const activeAssignment = await ticketAssignmentRepository.findActiveByTicketId(ticketId, connection);
+    if (activeAssignment) throw new Error("Unassigned ticket has active assignment history");
+
+    const affectedRows = await ticketRepository.assignTechnician(ticketId, currentUser.id, "ASSIGNED", connection);
+    if (affectedRows === 0) throw new ApiError(409, "Ticket is already assigned");
+    if (affectedRows !== 1) throw new Error("Unexpected assignment update count");
+
+    await ticketAssignmentRepository.createAssignment({
+      ticketId, technicianId: currentUser.id, assignedBy: currentUser.id, assignmentType: "SELF",
+    }, connection);
+    const updated = await ticketRepository.findById(ticketId, connection);
+    if (!updated) throw new Error("Assigned ticket could not be retrieved");
+    const result = mapTicket(updated);
+    await connection.commit();
+    return result;
+  } catch (error) {
+    try {
+      await connection.rollback();
+    } catch {
+      // Preserve the original error if rollback also fails.
+    }
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+module.exports = { selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+
 
 
 

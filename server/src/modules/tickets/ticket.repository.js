@@ -198,13 +198,24 @@ async function countQueue(options) {
   return Number(rows[0].total);
 }
 
+async function assignTechnician(ticketId, technicianId, status, db = pool) {
+  const [result] = await db.query(
+    `UPDATE tickets SET assigned_to = ?, status = ?
+     WHERE id = ? AND assigned_to IS NULL AND status = 'OPEN'`,
+    [technicianId, status, ticketId]
+  );
+  return result.affectedRows;
+}
+
 module.exports = {
+  assignTechnician,
   findQueue, countQueue,
   updateEmployeeDetails,
   findByCreator, countByCreator,
   create, assignTicketNumber, findById, findByTicketNumber,
   findCategoryById, findPriorityById,
 };
+
 
 
 
