@@ -1,6 +1,35 @@
 ﻿const pool = require("../../config/database");
 
 const { USER_ROLES } = require("../../constants/roles");
+const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
+
+async function getTechnicianWorkload(options = {}) {
+  const activeStatuses = [
+    TICKET_STATUSES.ASSIGNED, TICKET_STATUSES.IN_PROGRESS,
+    TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.REOPENED,
+  ];
+  const values = [...activeStatuses, ...activeStatuses, USER_ROLES.TECHNICIAN];
+  let searchClause = "";
+  if (options.search) {
+    searchClause = " AND (u.first_name LIKE ? OR u.last_name LIKE ? OR u.email LIKE ? OR u.department LIKE ?)";
+    values.push(...Array(4).fill(`%${options.search}%`));
+  }
+  const [rows] = await pool.execute(
+    `SELECT u.id, u.first_name, u.last_name, u.email, u.department, u.profile_image_url,
+       SUM(CASE WHEN t.status IN (?, ?, ?, ?) THEN 1 ELSE 0 END) AS total_active,
+       SUM(CASE WHEN t.status = ? THEN 1 ELSE 0 END) AS assigned_count,
+       SUM(CASE WHEN t.status = ? THEN 1 ELSE 0 END) AS in_progress_count,
+       SUM(CASE WHEN t.status = ? THEN 1 ELSE 0 END) AS waiting_for_user_count,
+       SUM(CASE WHEN t.status = ? THEN 1 ELSE 0 END) AS reopened_count
+     FROM users AS u
+     LEFT JOIN tickets AS t ON t.assigned_to = u.id
+     WHERE u.role = ? AND u.is_active = TRUE${searchClause}
+     GROUP BY u.id, u.first_name, u.last_name, u.email, u.department, u.profile_image_url
+     ORDER BY total_active ASC, u.first_name ASC, u.last_name ASC`,
+    values
+  );
+  return rows;
+}
 
 async function findAssignableTechnicians(options = {}) {
   const values = [USER_ROLES.TECHNICIAN];
@@ -160,6 +189,7 @@ async function updateDetails(id, userData) {
 }
 
 module.exports = {
+  getTechnicianWorkload,
   findAssignableTechnicians,
   findAll, countAll, updateDetails,
   findByEmail,

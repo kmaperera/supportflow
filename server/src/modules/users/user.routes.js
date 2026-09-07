@@ -11,6 +11,7 @@ router.use(authenticate, authorizeRoles(USER_ROLES.ADMIN));
 router.get("/", controller.getUsers);
 router.post("/", createUserValidation, validate, controller.createUser);
 router.get("/assignable-technicians", assignableTechniciansValidation, validate, controller.getAssignableTechnicians);
+router.get("/technician-workload", assignableTechniciansValidation, validate, controller.getTechnicianWorkload);
 router.get("/:id", userIdValidation, validate, controller.getUserById);
 router.patch("/:id", userIdValidation, updateUserValidation, validate, controller.updateUser);
 

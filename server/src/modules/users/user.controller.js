@@ -9,6 +9,12 @@ const getUsers = asyncHandler(async (req, res) => {
   const { users, pagination } = await service.getUsers(req.query);
   res.status(200).json({ success: true, message: "Users retrieved successfully", data: { users }, pagination });
 });
+const getTechnicianWorkload = asyncHandler(async (req, res) => {
+  const technicians = await service.getTechnicianWorkload(req.query);
+  res.status(200).json({
+    success: true, message: "Technician workload retrieved successfully", data: { technicians },
+  });
+});
 const getAssignableTechnicians = asyncHandler(async (req, res) => {
   const technicians = await service.getAssignableTechnicians(req.query);
   res.status(200).json({
@@ -42,6 +48,6 @@ const updateUserRole = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { getAssignableTechnicians, createUser, getUsers, getUserById, updateUser, updateUserStatus, updateUserRole };
+module.exports = { getTechnicianWorkload, getAssignableTechnicians, createUser, getUsers, getUserById, updateUser, updateUserStatus, updateUserRole };
 
 

@@ -84,7 +84,7 @@ async function getUsers(query = {}) {
   };
 }
 
-async function getAssignableTechnicians(query = {}) {
+function technicianSearchOptions(query) {
   if (Object.keys(query).some((key) => key !== "search")) {
     throw new ApiError(400, "Only search is supported");
   }
@@ -92,7 +92,24 @@ async function getAssignableTechnicians(query = {}) {
       Array.from(query.search.trim()).length > 100)) {
     throw new ApiError(400, "Search must be a string of at most 100 characters");
   }
-  const rows = await repository.findAssignableTechnicians({ search: query.search?.trim() });
+  return { search: query.search?.trim() };
+}
+
+async function getTechnicianWorkload(query = {}) {
+  const rows = await repository.getTechnicianWorkload(technicianSearchOptions(query));
+  return rows.map((row) => ({
+    id: row.id, firstName: row.first_name, lastName: row.last_name,
+    email: row.email, department: row.department, profileImageUrl: row.profile_image_url,
+    workload: {
+      totalActive: Number(row.total_active), assigned: Number(row.assigned_count),
+      inProgress: Number(row.in_progress_count), waitingForUser: Number(row.waiting_for_user_count),
+      reopened: Number(row.reopened_count),
+    },
+  }));
+}
+
+async function getAssignableTechnicians(query = {}) {
+  const rows = await repository.findAssignableTechnicians(technicianSearchOptions(query));
   return rows.map((row) => ({
     id: row.id, firstName: row.first_name, lastName: row.last_name,
     email: row.email, department: row.department, profileImageUrl: row.profile_image_url,
@@ -160,6 +177,6 @@ async function updateUserRole(id, role, currentAdminId) {
   return getUserById(id);
 }
 
-module.exports = { getAssignableTechnicians, createUser, getUsers, getUserById, updateUser, updateUserStatus, updateUserRole };
+module.exports = { getTechnicianWorkload, getAssignableTechnicians, createUser, getUsers, getUserById, updateUser, updateUserStatus, updateUserRole };
 
 
