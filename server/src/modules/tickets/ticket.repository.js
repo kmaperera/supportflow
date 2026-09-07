@@ -23,9 +23,9 @@ const TICKET_SELECT = `
   LEFT JOIN users AS assignee ON assignee.id = t.assigned_to
 `;
 
-async function create(ticketData) {
+async function create(ticketData, db = pool) {
   const { createdBy, categoryId, priorityId, title, description } = ticketData;
-  const [result] = await pool.execute(
+  const [result] = await db.query(
     `INSERT INTO tickets
       (created_by, category_id, priority_id, title, description,
        ticket_number, assigned_to, status)
@@ -35,37 +35,37 @@ async function create(ticketData) {
   return result.insertId;
 }
 
-async function assignTicketNumber(id, ticketNumber) {
-  const [result] = await pool.execute(
+async function assignTicketNumber(id, ticketNumber, db = pool) {
+  const [result] = await db.query(
     "UPDATE tickets SET ticket_number = ? WHERE id = ?",
     [ticketNumber, id]
   );
   return result.affectedRows;
 }
 
-async function findById(id) {
-  const [rows] = await pool.execute(`${TICKET_SELECT} WHERE t.id = ? LIMIT 1`, [id]);
+async function findById(id, db = pool) {
+  const [rows] = await db.query(`${TICKET_SELECT} WHERE t.id = ? LIMIT 1`, [id]);
   return rows[0] || null;
 }
 
-async function findByTicketNumber(ticketNumber) {
-  const [rows] = await pool.execute(
+async function findByTicketNumber(ticketNumber, db = pool) {
+  const [rows] = await db.query(
     `${TICKET_SELECT} WHERE t.ticket_number = ? LIMIT 1`,
     [ticketNumber]
   );
   return rows[0] || null;
 }
 
-async function findCategoryById(categoryId) {
-  const [rows] = await pool.execute(
+async function findCategoryById(categoryId, db = pool) {
+  const [rows] = await db.query(
     "SELECT id, name, description, is_active FROM ticket_categories WHERE id = ? LIMIT 1",
     [categoryId]
   );
   return rows[0] || null;
 }
 
-async function findPriorityById(priorityId) {
-  const [rows] = await pool.execute(
+async function findPriorityById(priorityId, db = pool) {
+  const [rows] = await db.query(
     "SELECT id, name, description, sort_order, is_active FROM ticket_priorities WHERE id = ? LIMIT 1",
     [priorityId]
   );
@@ -76,3 +76,4 @@ module.exports = {
   create, assignTicketNumber, findById, findByTicketNumber,
   findCategoryById, findPriorityById,
 };
+

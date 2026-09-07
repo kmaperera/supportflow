@@ -5,6 +5,7 @@ const requestLogger = require("./utils/logger");
 const cookieParser = require("cookie-parser");
 const ApiError = require("./utils/ApiError");
 const errorHandler = require("./middleware/errorHandler");
+const ticketRoutes = require("./modules/tickets/ticket.routes");
 const userRoutes = require("./modules/users/user.routes");
 const authRoutes = require("./modules/auth/auth.routes");
 const healthRoutes = require("./modules/health/health.routes");
@@ -29,6 +30,7 @@ app.get("/", (req, res) => {
 app.use("/api/v1/health", healthRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/tickets", ticketRoutes);
 
 app.use((req, res, next) => {
   next(new ApiError(404, `Route ${req.path} not found`));
@@ -37,6 +39,7 @@ app.use((req, res, next) => {
 app.use(errorHandler);
 
 module.exports = app;
+
 
 
 
