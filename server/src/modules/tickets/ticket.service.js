@@ -66,4 +66,39 @@ async function createTicket(userId, ticketData) {
   }
 }
 
-module.exports = { createTicket };
+async function getMyTickets(userId, query = {}) {
+  const id = String(userId);
+  if (!["string", "number"].includes(typeof userId) ||
+      (typeof userId === "number" && !Number.isSafeInteger(userId)) ||
+      !/^[1-9]\d*$/.test(id) || id.length > 20 || BigInt(id) > 18446744073709551615n) {
+    throw new ApiError(400, "User ID must be a positive integer");
+  }
+  const page = Number(query.page ?? 1);
+  const limit = Number(query.limit ?? 10);
+  const offset = (page - 1) * limit;
+  if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(limit) ||
+      limit < 1 || limit > 100 || !Number.isSafeInteger(offset)) {
+    throw new ApiError(400, "Invalid pagination options");
+  }
+  const options = {
+    search: query.search?.trim(), status: query.status,
+    categoryId: query.categoryId, priorityId: query.priorityId,
+    sortBy: query.sortBy ?? "created_at", order: (query.order ?? "desc").toLowerCase(),
+    limit, offset,
+  };
+  const [rows, totalRecords] = await Promise.all([
+    ticketRepository.findByCreator(userId, options),
+    ticketRepository.countByCreator(userId, options),
+  ]);
+  const totalPages = Math.ceil(totalRecords / limit);
+  return {
+    tickets: rows.map(mapTicket),
+    pagination: {
+      currentPage: page, limit, totalRecords, totalPages,
+      hasNext: page < totalPages, hasPrevious: page > 1,
+    },
+  };
+}
+
+module.exports = { createTicket, getMyTickets };
+

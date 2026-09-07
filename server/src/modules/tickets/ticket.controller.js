@@ -7,4 +7,13 @@ const createTicket = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, message: "Ticket created successfully", data: { ticket } });
 });
 
-module.exports = { createTicket };
+const getMyTickets = asyncHandler(async (req, res) => {
+  const { tickets, pagination } = await service.getMyTickets(req.user.id, req.query);
+  res.status(200).json({
+    success: true, message: "Tickets retrieved successfully",
+    data: { tickets }, pagination,
+  });
+});
+
+module.exports = { createTicket, getMyTickets };
+
