@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "seed:admin": "node database/seeds/001_seed_initial_admin.js"
+    "seed:admin": "node database/seeds/001_seed_initial_admin.js",
+    "seed:categories": "node database/seeds/002_seed_ticket_categories.js"
   },
   "keywords": [],
   "author": "",
