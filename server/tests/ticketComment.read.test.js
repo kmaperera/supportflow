@@ -8,7 +8,7 @@ const controller = require("../src/modules/tickets/ticketComment.controller");
 const { getTicketCommentsValidation } = require("../src/modules/tickets/ticketComment.validation");
 
 test("comment access follows ticket ownership and assignment", async (t) => {
-  let ticket = { created_by: 3, assigned_to: 7 };
+  let ticket = { id: 5, created_by: 3, assigned_to: 7 };
   const findTicket = t.mock.method(ticketRepository, "findById", async () => ticket);
   const findComments = t.mock.method(commentRepository, "findByTicketId", async () => []);
   for (const [role, id, includeInternal] of [
@@ -45,7 +45,7 @@ test("invalid IDs, missing authentication, and unknown roles never read comments
 });
 
 test("response mapping preserves repository order and exposes only safe fields", async (t) => {
-  t.mock.method(ticketRepository, "findById", async () => ({ created_by: 3, assigned_to: null }));
+  t.mock.method(ticketRepository, "findById", async () => ({ id: 5, created_by: 3, assigned_to: null }));
   const row = {
     id: 10, ticket_id: 5, user_id: 3, comment_type: "PUBLIC", content: "Hello",
     created_at: "2026-09-01", updated_at: "2026-09-01", author_first_name: "Test",

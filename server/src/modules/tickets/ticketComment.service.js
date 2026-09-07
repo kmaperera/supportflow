@@ -1,5 +1,6 @@
 const ticketRepository = require("./ticket.repository");
 const ticketCommentRepository = require("./ticketComment.repository");
+const { getCommentVisibilityOptions } = require("./ticketCommentAccess.service");
 const { USER_ROLES } = require("../../constants/roles");
 const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
 const { COMMENT_TYPES } = require("../../constants/commentTypes");
@@ -63,16 +64,8 @@ async function getTicketComments(ticketId, currentUser) {
     throw new ApiError(403, "You do not have permission to access this resource");
   }
   const ticket = await ticketRepository.findById(ticketId);
-  if (!ticket) throw new ApiError(404, "Ticket not found");
-  const userId = String(currentUser.id);
-  const allowed = currentUser.role === USER_ROLES.ADMIN ||
-    (currentUser.role === USER_ROLES.EMPLOYEE && String(ticket.created_by) === userId) ||
-    (currentUser.role === USER_ROLES.TECHNICIAN &&
-      (ticket.assigned_to === null || String(ticket.assigned_to) === userId));
-  if (!allowed) throw new ApiError(404, "Ticket not found");
-
-  const includeInternal = [USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN].includes(currentUser.role);
-  const rows = await ticketCommentRepository.findByTicketId(ticketId, { includeInternal });
+  const visibilityOptions = getCommentVisibilityOptions(ticket, currentUser);
+  const rows = await ticketCommentRepository.findByTicketId(ticketId, visibilityOptions);
   return rows.map(mapComment);
 }
 
