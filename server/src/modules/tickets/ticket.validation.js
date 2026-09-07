@@ -1,4 +1,4 @@
-﻿const { body, query } = require("express-validator");
+﻿const { body, query, param } = require("express-validator");
 
 const positiveId = (value) => {
   if (!(["string", "number"].includes(typeof value)) ||
@@ -46,5 +46,10 @@ const getMyTicketsValidation = [
   query("order").optional().isString().bail().toLowerCase().isIn(["asc", "desc"]),
 ];
 
-module.exports = { createTicketValidation, getMyTicketsValidation };
+const ticketIdValidation = [
+  param("id").custom(positiveId).withMessage("Ticket ID must be a positive integer"),
+];
+
+module.exports = { createTicketValidation, getMyTicketsValidation, ticketIdValidation };
+
 

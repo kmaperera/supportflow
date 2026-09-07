@@ -1,4 +1,5 @@
-﻿const pool = require("../../config/database");
+﻿const { USER_ROLES } = require("../../constants/roles");
+const pool = require("../../config/database");
 const ticketRepository = require("./ticket.repository");
 const { generateTicketNumber } = require("../../utils/ticketNumber");
 const ApiError = require("../../utils/ApiError");
@@ -100,5 +101,34 @@ async function getMyTickets(userId, query = {}) {
   };
 }
 
-module.exports = { createTicket, getMyTickets };
+function isValidTicketUserId(value) {
+  if (!["string", "number"].includes(typeof value) ||
+      (typeof value === "number" && !Number.isSafeInteger(value))) return false;
+  const id = String(value);
+  return /^[1-9]\d*$/.test(id) && id.length <= 20 && BigInt(id) <= 18446744073709551615n;
+}
+
+async function getTicketById(ticketId, currentUser) {
+  if (!isValidTicketUserId(ticketId)) {
+    throw new ApiError(400, "Ticket ID must be a positive integer");
+  }
+  if (!currentUser || !isValidTicketUserId(currentUser.id) ||
+      typeof currentUser.role !== "string" || !currentUser.role) {
+    throw new ApiError(401, "Authentication required");
+  }
+
+  const ticket = await ticketRepository.findById(ticketId);
+  if (!ticket) throw new ApiError(404, "Ticket not found");
+
+  const userId = String(currentUser.id);
+  const allowed = currentUser.role === USER_ROLES.ADMIN ||
+    (currentUser.role === USER_ROLES.EMPLOYEE && String(ticket.created_by) === userId) ||
+    (currentUser.role === USER_ROLES.TECHNICIAN &&
+      (ticket.assigned_to === null || String(ticket.assigned_to) === userId));
+  if (!allowed) throw new ApiError(404, "Ticket not found");
+  return mapTicket(ticket);
+}
+
+module.exports = { createTicket, getMyTickets, getTicketById };
+
 

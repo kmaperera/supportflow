@@ -15,5 +15,15 @@ const getMyTickets = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { createTicket, getMyTickets };
+const getTicketById = asyncHandler(async (req, res) => {
+  const ticket = await service.getTicketById(req.params.id, req.user);
+  res.status(200).json({
+    success: true,
+    message: "Ticket retrieved successfully",
+    data: { ticket },
+  });
+});
+
+module.exports = { createTicket, getMyTickets, getTicketById };
+
 
