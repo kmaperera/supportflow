@@ -355,7 +355,63 @@ async function updateTicketStatus(ticketId, newStatus, currentUser) {
   }
 }
 
-module.exports = { updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+async function updateTicketPriority(ticketId, priorityId, currentUser) {
+  if (!isValidTicketUserId(ticketId) || !isValidTicketUserId(priorityId)) {
+    throw new ApiError(400, "Ticket ID and priority ID must be positive integers");
+  }
+  if (!currentUser || !isValidTicketUserId(currentUser.id) ||
+      typeof currentUser.role !== "string" || !currentUser.role) {
+    throw new ApiError(401, "Authentication required");
+  }
+  if (![USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN].includes(currentUser.role)) {
+    throw new ApiError(403, "You do not have permission to access this resource");
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    // Serialize with assignment and status updates before checking access.
+    if (!(await ticketRepository.lockById(ticketId, connection))) {
+      throw new ApiError(404, "Ticket not found");
+    }
+    const ticket = await ticketRepository.findById(ticketId, connection);
+    if (!ticket) throw new ApiError(404, "Ticket not found");
+    if (currentUser.role === USER_ROLES.TECHNICIAN &&
+        String(ticket.assigned_to) !== String(currentUser.id)) {
+      throw new ApiError(404, "Ticket not found");
+    }
+    if ([TICKET_STATUSES.RESOLVED, TICKET_STATUSES.CLOSED].includes(ticket.status)) {
+      throw new ApiError(409, "Ticket priority cannot be changed in its current status");
+    }
+    const priority = await ticketRepository.findPriorityById(priorityId, connection);
+    if (!priority) throw new ApiError(404, "Ticket priority not found");
+    if (!priority.is_active) throw new ApiError(400, "Selected ticket priority is inactive");
+    if (String(ticket.priority_id) === String(priorityId)) {
+      const result = mapTicket(ticket);
+      await connection.commit();
+      return result;
+    }
+
+    const affectedRows = await ticketRepository.updatePriority(ticketId, priorityId, connection);
+    if (affectedRows !== 1) throw new Error("Unexpected ticket priority update count");
+    const updated = await ticketRepository.findById(ticketId, connection);
+    if (!updated) throw new Error("Updated ticket could not be retrieved");
+    const result = mapTicket(updated);
+    await connection.commit();
+    return result;
+  } catch (error) {
+    try {
+      await connection.rollback();
+    } catch {
+      // Preserve the original error if rollback also fails.
+    }
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+module.exports = { updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
 
 
 

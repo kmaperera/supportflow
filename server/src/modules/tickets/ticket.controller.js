@@ -59,7 +59,14 @@ const updateTicketStatus = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+const updateTicketPriority = asyncHandler(async (req, res) => {
+  const ticket = await service.updateTicketPriority(req.params.id, req.body.priorityId, req.user);
+  res.status(200).json({
+    success: true, message: "Ticket priority updated successfully", data: { ticket },
+  });
+});
+
+module.exports = { updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
 
 
 

@@ -110,7 +110,19 @@ const updateTicketStatusValidation = [
     .withMessage("Status must be IN_PROGRESS or WAITING_FOR_USER"),
 ];
 
-module.exports = { updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
+const updateTicketPriorityValidation = [
+  ...ticketIdValidation,
+  body().custom((value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value) ||
+        Object.keys(value).some((key) => key !== "priorityId")) {
+      throw new Error("Only priorityId is allowed");
+    }
+    return true;
+  }),
+  body("priorityId").custom(positiveId).withMessage("Priority ID must be a positive integer"),
+];
+
+module.exports = { updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
 
 
 

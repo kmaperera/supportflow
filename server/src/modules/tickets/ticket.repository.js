@@ -231,7 +231,15 @@ async function updateWorkingStatus(ticketId, newStatus, setFirstResponse, db = p
   return result.affectedRows;
 }
 
-module.exports = { updateWorkingStatus,
+async function updatePriority(ticketId, priorityId, db = pool) {
+  const [result] = await db.query(
+    "UPDATE tickets SET priority_id = ? WHERE id = ?",
+    [priorityId, ticketId]
+  );
+  return result.affectedRows;
+}
+
+module.exports = { updatePriority, updateWorkingStatus,
   lockById, updateAssignment,
   assignTechnician,
   findQueue, countQueue,
