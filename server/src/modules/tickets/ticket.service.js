@@ -411,7 +411,61 @@ async function updateTicketPriority(ticketId, priorityId, currentUser) {
   }
 }
 
-module.exports = { updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+async function resolveTicket(ticketId, resolutionSummary, currentUser) {
+  if (!isValidTicketUserId(ticketId)) throw new ApiError(400, "Ticket ID must be a positive integer");
+  if (!currentUser || !isValidTicketUserId(currentUser.id) ||
+      typeof currentUser.role !== "string" || !currentUser.role) {
+    throw new ApiError(401, "Authentication required");
+  }
+  if (![USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN].includes(currentUser.role)) {
+    throw new ApiError(403, "You do not have permission to access this resource");
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    // Keep assignment and lifecycle checks valid until resolution commits.
+    if (!(await ticketRepository.lockById(ticketId, connection))) {
+      throw new ApiError(404, "Ticket not found");
+    }
+    const ticket = await ticketRepository.findById(ticketId, connection);
+    if (!ticket) throw new ApiError(404, "Ticket not found");
+    if (ticket.assigned_to === null) {
+      throw new ApiError(409, "Ticket must be assigned before it can be resolved");
+    }
+    if (currentUser.role === USER_ROLES.TECHNICIAN &&
+        String(ticket.assigned_to) !== String(currentUser.id)) {
+      throw new ApiError(404, "Ticket not found");
+    }
+    assertTicketStatusTransition(ticket.status, TICKET_STATUSES.RESOLVED);
+    if (typeof resolutionSummary !== "string") {
+      throw new ApiError(400, "Resolution summary is required and must be a string");
+    }
+    const summary = resolutionSummary.trim();
+    const length = Array.from(summary).length;
+    if (length < 10 || length > 5000) {
+      throw new ApiError(400, "Resolution summary must be 10 to 5000 characters");
+    }
+    const affectedRows = await ticketRepository.resolveTicket(ticketId, summary, connection);
+    if (affectedRows !== 1) throw new Error("Unexpected ticket resolution update count");
+    const updated = await ticketRepository.findById(ticketId, connection);
+    if (!updated) throw new Error("Resolved ticket could not be retrieved");
+    const result = mapTicket(updated);
+    await connection.commit();
+    return result;
+  } catch (error) {
+    try {
+      await connection.rollback();
+    } catch {
+      // Preserve the original error if rollback also fails.
+    }
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+module.exports = { resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
 
 
 

@@ -122,7 +122,22 @@ const updateTicketPriorityValidation = [
   body("priorityId").custom(positiveId).withMessage("Priority ID must be a positive integer"),
 ];
 
-module.exports = { updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
+const resolveTicketValidation = [
+  ...ticketIdValidation,
+  body().custom((value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value) ||
+        Object.keys(value).some((key) => key !== "resolutionSummary")) {
+      throw new Error("Only resolutionSummary is allowed");
+    }
+    return true;
+  }),
+  body("resolutionSummary").isString()
+    .withMessage("Resolution summary is required and must be a string").bail()
+    .trim().isLength({ min: 10, max: 5000 })
+    .withMessage("Resolution summary must be 10 to 5000 characters"),
+];
+
+module.exports = { resolveTicketValidation, updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
 
 
 

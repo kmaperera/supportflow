@@ -1,3 +1,4 @@
+const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
 ﻿const { USER_ROLES } = require("../../constants/roles");
 const pool = require("../../config/database");
 
@@ -239,7 +240,15 @@ async function updatePriority(ticketId, priorityId, db = pool) {
   return result.affectedRows;
 }
 
-module.exports = { updatePriority, updateWorkingStatus,
+async function resolveTicket(ticketId, resolutionSummary, db = pool) {
+  const [result] = await db.query(
+    "UPDATE tickets SET status = ?, resolution_summary = ?, resolved_at = CURRENT_TIMESTAMP WHERE id = ?",
+    [TICKET_STATUSES.RESOLVED, resolutionSummary, ticketId]
+  );
+  return result.affectedRows;
+}
+
+module.exports = { resolveTicket, updatePriority, updateWorkingStatus,
   lockById, updateAssignment,
   assignTechnician,
   findQueue, countQueue,

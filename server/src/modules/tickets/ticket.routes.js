@@ -3,8 +3,8 @@ const authenticate = require("../../middleware/authenticate");
 const authorizeRoles = require("../../middleware/authorize");
 const validate = require("../../middleware/validate");
 const { USER_ROLES } = require("../../constants/roles");
-const { updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation } = require("./ticket.validation");
-const { updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket } = require("./ticket.controller");
+const { resolveTicketValidation, updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation } = require("./ticket.validation");
+const { resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket } = require("./ticket.controller");
 
 const router = express.Router();
 router.get("/my", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE), getMyTicketsValidation, validate, getMyTickets);
@@ -23,6 +23,8 @@ router.patch("/:id/assign", authenticate, authorizeRoles(USER_ROLES.ADMIN), admi
 router.patch("/:id/status", authenticate, authorizeRoles(USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN), updateTicketStatusValidation, validate, updateTicketStatus);
 
 router.patch("/:id/priority", authenticate, authorizeRoles(USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN), updateTicketPriorityValidation, validate, updateTicketPriority);
+
+router.patch("/:id/resolve", authenticate, authorizeRoles(USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN), resolveTicketValidation, validate, resolveTicket);
 
 module.exports = router;
 
