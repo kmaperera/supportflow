@@ -24,6 +24,14 @@ const getTicketById = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { createTicket, getMyTickets, getTicketById };
+const updateEmployeeTicket = asyncHandler(async (req, res) => {
+  const ticket = await service.updateEmployeeTicket(req.params.id, req.user.id, req.body);
+  res.status(200).json({
+    success: true, message: "Ticket updated successfully", data: { ticket },
+  });
+});
+
+module.exports = { createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+
 
 

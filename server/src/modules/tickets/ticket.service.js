@@ -129,6 +129,42 @@ async function getTicketById(ticketId, currentUser) {
   return mapTicket(ticket);
 }
 
-module.exports = { createTicket, getMyTickets, getTicketById };
+async function updateEmployeeTicket(ticketId, currentUserId, updateData) {
+  if (!isValidTicketUserId(ticketId) || !isValidTicketUserId(currentUserId)) {
+    throw new ApiError(400, "Ticket ID and user ID must be positive integers");
+  }
+  const ticket = await ticketRepository.findById(ticketId);
+  if (!ticket || String(ticket.created_by) !== String(currentUserId)) {
+    throw new ApiError(404, "Ticket not found");
+  }
+  if (!["OPEN", "ASSIGNED"].includes(ticket.status)) {
+    throw new ApiError(409, "Ticket can no longer be edited in its current status");
+  }
+
+  const allowed = ["categoryId", "priorityId", "title", "description"];
+  const details = {};
+  for (const key of allowed) {
+    if (Object.hasOwn(updateData, key)) details[key] = updateData[key];
+  }
+  if (!Object.keys(details).length) throw new ApiError(400, "At least one editable field is required");
+
+  if (details.categoryId !== undefined && String(details.categoryId) !== String(ticket.category_id)) {
+    const category = await ticketRepository.findCategoryById(details.categoryId);
+    if (!category) throw new ApiError(404, "Ticket category not found");
+    if (!category.is_active) throw new ApiError(400, "Selected ticket category is inactive");
+  }
+  if (details.priorityId !== undefined && String(details.priorityId) !== String(ticket.priority_id)) {
+    const priority = await ticketRepository.findPriorityById(details.priorityId);
+    if (!priority) throw new ApiError(404, "Ticket priority not found");
+    if (!priority.is_active) throw new ApiError(400, "Selected ticket priority is inactive");
+  }
+  await ticketRepository.updateEmployeeDetails(ticketId, details);
+  const updated = await ticketRepository.findById(ticketId);
+  if (!updated) throw new ApiError(404, "Ticket not found");
+  return mapTicket(updated);
+}
+
+module.exports = { createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+
 
 

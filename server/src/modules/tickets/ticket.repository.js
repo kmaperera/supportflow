@@ -121,10 +121,29 @@ async function countByCreator(userId, filters = {}) {
   return Number(rows[0].total);
 }
 
+async function updateEmployeeDetails(id, data) {
+  const columns = {
+    categoryId: "category_id", priorityId: "priority_id",
+    title: "title", description: "description",
+  };
+  const entries = Object.entries(data);
+  if (!entries.length || entries.some(([key]) => !Object.hasOwn(columns, key))) {
+    throw new TypeError("Only categoryId, priorityId, title, and description may be updated");
+  }
+  const assignments = entries.map(([key]) => `${columns[key]} = ?`).join(", ");
+  const [result] = await pool.query(
+    `UPDATE tickets SET ${assignments} WHERE id = ?`,
+    [...entries.map(([, value]) => value), id]
+  );
+  return result.affectedRows;
+}
+
 module.exports = {
+  updateEmployeeDetails,
   findByCreator, countByCreator,
   create, assignTicketNumber, findById, findByTicketNumber,
   findCategoryById, findPriorityById,
 };
+
 
 

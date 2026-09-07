@@ -50,6 +50,25 @@ const ticketIdValidation = [
   param("id").custom(positiveId).withMessage("Ticket ID must be a positive integer"),
 ];
 
-module.exports = { createTicketValidation, getMyTicketsValidation, ticketIdValidation };
+const updateEmployeeTicketValidation = [
+  ...ticketIdValidation,
+  body().custom((value) => {
+    const allowed = ["categoryId", "priorityId", "title", "description"];
+    if (!value || typeof value !== "object" || Array.isArray(value) ||
+        !Object.keys(value).length || Object.keys(value).some((key) => !allowed.includes(key))) {
+      throw new Error("Supply at least one of categoryId, priorityId, title, or description; other fields are not allowed");
+    }
+    return true;
+  }),
+  body("categoryId").optional().custom(positiveId).withMessage("Invalid category ID"),
+  body("priorityId").optional().custom(positiveId).withMessage("Invalid priority ID"),
+  body("title").optional().isString().bail().trim().isLength({ min: 5, max: 200 })
+    .withMessage("Title must be 5 to 200 characters"),
+  body("description").optional().isString().bail().trim().isLength({ min: 10, max: 5000 })
+    .withMessage("Description must be 10 to 5000 characters"),
+];
+
+module.exports = { createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
+
 
 
