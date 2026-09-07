@@ -217,6 +217,16 @@ async function lockById(id, db = pool) {
   return rows[0] || null;
 }
 
+async function unassignTicket(ticketId, db = pool) {
+  const [result] = await db.query(
+    `UPDATE tickets SET assigned_to = NULL, status = ?
+     WHERE id = ? AND assigned_to IS NOT NULL AND status IN (?, ?, ?, ?)`,
+    [TICKET_STATUSES.OPEN, ticketId, TICKET_STATUSES.ASSIGNED,
+      TICKET_STATUSES.IN_PROGRESS, TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.REOPENED]
+  );
+  return result.affectedRows;
+}
+
 async function updateAssignment(ticketId, technicianId, status, db = pool) {
   const [result] = await db.query(
     "UPDATE tickets SET assigned_to = ?, status = ? WHERE id = ?",
@@ -269,7 +279,7 @@ async function reopenTicket(ticketId, db = pool) {
 }
 
 module.exports = { reopenTicket, closeTicket, resolveTicket, updatePriority, updateWorkingStatus,
-  lockById, updateAssignment,
+  lockById, updateAssignment, unassignTicket,
   assignTechnician,
   findQueue, countQueue,
   updateEmployeeDetails,

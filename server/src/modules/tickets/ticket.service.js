@@ -295,6 +295,59 @@ async function selfAssignTicket(ticketId, currentUser) {
   }
 }
 
+async function unassignTicketByAdmin(ticketId, currentAdmin) {
+  if (!isValidTicketUserId(ticketId)) throw new ApiError(400, "Ticket ID must be a positive integer");
+  if (!currentAdmin || !isValidTicketUserId(currentAdmin.id) ||
+      typeof currentAdmin.role !== "string" || !currentAdmin.role) {
+    throw new ApiError(401, "Authentication required");
+  }
+  if (currentAdmin.role !== USER_ROLES.ADMIN) {
+    throw new ApiError(403, "You do not have permission to access this resource");
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    // Serialize with assignment/reassignment before any snapshot reads.
+    if (!(await ticketRepository.lockById(ticketId, connection))) {
+      throw new ApiError(404, "Ticket not found");
+    }
+    const ticket = await ticketRepository.findById(ticketId, connection);
+    if (!ticket) throw new ApiError(404, "Ticket not found");
+    if (ticket.assigned_to === null) throw new ApiError(409, "Ticket is already unassigned");
+    if (![TICKET_STATUSES.ASSIGNED, TICKET_STATUSES.IN_PROGRESS,
+      TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.REOPENED].includes(ticket.status)) {
+      throw new ApiError(409, "Ticket cannot be unassigned in its current status");
+    }
+    const fromStatus = ticket.status;
+    const active = await ticketAssignmentRepository.findActiveByTicketId(ticketId, connection);
+    if (!active || String(active.technician_id) !== String(ticket.assigned_to)) {
+      throw new Error("Assigned ticket has no matching active assignment history");
+    }
+    const closedRows = await ticketAssignmentRepository.closeActiveAssignment(ticketId, connection);
+    if (closedRows !== 1) throw new Error("Expected exactly one active assignment to be closed");
+    const affectedRows = await ticketRepository.unassignTicket(ticketId, connection);
+    if (affectedRows !== 1) throw new Error("Unexpected ticket unassignment update count");
+    await ticketStatusHistoryRepository.createHistory({
+      ticketId, fromStatus, toStatus: TICKET_STATUSES.OPEN, changedBy: currentAdmin.id,
+    }, connection);
+    const updated = await ticketRepository.findById(ticketId, connection);
+    if (!updated) throw new Error("Unassigned ticket could not be retrieved");
+    const result = mapTicket(updated);
+    await connection.commit();
+    return result;
+  } catch (error) {
+    try {
+      await connection.rollback();
+    } catch {
+      // Preserve the original error if rollback also fails.
+    }
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 async function assignTicketByAdmin(ticketId, technicianId, currentAdmin) {
   if (!isValidTicketUserId(ticketId) || !isValidTicketUserId(technicianId)) {
     throw new ApiError(400, "Ticket ID and technician ID must be positive integers");
@@ -653,7 +706,7 @@ async function getTicketStatusHistory(ticketId, currentUser) {
   }));
 }
 
-module.exports = { getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+module.exports = { unassignTicketByAdmin, getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
 
 
 

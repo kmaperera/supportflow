@@ -45,6 +45,13 @@ const selfAssignTicket = asyncHandler(async (req, res) => {
   });
 });
 
+const unassignTicketByAdmin = asyncHandler(async (req, res) => {
+  const ticket = await service.unassignTicketByAdmin(req.params.id, req.user);
+  res.status(200).json({
+    success: true, message: "Ticket unassigned successfully", data: { ticket },
+  });
+});
+
 const assignTicketByAdmin = asyncHandler(async (req, res) => {
   const ticket = await service.assignTicketByAdmin(req.params.id, req.body.technicianId, req.user);
   res.status(200).json({
@@ -101,7 +108,7 @@ const getTicketStatusHistory = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+module.exports = { unassignTicketByAdmin, getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
 
 
 

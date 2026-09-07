@@ -66,6 +66,8 @@ const ticketIdValidation = [
   param("id").custom(positiveId).withMessage("Ticket ID must be a positive integer"),
 ];
 
+const unassignTicketValidation = [...ticketIdValidation];
+
 const updateEmployeeTicketValidation = [
   ...ticketIdValidation,
   body().custom((value) => {
@@ -175,7 +177,7 @@ const reopenTicketValidation = [
   }),
 ];
 
-module.exports = { reopenTicketValidation, closeTicketValidation, resolveTicketValidation, updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
+module.exports = { unassignTicketValidation, reopenTicketValidation, closeTicketValidation, resolveTicketValidation, updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
 
 
 
