@@ -164,7 +164,39 @@ async function updateEmployeeTicket(ticketId, currentUserId, updateData) {
   return mapTicket(updated);
 }
 
-module.exports = { createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+async function getTicketQueue(currentUser, query = {}) {
+  if (!currentUser || !isValidTicketUserId(currentUser.id) || !currentUser.role) {
+    throw new ApiError(401, "Authentication required");
+  }
+  if (![USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN].includes(currentUser.role)) {
+    throw new ApiError(403, "You do not have permission to access this resource");
+  }
+  const page = Number(query.page ?? 1);
+  const limit = Number(query.limit ?? 10);
+  const offset = (page - 1) * limit;
+  if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(limit) ||
+      limit < 1 || limit > 100 || !Number.isSafeInteger(offset)) {
+    throw new ApiError(400, "Invalid pagination options");
+  }
+  const options = {
+    currentUserId: currentUser.id, currentUserRole: currentUser.role,
+    search: query.search?.trim(), status: query.status,
+    categoryId: query.categoryId, priorityId: query.priorityId,
+    assignedTo: query.assignedTo, assignment: query.assignment,
+    sortBy: query.sortBy, order: (query.order ?? "desc").toLowerCase(), limit, offset,
+  };
+  const [rows, totalRecords] = await Promise.all([
+    ticketRepository.findQueue(options), ticketRepository.countQueue(options),
+  ]);
+  const totalPages = Math.ceil(totalRecords / limit);
+  return {
+    tickets: rows.map(mapTicket),
+    pagination: { currentPage: page, limit, totalRecords, totalPages, hasNext: page < totalPages, hasPrevious: page > 1 },
+  };
+}
+
+module.exports = { getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+
 
 
 

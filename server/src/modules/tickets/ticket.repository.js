@@ -1,4 +1,5 @@
-﻿const pool = require("../../config/database");
+﻿const { USER_ROLES } = require("../../constants/roles");
+const pool = require("../../config/database");
 
 const TICKET_SELECT = `
   SELECT
@@ -138,12 +139,73 @@ async function updateEmployeeDetails(id, data) {
   return result.affectedRows;
 }
 
+function queueFilters(options) {
+  const conditions = [];
+  const values = [];
+  if (options.currentUserRole === USER_ROLES.TECHNICIAN) {
+    if (!options.currentUserId) throw new TypeError("Queue user ID is required");
+    conditions.push("(t.assigned_to IS NULL OR t.assigned_to = ?)");
+    values.push(options.currentUserId);
+  } else if (options.currentUserRole !== USER_ROLES.ADMIN) {
+    throw new TypeError("Queue requires a technician or administrator");
+  }
+  if (options.search) {
+    conditions.push("(t.ticket_number LIKE ? OR t.title LIKE ? OR t.description LIKE ?)");
+    values.push(...Array(3).fill(`%${options.search}%`));
+  }
+  for (const [key, column] of [["status", "t.status"], ["categoryId", "t.category_id"], ["priorityId", "t.priority_id"], ["assignedTo", "t.assigned_to"]]) {
+    if (options[key] !== undefined) {
+      conditions.push(`${column} = ?`);
+      values.push(options[key]);
+    }
+  }
+  if (options.assignment !== undefined) {
+    if (options.assignment === "unassigned") conditions.push("t.assigned_to IS NULL");
+    else if (options.assignment === "assigned") conditions.push("t.assigned_to IS NOT NULL");
+    else if (options.assignment === "mine") {
+      if (!options.currentUserId) throw new TypeError("Queue user ID is required");
+      conditions.push("t.assigned_to = ?");
+      values.push(options.currentUserId);
+    } else throw new TypeError("Invalid assignment filter");
+  }
+  return { where: conditions.length ? " WHERE " + conditions.join(" AND ") : "", values };
+}
+
+async function findQueue(options) {
+  const { where, values } = queueFilters(options);
+  const limit = options.limit ?? 10;
+  const offset = options.offset ?? 0;
+  const order = String(options.order ?? "desc").toLowerCase();
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100 ||
+      !Number.isSafeInteger(offset) || offset < 0 || !["asc", "desc"].includes(order)) {
+    throw new TypeError("Invalid queue options");
+  }
+  let sorting = "p.sort_order DESC, t.created_at ASC, t.id ASC";
+  if (options.sortBy !== undefined) {
+    if (!Object.hasOwn(CREATOR_SORT_COLUMNS, options.sortBy)) throw new TypeError("Invalid queue sort column");
+    sorting = `${CREATOR_SORT_COLUMNS[options.sortBy]} ${order}, t.id ${order}`;
+  }
+  const [rows] = await pool.query(
+    `${TICKET_SELECT}${where} ORDER BY ${sorting} LIMIT ? OFFSET ?`,
+    [...values, limit, offset]
+  );
+  return rows;
+}
+
+async function countQueue(options) {
+  const { where, values } = queueFilters(options);
+  const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM tickets AS t${where}`, values);
+  return Number(rows[0].total);
+}
+
 module.exports = {
+  findQueue, countQueue,
   updateEmployeeDetails,
   findByCreator, countByCreator,
   create, assignTicketNumber, findById, findByTicketNumber,
   findCategoryById, findPriorityById,
 };
+
 
 
 

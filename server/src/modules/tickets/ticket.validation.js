@@ -68,7 +68,30 @@ const updateEmployeeTicketValidation = [
     .withMessage("Description must be 10 to 5000 characters"),
 ];
 
-module.exports = { createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
+const ticketQueueValidation = [
+  query().custom((value) => {
+    const allowed = ["page", "limit", "search", "status", "categoryId", "priorityId", "assignedTo", "assignment", "sortBy", "order"];
+    if (Object.keys(value).some((key) => !allowed.includes(key))) throw new Error("Unsupported queue query parameter");
+    return true;
+  }),
+  query("page").optional().custom((value) => positiveId(value) && Number.isSafeInteger(Number(value)))
+    .withMessage("Page must be a positive integer"),
+  query("limit").optional().custom((value) => positiveId(value) && Number(value) <= 100)
+    .withMessage("Limit must be between 1 and 100"),
+  query("search").optional().isString().bail().trim().isLength({ max: 200 }),
+  query("categoryId").optional().custom(positiveId),
+  query("priorityId").optional().custom(positiveId),
+  query("assignedTo").optional().custom(positiveId),
+  query("status").optional().isString().bail()
+    .isIn(["OPEN", "ASSIGNED", "IN_PROGRESS", "WAITING_FOR_USER", "RESOLVED", "CLOSED", "REOPENED"]),
+  query("assignment").optional().isString().bail().isIn(["unassigned", "assigned", "mine"]),
+  query("sortBy").optional().isString().bail()
+    .isIn(["created_at", "updated_at", "ticket_number", "title", "status", "priority"]),
+  query("order").optional().isString().bail().toLowerCase().isIn(["asc", "desc"]),
+];
+
+module.exports = { ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
+
 
 
 

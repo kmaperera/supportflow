@@ -31,7 +31,15 @@ const updateEmployeeTicket = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+const getTicketQueue = asyncHandler(async (req, res) => {
+  const { tickets, pagination } = await service.getTicketQueue(req.user, req.query);
+  res.status(200).json({
+    success: true, message: "Ticket queue retrieved successfully", data: { tickets }, pagination,
+  });
+});
+
+module.exports = { getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+
 
 
 
