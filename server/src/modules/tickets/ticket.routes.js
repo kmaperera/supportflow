@@ -3,8 +3,8 @@ const authenticate = require("../../middleware/authenticate");
 const authorizeRoles = require("../../middleware/authorize");
 const validate = require("../../middleware/validate");
 const { USER_ROLES } = require("../../constants/roles");
-const { closeTicketValidation, resolveTicketValidation, updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation } = require("./ticket.validation");
-const { closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket } = require("./ticket.controller");
+const { reopenTicketValidation, closeTicketValidation, resolveTicketValidation, updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation } = require("./ticket.validation");
+const { reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket } = require("./ticket.controller");
 
 const router = express.Router();
 router.get("/my", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE), getMyTicketsValidation, validate, getMyTickets);
@@ -27,6 +27,8 @@ router.patch("/:id/priority", authenticate, authorizeRoles(USER_ROLES.TECHNICIAN
 router.patch("/:id/resolve", authenticate, authorizeRoles(USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN), resolveTicketValidation, validate, resolveTicket);
 
 router.patch("/:id/close", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE, USER_ROLES.ADMIN), closeTicketValidation, validate, closeTicket);
+
+router.patch("/:id/reopen", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE, USER_ROLES.ADMIN), reopenTicketValidation, validate, reopenTicket);
 
 module.exports = router;
 

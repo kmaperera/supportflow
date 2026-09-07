@@ -508,7 +508,50 @@ async function closeTicket(ticketId, currentUser) {
   }
 }
 
-module.exports = { closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+async function reopenTicket(ticketId, currentUser) {
+  if (!isValidTicketUserId(ticketId)) throw new ApiError(400, "Ticket ID must be a positive integer");
+  if (!currentUser || !isValidTicketUserId(currentUser.id) ||
+      typeof currentUser.role !== "string" || !currentUser.role) {
+    throw new ApiError(401, "Authentication required");
+  }
+  if (![USER_ROLES.EMPLOYEE, USER_ROLES.ADMIN].includes(currentUser.role)) {
+    throw new ApiError(403, "You do not have permission to access this resource");
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    // Keep ownership and lifecycle checks valid until reopening commits.
+    if (!(await ticketRepository.lockById(ticketId, connection))) {
+      throw new ApiError(404, "Ticket not found");
+    }
+    const ticket = await ticketRepository.findById(ticketId, connection);
+    if (!ticket) throw new ApiError(404, "Ticket not found");
+    if (currentUser.role === USER_ROLES.EMPLOYEE &&
+        String(ticket.created_by) !== String(currentUser.id)) {
+      throw new ApiError(404, "Ticket not found");
+    }
+    assertTicketStatusTransition(ticket.status, TICKET_STATUSES.REOPENED);
+    const affectedRows = await ticketRepository.reopenTicket(ticketId, connection);
+    if (affectedRows !== 1) throw new Error("Unexpected ticket reopening update count");
+    const updated = await ticketRepository.findById(ticketId, connection);
+    if (!updated) throw new Error("Reopened ticket could not be retrieved");
+    const result = mapTicket(updated);
+    await connection.commit();
+    return result;
+  } catch (error) {
+    try {
+      await connection.rollback();
+    } catch {
+      // Preserve the original error if rollback also fails.
+    }
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+module.exports = { reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
 
 
 

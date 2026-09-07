@@ -80,7 +80,14 @@ const closeTicket = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
+const reopenTicket = asyncHandler(async (req, res) => {
+  const ticket = await service.reopenTicket(req.params.id, req.user);
+  res.status(200).json({
+    success: true, message: "Ticket reopened successfully", data: { ticket },
+  });
+});
+
+module.exports = { reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
 
 
 

@@ -148,7 +148,18 @@ const closeTicketValidation = [
   }),
 ];
 
-module.exports = { closeTicketValidation, resolveTicketValidation, updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
+const reopenTicketValidation = [
+  ...ticketIdValidation,
+  body().custom((value) => {
+    if (value !== undefined &&
+        (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length)) {
+      throw new Error("Request body must be empty");
+    }
+    return true;
+  }),
+];
+
+module.exports = { reopenTicketValidation, closeTicketValidation, resolveTicketValidation, updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
 
 
 

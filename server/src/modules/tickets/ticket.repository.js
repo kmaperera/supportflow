@@ -256,7 +256,15 @@ async function closeTicket(ticketId, db = pool) {
   return result.affectedRows;
 }
 
-module.exports = { closeTicket, resolveTicket, updatePriority, updateWorkingStatus,
+async function reopenTicket(ticketId, db = pool) {
+  const [result] = await db.query(
+    "UPDATE tickets SET status = ?, resolved_at = NULL, resolution_summary = NULL, closed_at = NULL WHERE id = ?",
+    [TICKET_STATUSES.REOPENED, ticketId]
+  );
+  return result.affectedRows;
+}
+
+module.exports = { reopenTicket, closeTicket, resolveTicket, updatePriority, updateWorkingStatus,
   lockById, updateAssignment,
   assignTechnician,
   findQueue, countQueue,
