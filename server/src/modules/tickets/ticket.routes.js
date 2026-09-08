@@ -16,13 +16,14 @@ const { createPublicCommentValidation, createInternalNoteValidation, getTicketCo
 const { createPublicComment, createInternalNote, getTicketComments } = require("./ticketComment.controller");
 const { uploadSingleAttachment, handleMulterError } = require("../../middleware/upload");
 const { validateSingleAttachment } = require("../../middleware/attachmentValidation");
-const { uploadTicketAttachmentValidation, uploadCommentAttachmentValidation } = require("./ticketAttachment.validation");
-const { uploadTicketAttachment, uploadCommentAttachment } = require("./ticketAttachment.controller");
+const { uploadTicketAttachmentValidation, uploadCommentAttachmentValidation, getTicketAttachmentsValidation } = require("./ticketAttachment.validation");
+const { uploadTicketAttachment, uploadCommentAttachment, getTicketAttachments } = require("./ticketAttachment.controller");
 
 router.post("/:id/attachments", authenticate, uploadSingleAttachment, handleMulterError,
   validateSingleAttachment, uploadTicketAttachmentValidation, validate, uploadTicketAttachment);
 router.post("/:id/comments/:commentId/attachments", authenticate, uploadSingleAttachment, handleMulterError,
   validateSingleAttachment, uploadCommentAttachmentValidation, validate, uploadCommentAttachment);
+router.get("/:id/attachments", authenticate, getTicketAttachmentsValidation, validate, getTicketAttachments);
 router.get("/my", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE), getMyTicketsValidation, validate, getMyTickets);
 router.post("/", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE), createTicketValidation, validate, createTicket);
 

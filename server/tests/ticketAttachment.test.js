@@ -187,6 +187,74 @@ test("route parses one file, ignores spoofed fields and normalizes Multer errors
     });
   }
   assert.equal(commentCalls.mock.callCount(), 1);
+  const reads = t.mock.method(service, "getTicketAttachments", async (id, user) => {
+    assert.equal(id, "5");
+    assert.equal(user.id, 3);
+    return [];
+  });
+  const listing = await fetch(`${url}/5/attachments`, { headers: { authorization: "test" } });
+  assert.equal(listing.status, 200);
+  assert.deepEqual(await listing.json(), { success: true, message: "Ticket attachments retrieved successfully", data: { attachments: [] } });
+  for (const suffix of ["5/attachments?includeInternal=true", "5/attachments?visibility=INTERNAL", "5/attachments?role=ADMIN", "0/attachments"]) {
+    const response = await fetch(`${url}/${suffix}`, { headers: { authorization: "test" } });
+    assert.equal(response.status, 422);
+  }
+  assert.equal((await fetch(`${url}/5/attachments`)).status, 401);
+  assert.equal(reads.mock.callCount(), 1);
+});
+
+test("attachment listing reuses resource access and trusted visibility with safe mapping", async (t) => {
+  let currentTicket = { ...ticket, status: "CLOSED" };
+  t.mock.method(tickets, "findById", async () => currentTicket);
+  const row = { id: 12, ticket_id: 5, comment_id: 21, original_name: "report.txt",
+    public_id: "hidden", file_url: "https://example.com/file", resource_type: "raw",
+    mime_type: "text/plain", file_size: 3, created_at: "now", uploader_id: 7,
+    uploader_first_name: "Tech", uploader_last_name: "User", uploader_email: "tech@example.com",
+    uploader_role: "TECHNICIAN", uploader_profile_image_url: null, comment_type: "PUBLIC",
+    password_hash: "hidden", buffer: file.buffer };
+  const read = t.mock.method(attachments, "findByTicketId", async () => [row, { ...row, id: 13 }]);
+  for (const [user, includeInternal] of [
+    [{ id: "3", role: "EMPLOYEE", includeInternal: true }, false],
+    [{ id: "7", role: "TECHNICIAN" }, true], [{ id: 9, role: "ADMIN" }, true],
+  ]) {
+    const result = await service.getTicketAttachments("5", user);
+    assert.deepEqual(read.mock.calls.at(-1).arguments, ["5", { includeInternal }]);
+    assert.deepEqual(result.map(value => value.id), [12, 13]);
+    assert.deepEqual(result[0], { id: 12, ticketId: 5, commentId: 21, originalName: "report.txt",
+      fileUrl: row.file_url, resourceType: "raw", mimeType: "text/plain", fileSize: 3, createdAt: "now",
+      uploadedBy: { id: 7, firstName: "Tech", lastName: "User", email: "tech@example.com", role: "TECHNICIAN", profileImageUrl: null } });
+  }
+  const before = read.mock.callCount();
+  for (const user of [{ id: 4, role: "EMPLOYEE" }, { id: 8, role: "TECHNICIAN" }]) {
+    await assert.rejects(service.getTicketAttachments(5, user), { statusCode: 404, message: "Ticket not found" });
+  }
+  for (const [id, user, status] of [[0, { id: 3, role: "EMPLOYEE" }, 422], [5, null, 401], [5, { id: 9, role: "UNKNOWN" }, 403]]) {
+    await assert.rejects(service.getTicketAttachments(id, user), { statusCode: status });
+  }
+  assert.equal(read.mock.callCount(), before);
+  currentTicket.assigned_to = null;
+  read.mock.mockImplementation(async () => []);
+  assert.deepEqual(await service.getTicketAttachments(5, { id: 8, role: "TECHNICIAN" }), []);
+  assert.deepEqual(read.mock.calls.at(-1).arguments, [5, { includeInternal: true }]);
+  currentTicket = null;
+  await assert.rejects(service.getTicketAttachments(5, { id: 9, role: "ADMIN" }), { statusCode: 404 });
+});
+
+test("listing SQL defaults to PUBLIC/direct filtering and orders deterministically", async () => {
+  let query;
+  const db = { async query(sql, values) { query = { sql, values }; return [[]]; } };
+  for (const options of [{}, { includeInternal: false }, { includeInternal: "true" }]) {
+    assert.deepEqual(await attachments.findByTicketId(5, options, db), []);
+    assert.deepEqual(query.values, [5, "PUBLIC"]);
+    assert.match(query.sql, /AND \(a.comment_id IS NULL OR c.comment_type = \?\)/);
+  }
+  await attachments.findByTicketId(5, { includeInternal: true }, db);
+  assert.deepEqual(query.values, [5]);
+  assert.doesNotMatch(query.sql, /AND \(a.comment_id/);
+  assert.match(query.sql, /INNER JOIN users AS u ON u.id = a.uploaded_by/);
+  assert.match(query.sql, /LEFT JOIN ticket_comments AS c ON c.id = a.comment_id/);
+  assert.match(query.sql, /ORDER BY a.created_at ASC, a.id ASC/);
+  assert.doesNotMatch(query.sql, /password|SELECT\s+\*/i);
 });
 
 test("comment attachment role/type/status matrix and trusted metadata", async (t) => {

@@ -21,4 +21,13 @@ const uploadCommentAttachment = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { uploadTicketAttachment, uploadCommentAttachment };
+const getTicketAttachments = asyncHandler(async (req, res) => {
+  const attachments = await service.getTicketAttachments(req.params.id, req.user);
+  res.status(200).json({
+    success: true,
+    message: "Ticket attachments retrieved successfully",
+    data: { attachments },
+  });
+});
+
+module.exports = { uploadTicketAttachment, uploadCommentAttachment, getTicketAttachments };

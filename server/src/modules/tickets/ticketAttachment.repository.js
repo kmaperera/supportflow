@@ -1,4 +1,5 @@
 const pool = require("../../config/database");
+const { COMMENT_TYPES } = require("../../constants/commentTypes");
 
 async function createAttachment({
   ticketId, commentId = null, uploadedBy, originalName, publicId,
@@ -32,4 +33,26 @@ async function findById(attachmentId, db = pool) {
   return rows[0] || null;
 }
 
-module.exports = { createAttachment, findById };
+async function findByTicketId(ticketId, options = {}, db = pool) {
+  // Only trusted service code may enable internal-comment visibility.
+  const includeInternal = options.includeInternal === true;
+  const visibilityFilter = includeInternal ? "" : " AND (a.comment_id IS NULL OR c.comment_type = ?)";
+  const values = includeInternal ? [ticketId] : [ticketId, COMMENT_TYPES.PUBLIC];
+  const [rows] = await db.query(
+    `SELECT a.id, a.ticket_id, a.comment_id, a.original_name, a.public_id,
+      a.file_url, a.resource_type, a.mime_type, a.file_size, a.created_at,
+      u.id AS uploader_id, u.first_name AS uploader_first_name,
+      u.last_name AS uploader_last_name, u.email AS uploader_email,
+      u.role AS uploader_role, u.profile_image_url AS uploader_profile_image_url,
+      c.comment_type
+     FROM ticket_attachments AS a
+     INNER JOIN users AS u ON u.id = a.uploaded_by
+     LEFT JOIN ticket_comments AS c ON c.id = a.comment_id
+     WHERE a.ticket_id = ?${visibilityFilter}
+     ORDER BY a.created_at ASC, a.id ASC`,
+    values
+  );
+  return rows;
+}
+
+module.exports = { createAttachment, findById, findByTicketId };

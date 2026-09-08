@@ -1,6 +1,7 @@
 const ticketRepository = require("./ticket.repository");
 const attachmentRepository = require("./ticketAttachment.repository");
 const ticketCommentRepository = require("./ticketComment.repository");
+const { getCommentVisibilityOptions } = require("./ticketCommentAccess.service");
 const { COMMENT_TYPES } = require("../../constants/commentTypes");
 const cloudinaryUpload = require("../../services/cloudinaryUpload.service");
 const { validateAttachmentFile } = require("../../middleware/attachmentValidation");
@@ -117,17 +118,37 @@ async function persistAttachment(ticketId, commentId, file, currentUser, folder)
 
   const attachment = await attachmentRepository.findById(attachmentId);
   if (!attachment) throw new ApiError(500, "Created attachment could not be retrieved");
+  return mapAttachment(attachment);
+}
+
+async function getTicketAttachments(ticketId, currentUser) {
+  if (!validId(ticketId)) throw new ApiError(422, "Ticket ID must be a positive integer");
+  if (!currentUser || typeof currentUser !== "object" || Array.isArray(currentUser) ||
+      !validId(currentUser.id) || typeof currentUser.role !== "string" || !currentUser.role) {
+    throw new ApiError(401, "Authentication required");
+  }
+  if (!Object.values(USER_ROLES).includes(currentUser.role)) {
+    throw new ApiError(403, "You do not have permission to access this resource");
+  }
+  const ticket = await ticketRepository.findById(ticketId);
+  if (!ticket) throw new ApiError(404, "Ticket not found");
+  const { includeInternal } = getCommentVisibilityOptions(ticket, currentUser);
+  const rows = await attachmentRepository.findByTicketId(ticketId, { includeInternal });
+  return rows.map(mapAttachment);
+}
+
+function mapAttachment(attachment) {
   return {
     id: attachment.id, ticketId: attachment.ticket_id, commentId: attachment.comment_id,
     originalName: attachment.original_name, fileUrl: attachment.file_url,
     resourceType: attachment.resource_type, mimeType: attachment.mime_type,
     fileSize: attachment.file_size, createdAt: attachment.created_at,
     uploadedBy: {
-      id: attachment.uploaded_by, firstName: attachment.uploader_first_name,
+      id: attachment.uploader_id ?? attachment.uploaded_by, firstName: attachment.uploader_first_name,
       lastName: attachment.uploader_last_name, email: attachment.uploader_email,
       role: attachment.uploader_role, profileImageUrl: attachment.uploader_profile_image_url,
     },
   };
 }
 
-module.exports = { uploadTicketAttachment, uploadCommentAttachment };
+module.exports = { uploadTicketAttachment, uploadCommentAttachment, getTicketAttachments };
