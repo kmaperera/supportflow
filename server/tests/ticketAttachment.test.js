@@ -10,6 +10,7 @@ const upload = require("../src/services/cloudinaryUpload.service");
 const tickets = require("../src/modules/tickets/ticket.repository");
 const attachments = require("../src/modules/tickets/ticketAttachment.repository");
 const service = require("../src/modules/tickets/ticketAttachment.service");
+const comments = require("../src/modules/tickets/ticketComment.repository");
 const file = { originalname: "report.txt", mimetype: "text/plain", size: 3, buffer: Buffer.from("abc") };
 const ticket = { id: 5, ticket_number: "TKT-000005", created_by: 3, assigned_to: 7, status: "OPEN" };
 const asset = { publicId: "asset-id", secureUrl: "https://example.com/file", resourceType: "raw", bytes: 3 };
@@ -164,4 +165,107 @@ test("route parses one file, ignores spoofed fields and normalizes Multer errors
   }
   assert.equal((await request({ auth: false })).status, 401);
   assert.equal(calls.mock.callCount(), 1);
+  const commentCalls = t.mock.method(service, "uploadCommentAttachment", async (id, commentId, received, user) => {
+    assert.equal(id, "5");
+    assert.equal(commentId, "22");
+    assert.equal(user.id, 3);
+    assert.ok(Buffer.isBuffer(received.buffer));
+    return { id: 15, ticketId: 5, commentId: 22 };
+  });
+  for (const [commentId, field, status] of [["22", "attachment", 201], ["0", "attachment", 422],
+    ["18446744073709551616", "attachment", 422], ["22", "wrong", 422]]) {
+    const form = new FormData();
+    for (const key of ["ticketId", "commentId", "uploadedBy", "visibility", "isInternal", "publicId"]) form.append(key, "spoofed");
+    form.append(field, new Blob(["abc"], { type: "text/plain" }), "report.txt");
+    const response = await fetch(`${url}/5/comments/${commentId}/attachments`, {
+      method: "POST", headers: { authorization: "test" }, body: form,
+    });
+    assert.equal(response.status, status);
+    if (status === 201) assert.deepEqual(await response.json(), {
+      success: true, message: "Comment attachment uploaded successfully",
+      data: { attachment: { id: 15, ticketId: 5, commentId: 22 } },
+    });
+  }
+  assert.equal(commentCalls.mock.callCount(), 1);
+});
+
+test("comment attachment role/type/status matrix and trusted metadata", async (t) => {
+  const currentTicket = { ...ticket };
+  const comment = { id: 22, ticket_id: "5", comment_type: "PUBLIC" };
+  t.mock.method(tickets, "findById", async () => currentTicket);
+  t.mock.method(comments, "findById", async () => comment);
+  const send = t.mock.method(upload, "uploadAttachmentBuffer", async () => asset);
+  let saved;
+  t.mock.method(attachments, "createAttachment", async value => { saved = value; return 15; });
+  t.mock.method(attachments, "findById", async () => ({ id: 15, ticket_id: saved.ticketId,
+    comment_id: saved.commentId, uploaded_by: saved.uploadedBy, public_id: "hidden" }));
+  for (const type of ["PUBLIC", "INTERNAL"]) {
+    comment.comment_type = type;
+    for (const status of ["OPEN", "ASSIGNED", "IN_PROGRESS", "WAITING_FOR_USER", "RESOLVED", "REOPENED", "CLOSED"]) {
+      currentTicket.status = status;
+      for (const user of [{ id: "3", role: "EMPLOYEE" }, { id: "7", role: "TECHNICIAN" }, { id: 9, role: "ADMIN" }]) {
+        const before = send.mock.callCount();
+        const hidden = type === "INTERNAL" && user.role === "EMPLOYEE";
+        const blocked = status === "CLOSED" || (type === "PUBLIC" && status === "RESOLVED");
+        if (hidden || blocked) {
+          await assert.rejects(service.uploadCommentAttachment("5", "22", file, user), {
+            statusCode: hidden ? 404 : 409,
+            message: hidden ? "Comment not found" : type === "INTERNAL"
+              ? "Attachments cannot be added to a closed ticket"
+              : "Attachments cannot be added in the ticket's current status",
+          });
+          assert.equal(send.mock.callCount(), before);
+        } else {
+          const result = await service.uploadCommentAttachment("5", "22", file, user);
+          assert.equal(result.commentId, "22");
+          assert.equal(saved.uploadedBy, user.id);
+          assert.equal(saved.publicId, asset.publicId);
+          assert.equal(saved.fileUrl, asset.secureUrl);
+          assert.equal(saved.fileSize, asset.bytes);
+          assert.equal("visibility" in saved, false);
+          assert.equal("publicId" in result, false);
+          assert.equal(send.mock.calls.at(-1).arguments[0].folder, "supportflow/tickets/TKT-000005/comments/22");
+        }
+      }
+    }
+  }
+});
+
+test("comment attachment rejects missing, mismatched and unauthorized resources before upload", async (t) => {
+  let currentTicket = { ...ticket };
+  let comment = { id: 22, ticket_id: 5, comment_type: "PUBLIC" };
+  t.mock.method(tickets, "findById", async () => currentTicket);
+  t.mock.method(comments, "findById", async () => comment);
+  const send = t.mock.method(upload, "uploadAttachmentBuffer", async () => asset);
+  const admin = { id: 9, role: "ADMIN" };
+  for (const bad of [undefined, 0, -1, "1.5", "18446744073709551616", Number.MAX_SAFE_INTEGER + 1]) {
+    await assert.rejects(service.uploadCommentAttachment(bad, 22, file, admin), { statusCode: 422 });
+    await assert.rejects(service.uploadCommentAttachment(5, bad, file, admin), { statusCode: 422 });
+  }
+  await assert.rejects(service.uploadCommentAttachment(5, 22, file, null), { statusCode: 401 });
+  await assert.rejects(service.uploadCommentAttachment(5, 22, file, { id: 9, role: "OTHER" }), { statusCode: 403 });
+  await assert.rejects(service.uploadCommentAttachment(5, 22, null, admin), { statusCode: 422 });
+  for (const user of [{ id: 4, role: "EMPLOYEE" }, { id: 8, role: "TECHNICIAN" }]) {
+    await assert.rejects(service.uploadCommentAttachment(5, 22, file, user), { statusCode: 404 });
+  }
+  currentTicket.assigned_to = null;
+  await assert.rejects(service.uploadCommentAttachment(5, 22, file, { id: 7, role: "TECHNICIAN" }), { statusCode: 404 });
+  for (const value of [null, { ...comment, ticket_id: 6 }, { ...comment, comment_type: "OTHER" }]) {
+    comment = value;
+    await assert.rejects(service.uploadCommentAttachment(5, 22, file, admin), { statusCode: 404, message: "Comment not found" });
+  }
+  currentTicket = null;
+  await assert.rejects(service.uploadCommentAttachment(5, 22, file, admin), { statusCode: 404, message: "Ticket not found" });
+  assert.equal(send.mock.callCount(), 0);
+});
+
+test("comment insert failure cleans up the uploaded asset and preserves DB error", async (t) => {
+  t.mock.method(tickets, "findById", async () => ticket);
+  t.mock.method(comments, "findById", async () => ({ id: 22, ticket_id: 5, comment_type: "PUBLIC" }));
+  t.mock.method(upload, "uploadAttachmentBuffer", async () => asset);
+  const failure = new Error("insert failed");
+  t.mock.method(attachments, "createAttachment", async () => { throw failure; });
+  const cleanup = t.mock.method(upload, "deleteCloudinaryAsset", async () => { throw new Error("cleanup failed"); });
+  await assert.rejects(service.uploadCommentAttachment(5, 22, file, { id: 9, role: "ADMIN" }), err => err === failure);
+  assert.deepEqual(cleanup.mock.calls[0].arguments[0], { publicId: asset.publicId, resourceType: asset.resourceType });
 });

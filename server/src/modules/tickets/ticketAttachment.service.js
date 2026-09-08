@@ -1,5 +1,8 @@
 const ticketRepository = require("./ticket.repository");
 const attachmentRepository = require("./ticketAttachment.repository");
+const ticketCommentRepository = require("./ticketComment.repository");
+const commentAccess = require("./ticketCommentAccess.service");
+const { COMMENT_TYPES } = require("../../constants/commentTypes");
 const cloudinaryUpload = require("../../services/cloudinaryUpload.service");
 const { validateAttachmentFile } = require("../../middleware/attachmentValidation");
 const { USER_ROLES } = require("../../constants/roles");
@@ -37,16 +40,64 @@ async function uploadTicketAttachment(ticketId, file, currentUser) {
     throw new ApiError(409, "Attachments cannot be added in the ticket's current status");
   }
 
+  return persistAttachment(ticketId, null, file, currentUser,
+    `supportflow/tickets/${ticket.ticket_number}`);
+}
+
+async function uploadCommentAttachment(ticketId, commentId, file, currentUser) {
+  if (!validId(ticketId)) throw new ApiError(422, "Ticket ID must be a positive integer");
+  if (!validId(commentId)) throw new ApiError(422, "Comment ID must be a positive integer");
+  if (!currentUser || typeof currentUser !== "object" || Array.isArray(currentUser) ||
+      !validId(currentUser.id) || typeof currentUser.role !== "string" || !currentUser.role) {
+    throw new ApiError(401, "Authentication required");
+  }
+  if (!Object.values(USER_ROLES).includes(currentUser.role)) {
+    throw new ApiError(403, "You do not have permission to access this resource");
+  }
+  validateAttachmentFile(file);
+  const ticket = await ticketRepository.findById(ticketId);
+  if (!ticket) throw new ApiError(404, "Ticket not found");
+  commentAccess.assertCanViewTicketComments(ticket, currentUser);
+  // Read access permits unassigned tickets; attachment writes require assignment.
+  if (currentUser.role === USER_ROLES.TECHNICIAN &&
+      (ticket.assigned_to == null || String(ticket.assigned_to) !== String(currentUser.id))) {
+    throw new ApiError(404, "Ticket not found");
+  }
+  const comment = await ticketCommentRepository.findById(commentId);
+  if (!comment || String(comment.ticket_id) !== String(ticket.id)) {
+    throw new ApiError(404, "Comment not found");
+  }
+  if (comment.comment_type === COMMENT_TYPES.INTERNAL) {
+    if (!commentAccess.canViewInternalComments(currentUser)) {
+      throw new ApiError(404, "Comment not found");
+    }
+    if (ticket.status === TICKET_STATUSES.CLOSED) {
+      throw new ApiError(409, "Attachments cannot be added to a closed ticket");
+    }
+  } else if (comment.comment_type !== COMMENT_TYPES.PUBLIC) {
+    throw new ApiError(404, "Comment not found");
+  }
+  const allowedStatuses = [TICKET_STATUSES.OPEN, TICKET_STATUSES.ASSIGNED,
+    TICKET_STATUSES.IN_PROGRESS, TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.REOPENED];
+  if (comment.comment_type === COMMENT_TYPES.INTERNAL) allowedStatuses.push(TICKET_STATUSES.RESOLVED);
+  if (!allowedStatuses.includes(ticket.status)) {
+    throw new ApiError(409, "Attachments cannot be added in the ticket's current status");
+  }
+  return persistAttachment(ticketId, commentId, file, currentUser,
+    `supportflow/tickets/${ticket.ticket_number}/comments/${commentId}`);
+}
+
+async function persistAttachment(ticketId, commentId, file, currentUser, folder) {
   const asset = await cloudinaryUpload.uploadAttachmentBuffer({
     buffer: file.buffer,
-    folder: `supportflow/tickets/${ticket.ticket_number}`,
+    folder,
     originalName: file.originalname,
     mimeType: file.mimetype,
   });
   let attachmentId;
   try {
     attachmentId = await attachmentRepository.createAttachment({
-      ticketId, commentId: null, uploadedBy: currentUser.id,
+      ticketId, commentId, uploadedBy: currentUser.id,
       originalName: file.originalname, publicId: asset.publicId,
       fileUrl: asset.secureUrl, resourceType: asset.resourceType,
       mimeType: file.mimetype, fileSize: asset.bytes ?? file.size,
@@ -77,4 +128,4 @@ async function uploadTicketAttachment(ticketId, file, currentUser) {
   };
 }
 
-module.exports = { uploadTicketAttachment };
+module.exports = { uploadTicketAttachment, uploadCommentAttachment };
