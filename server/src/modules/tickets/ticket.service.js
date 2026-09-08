@@ -662,6 +662,11 @@ async function resolveTicket(ticketId, resolutionSummary, currentUser) {
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Resolved ticket could not be retrieved");
     const result = mapTicket(updated);
+    await notificationService.createNotification({
+      userId: ticket.created_by, ticketId: ticket.id, commentId: null,
+      type: NOTIFICATION_TYPES.TICKET_RESOLVED, title: "Ticket resolved",
+      message: `${ticket.ticket_number} has been resolved.`,
+    }, connection);
     await connection.commit();
     return result;
   } catch (error) {
@@ -708,6 +713,13 @@ async function closeTicket(ticketId, currentUser) {
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Closed ticket could not be retrieved");
     const result = mapTicket(updated);
+    if (ticket.assigned_to !== null) {
+      await notificationService.createNotification({
+        userId: ticket.assigned_to, ticketId: ticket.id, commentId: null,
+        type: NOTIFICATION_TYPES.TICKET_CLOSED, title: "Ticket closed",
+        message: `${ticket.ticket_number} has been closed.`,
+      }, connection);
+    }
     await connection.commit();
     return result;
   } catch (error) {
@@ -754,6 +766,13 @@ async function reopenTicket(ticketId, currentUser) {
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Reopened ticket could not be retrieved");
     const result = mapTicket(updated);
+    if (ticket.assigned_to !== null) {
+      await notificationService.createNotification({
+        userId: ticket.assigned_to, ticketId: ticket.id, commentId: null,
+        type: NOTIFICATION_TYPES.TICKET_REOPENED, title: "Ticket reopened",
+        message: `${ticket.ticket_number} has been reopened.`,
+      }, connection);
+    }
     await connection.commit();
     return result;
   } catch (error) {
@@ -803,7 +822,6 @@ async function getTicketStatusHistory(ticketId, currentUser) {
 }
 
 module.exports = { getAssignmentWorkflowSummary, getAssignedTicketsForTechnician, unassignTicketByAdmin, getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
-
 
 
 
