@@ -10,4 +10,17 @@ const getSlaPolicies = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { getSlaPolicies };
+const updateSlaPolicy = asyncHandler(async (req, res) => {
+  const { responseTimeMinutes, resolutionTimeMinutes } = req.body;
+  const policy = await slaPolicyService.updatePolicy(req.params.policyId, {
+    responseTimeMinutes,
+    resolutionTimeMinutes,
+  });
+  res.status(200).json({
+    success: true,
+    message: "SLA policy updated successfully",
+    data: { policy },
+  });
+});
+
+module.exports = { getSlaPolicies, updateSlaPolicy };

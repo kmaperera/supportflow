@@ -66,8 +66,82 @@ test("SLA listing authenticates, requires the database ADMIN role, and returns m
   assert.equal(empty.status, 200);
   assert.deepEqual((await empty.json()).data, { policies: [] });
   const reads = query.mock.callCount();
-  for (const [method, suffix] of [["POST", ""], ["PATCH", "/1"], ["PUT", "/1"], ["DELETE", "/1"], ["PATCH", "/1/status"]]) {
+  for (const [method, suffix] of [["POST", ""], ["PUT", "/1"], ["DELETE", "/1"], ["PATCH", "/1/status"]]) {
     assert.equal((await fetch(url + suffix, { method, headers: headers(1) })).status, 404);
   }
   assert.equal(query.mock.callCount(), reads);
+});
+
+test("SLA updates validate before SQL and update only durations, with refreshed GET output", async (t) => {
+  const previousSecret = process.env.JWT_ACCESS_SECRET;
+  process.env.JWT_ACCESS_SECRET = "sla-update-api-test-secret";
+  t.after(() => {
+    if (previousSecret === undefined) delete process.env.JWT_ACCESS_SECRET;
+    else process.env.JWT_ACCESS_SECRET = previousSecret;
+  });
+  const roles = { 1: "ADMIN", 2: "EMPLOYEE", 3: "TECHNICIAN" };
+  t.mock.method(users, "findById", async id => ({ id, role: roles[id], is_active: 1 }));
+  const row = { id: 8, priority_id: 91, priority_name: "CRITICAL", response_time_minutes: 15,
+    resolution_time_minutes: 120, is_active: 1, created_at: "created", updated_at: "original" };
+  const query = t.mock.method(pool, "query", async (sql, values) => {
+    if (sql.startsWith("UPDATE")) {
+      assert.equal(sql, "UPDATE sla_policies SET response_time_minutes = ?, resolution_time_minutes = ? WHERE id = ?");
+      assert.deepEqual(values, [45, 360, "8"]);
+      row.response_time_minutes = values[0];
+      row.resolution_time_minutes = values[1];
+      row.updated_at = "updated";
+      return [{ affectedRows: 1 }];
+    }
+    assert.match(sql, /FROM sla_policies AS sp/);
+    if (sql.includes("WHERE")) {
+      assert.match(sql, /WHERE sp.id = \? LIMIT 1/);
+      return [values[0] === "8" ? [{ ...row }] : []];
+    }
+    return [[{ ...row }]];
+  });
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise(resolve => server.once("listening", resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const url = `http://127.0.0.1:${server.address().port}/api/v1/sla/policies`;
+  const headers = id => ({ "content-type": "application/json", ...(id ? {
+    authorization: `Bearer ${jwt.sign({ role: "ADMIN" }, process.env.JWT_ACCESS_SECRET, { subject: String(id), expiresIn: "5m" })}`,
+  } : {}) });
+  const valid = { responseTimeMinutes: 45, resolutionTimeMinutes: 360 };
+  const patch = (id, body = valid, actor = 1) => fetch(`${url}/${id}?role=ADMIN`, {
+    method: "PATCH", headers: headers(actor), body: JSON.stringify(body),
+  });
+  assert.equal((await patch("8", valid, null)).status, 401);
+  for (const actor of [2, 3]) {
+    assert.equal((await patch("8", { ...valid, role: "ADMIN" }, actor)).status, 403);
+  }
+  for (const id of ["0", "-1", "1.5", "abc", "18446744073709551616"]) {
+    assert.equal((await patch(id)).status, 422);
+  }
+  assert.equal((await patch("")).status, 404);
+  for (const field of Object.keys(valid)) {
+    for (const value of [0, -1, 1.5, "45", "NaN", null, undefined, true, 4294967296]) {
+      assert.equal((await patch("8", { ...valid, [field]: value })).status, 422);
+    }
+  }
+  for (const field of ["priorityId", "priorityName", "isActive", "createdAt", "updatedAt", "id", "unknown"]) {
+    assert.equal((await patch("8", { ...valid, [field]: 1 })).status, 422);
+  }
+  for (const body of [{}, [], { responseTimeMinutes: 500, resolutionTimeMinutes: 300 }]) {
+    assert.equal((await patch("8", body)).status, 422);
+  }
+  assert.equal(query.mock.callCount(), 0);
+  const missing = await patch("999");
+  assert.equal(missing.status, 404);
+  assert.equal((await missing.json()).message, "SLA policy not found");
+  const updated = await patch("8");
+  assert.equal(updated.status, 200);
+  const expected = { id: 8, priorityId: 91, priorityName: "CRITICAL", ...valid,
+    isActive: true, createdAt: "created", updatedAt: "updated" };
+  assert.deepEqual(await updated.json(), {
+    success: true, message: "SLA policy updated successfully", data: { policy: expected },
+  });
+  const listing = await fetch(url, { headers: headers(1) });
+  assert.equal(listing.status, 200);
+  assert.deepEqual((await listing.json()).data, { policies: [expected] });
+  assert.equal(query.mock.calls.filter(call => call.arguments[0].startsWith("UPDATE")).length, 1);
 });
