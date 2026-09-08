@@ -10,6 +10,8 @@ const pool = require("../../config/database");
 const ticketRepository = require("./ticket.repository");
 const { generateTicketNumber } = require("../../utils/ticketNumber");
 const ApiError = require("../../utils/ApiError");
+const notificationService = require("../notifications/notification.service");
+const { NOTIFICATION_TYPES } = require("../../constants/notificationTypes");
 
 function mapTicket(row) {
   return {
@@ -60,6 +62,14 @@ async function createTicket(userId, ticketData) {
     const row = await ticketRepository.findById(ticketId, connection);
     if (!row) throw new Error("Created ticket could not be retrieved");
     const ticket = mapTicket(row);
+    await notificationService.createNotification({
+      userId,
+      ticketId: ticket.id,
+      commentId: null,
+      type: NOTIFICATION_TYPES.TICKET_CREATED,
+      title: "Ticket created",
+      message: `${ticket.ticketNumber} was created successfully.`,
+    }, connection);
     await connection.commit();
     return ticket;
   } catch (error) {
