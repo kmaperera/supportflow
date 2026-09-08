@@ -2,6 +2,44 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const service = require("../src/modules/sla/slaPolicy.service");
 
+test("resolver uses database priority/policy relationship and validates runtime configuration", async (t) => {
+  const tickets = require("../src/modules/tickets/ticket.repository");
+  const policies = require("../src/modules/sla/slaPolicy.repository");
+  const db = {};
+  let priority = { id: 87, name: "CUSTOM" };
+  let row = { id: 12, priority_id: 87, priority_name: "CUSTOM", response_time_minutes: 45,
+    resolution_time_minutes: 360, is_active: 1 };
+  const reads = [];
+  t.mock.method(tickets, "findPriorityById", async (id, connection) => {
+    assert.equal(connection, db); reads.push(id); return priority;
+  });
+  t.mock.method(policies, "findByPriorityId", async (id, connection) => {
+    assert.equal(connection, db); assert.equal(id, 87); return row;
+  });
+  for (const invalid of [undefined, null, 0, -1, 1.5, NaN, Infinity, "invalid"]) {
+    await assert.rejects(service.resolvePolicyForPriority(invalid, db), { statusCode: 422 });
+  }
+  assert.equal(reads.length, 0);
+  let policy = await service.resolvePolicyForPriority(87, db);
+  assert.equal(policy.priorityName, "CUSTOM");
+  assert.equal(policy.responseTimeMinutes, 45);
+  row.response_time_minutes = 50;
+  assert.equal((await service.resolvePolicyForPriority(87, db)).responseTimeMinutes, 50);
+  for (const active of [0, false, "0"]) {
+    row.is_active = active;
+    await assert.rejects(service.resolvePolicyForPriority(87, db), { statusCode: 409, message: "Active SLA policy is not available for this priority" });
+  }
+  row.is_active = 1;
+  for (const [response, resolution] of [[0, 360], [-1, 360], [1.5, 360], [NaN, 360], [Infinity, 360], ["45", 360], [60, 30], [30, null], [30, 4294967296]]) {
+    row.response_time_minutes = response; row.resolution_time_minutes = resolution;
+    await assert.rejects(service.resolvePolicyForPriority(87, db), { statusCode: 500, message: "Invalid SLA policy configuration" });
+  }
+  row = null;
+  await assert.rejects(service.resolvePolicyForPriority(87, db), { statusCode: 409, message: "SLA policy is not configured for this priority" });
+  priority = null;
+  await assert.rejects(service.resolvePolicyForPriority(87, db), { statusCode: 404, message: "Ticket priority not found" });
+});
+
 test("reads map policies, normalize names and preserve injected database", async () => {
   let row = { id: 1, priority_id: 9, priority_name: "HIGH", response_time_minutes: 60,
     resolution_time_minutes: 480, is_active: 1, created_at: "created", updated_at: "updated" };

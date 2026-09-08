@@ -1,4 +1,5 @@
 const repository = require("./slaPolicy.repository");
+const ticketRepository = require("../tickets/ticket.repository");
 const ApiError = require("../../utils/ApiError");
 
 function validateId(value) {
@@ -52,6 +53,24 @@ async function getActivePolicyByPriorityId(priorityId, db) {
   return policy;
 }
 
+async function resolvePolicyForPriority(priorityId, db) {
+  validateId(priorityId);
+  const priority = await ticketRepository.findPriorityById(priorityId, db);
+  if (!priority) throw new ApiError(404, "Ticket priority not found");
+  const row = await repository.findByPriorityId(priorityId, db);
+  if (!row) throw new ApiError(409, "SLA policy is not configured for this priority");
+  const policy = mapSlaPolicy(row);
+  if (![true, 1, "1"].includes(row.is_active)) {
+    throw new ApiError(409, "Active SLA policy is not available for this priority");
+  }
+  const durations = [policy.responseTimeMinutes, policy.resolutionTimeMinutes];
+  if (durations.some(value => !Number.isInteger(value) || value < 1 || value > 4294967295) ||
+      policy.resolutionTimeMinutes < policy.responseTimeMinutes) {
+    throw new ApiError(500, "Invalid SLA policy configuration");
+  }
+  return policy;
+}
+
 async function updatePolicy(id, values, db) {
   validateId(id);
   if (!values || typeof values !== "object" || Array.isArray(values) ||
@@ -81,4 +100,4 @@ async function setPolicyActiveStatus(id, isActive, db) {
 }
 
 module.exports = { mapSlaPolicy, getAllPolicies, getPolicyById, getPolicyByPriorityId,
-  getPolicyByPriorityName, getActivePolicyByPriorityId, updatePolicy, setPolicyActiveStatus };
+  getPolicyByPriorityName, getActivePolicyByPriorityId, resolvePolicyForPriority, updatePolicy, setPolicyActiveStatus };
