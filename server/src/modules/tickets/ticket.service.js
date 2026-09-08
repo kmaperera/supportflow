@@ -13,6 +13,11 @@ const ApiError = require("../../utils/ApiError");
 const notificationService = require("../notifications/notification.service");
 const { NOTIFICATION_TYPES } = require("../../constants/notificationTypes");
 
+const WORKING_STATUS_LABELS = Object.freeze({
+  [TICKET_STATUSES.IN_PROGRESS]: "In Progress",
+  [TICKET_STATUSES.WAITING_FOR_USER]: "Waiting for User",
+});
+
 function mapTicket(row) {
   return {
     id: row.id, ticketNumber: row.ticket_number,
@@ -539,6 +544,11 @@ async function updateTicketStatus(ticketId, newStatus, currentUser) {
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Updated ticket could not be retrieved");
     const result = mapTicket(updated);
+    await notificationService.createNotification({
+      userId: ticket.created_by, ticketId: ticket.id, commentId: null,
+      type: NOTIFICATION_TYPES.STATUS_CHANGED, title: "Ticket status updated",
+      message: `${ticket.ticket_number} status changed to ${WORKING_STATUS_LABELS[newStatus]}.`,
+    }, connection);
     await connection.commit();
     return result;
   } catch (error) {
@@ -793,7 +803,6 @@ async function getTicketStatusHistory(ticketId, currentUser) {
 }
 
 module.exports = { getAssignmentWorkflowSummary, getAssignedTicketsForTechnician, unassignTicketByAdmin, getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
-
 
 
 
