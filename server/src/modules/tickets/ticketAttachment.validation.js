@@ -19,4 +19,12 @@ const getTicketAttachmentsValidation = [
   }),
 ];
 
-module.exports = { uploadTicketAttachmentValidation, uploadCommentAttachmentValidation, getTicketAttachmentsValidation };
+const downloadTicketAttachmentValidation = [
+  ...getTicketAttachmentsValidation,
+  param("attachmentId").custom((value) => {
+    if (typeof value !== "string" || !/^[1-9]\d*$/.test(value) || value.length > 20) return false;
+    return BigInt(value) <= 18446744073709551615n;
+  }).withMessage("Attachment ID must be a positive integer"),
+];
+
+module.exports = { uploadTicketAttachmentValidation, uploadCommentAttachmentValidation, getTicketAttachmentsValidation, downloadTicketAttachmentValidation };

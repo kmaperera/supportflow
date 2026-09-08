@@ -15,6 +15,88 @@ const file = { originalname: "report.txt", mimetype: "text/plain", size: 3, buff
 const ticket = { id: 5, ticket_number: "TKT-000005", created_by: 3, assigned_to: 7, status: "OPEN" };
 const asset = { publicId: "asset-id", secureUrl: "https://example.com/file", resourceType: "raw", bytes: 3 };
 
+test("downloads enforce ownership and internal visibility across historical statuses", async (t) => {
+  let currentTicket = { ...ticket };
+  let attachment = { id: 10, ticket_id: "5", comment_id: null, comment_type: null,
+    original_name: "report.txt", file_url: asset.secureUrl, mime_type: "text/plain", file_size: 3 };
+  t.mock.method(tickets, "findById", async () => currentTicket);
+  t.mock.method(attachments, "findById", async () => attachment);
+  for (const status of ["OPEN", "ASSIGNED", "IN_PROGRESS", "WAITING_FOR_USER", "REOPENED", "RESOLVED", "CLOSED"]) {
+    currentTicket.status = status;
+    for (const type of [null, "PUBLIC", "INTERNAL", "INVALID"]) {
+      attachment.comment_id = type === null ? null : 22;
+      attachment.comment_type = type;
+      for (const user of [{ id: 3, role: "EMPLOYEE" }, { id: 7, role: "TECHNICIAN" }, { id: 9, role: "ADMIN" }]) {
+        if (type === "INVALID" || (type === "INTERNAL" && user.role === "EMPLOYEE")) {
+          await assert.rejects(service.getAttachmentForDownload(5, 10, user), { statusCode: 404, message: "Attachment not found" });
+        } else {
+          assert.deepEqual(await service.getAttachmentForDownload(5, 10, user), {
+            originalName: "report.txt", mimeType: "text/plain", fileSize: 3, fileUrl: asset.secureUrl,
+          });
+        }
+      }
+    }
+  }
+  attachment.comment_type = "INTERNAL";
+  currentTicket.assigned_to = null;
+  await service.getAttachmentForDownload(5, 10, { id: 8, role: "TECHNICIAN" });
+  currentTicket.assigned_to = 7;
+  for (const user of [{ id: 4, role: "EMPLOYEE" }, { id: 8, role: "TECHNICIAN" }]) {
+    await assert.rejects(service.getAttachmentForDownload(5, 10, user), { statusCode: 404, message: "Ticket not found" });
+  }
+  const admin = { id: 9, role: "ADMIN" };
+  attachment.comment_type = null;
+  await assert.rejects(service.getAttachmentForDownload(5, 10, admin), { statusCode: 404 });
+  attachment.ticket_id = 6;
+  await assert.rejects(service.getAttachmentForDownload(5, 10, admin), { statusCode: 404 });
+  attachment = null;
+  await assert.rejects(service.getAttachmentForDownload(5, 10, admin), { statusCode: 404 });
+  currentTicket = null;
+  await assert.rejects(service.getAttachmentForDownload(5, 10, admin), { statusCode: 404, message: "Ticket not found" });
+  for (const [id, attachmentId, user, status] of [[0, 10, admin, 422], [5, 0, admin, 422], [5, 10, null, 401], [5, 10, { id: 9, role: "OTHER" }, 403]]) {
+    await assert.rejects(service.getAttachmentForDownload(id, attachmentId, user), { statusCode: status });
+  }
+});
+
+test("download controller sends safe binary headers and never fetches denied requests", async (t) => {
+  const controller = require("../src/modules/tickets/ticketAttachment.controller");
+  const info = { originalName: 'report"\r\nInjected: yes\\.txt', mimeType: "text/plain", fileUrl: asset.secureUrl };
+  const authorize = t.mock.method(service, "getAttachmentForDownload", async () => info);
+  const remote = t.mock.method(globalThis, "fetch", async () => new Response("abc"));
+  async function invoke() {
+    const res = { set(headers) { this.headers = headers; return this; }, status(code) { this.code = code; return this; }, send(body) { this.body = body; } };
+    let error;
+    await controller.downloadTicketAttachment({ params: { id: "5", attachmentId: "10" }, user: { id: 3, role: "EMPLOYEE" } }, res, err => { error = err; });
+    return { res, error };
+  }
+  let result = await invoke();
+  assert.equal(result.error, undefined);
+  assert.equal(result.res.code, 200);
+  assert.deepEqual(result.res.body, Buffer.from("abc"));
+  assert.equal(result.res.headers["Content-Length"], "3");
+  assert.equal(result.res.headers["Content-Type"], "text/plain");
+  assert.equal(result.res.headers["X-Content-Type-Options"], "nosniff");
+  assert.equal(result.res.headers["Cache-Control"], "private, no-store");
+  assert.match(result.res.headers["Content-Disposition"], /^attachment; filename="[^"\r\n\\]+"$/);
+  const denied = new Error("denied");
+  authorize.mock.mockImplementation(async () => { throw denied; });
+  result = await invoke();
+  assert.equal(result.error, denied);
+  assert.equal(remote.mock.callCount(), 1);
+  authorize.mock.mockImplementation(async () => info);
+  for (const implementation of [
+    async () => new Response("failed", { status: 404 }),
+    async () => { throw new Error(asset.secureUrl); },
+    async () => new Response("abc", { headers: { "content-length": String(10 * 1024 * 1024 + 1) } }),
+  ]) {
+    remote.mock.mockImplementation(implementation);
+    result = await invoke();
+    assert.equal(result.error.statusCode, 502);
+    assert.equal(result.error.message, "Attachment download failed");
+    assert.equal(result.res.body, undefined);
+  }
+});
+
 test("authorization and workflow failures never upload", async (t) => {
   let currentTicket = { ...ticket };
   t.mock.method(tickets, "findById", async () => currentTicket);
@@ -61,7 +143,7 @@ test("allowed roles/statuses persist trusted metadata and return safe fields", a
       assert.equal(saved.ticketId, "5");
       assert.equal(saved.publicId, asset.publicId);
       assert.equal(result.uploadedBy.id, user.id);
-      assert.deepEqual(Object.keys(result).sort(), ["id", "ticketId", "commentId", "originalName", "fileUrl", "resourceType", "mimeType", "fileSize", "createdAt", "uploadedBy"].sort());
+      assert.deepEqual(Object.keys(result).sort(), ["id", "ticketId", "commentId", "originalName", "downloadPath", "resourceType", "mimeType", "fileSize", "createdAt", "uploadedBy"].sort());
     }
   }
   assert.equal(send.mock.calls[0].arguments[0].folder, "supportflow/tickets/TKT-000005");
@@ -201,6 +283,11 @@ test("route parses one file, ignores spoofed fields and normalizes Multer errors
   }
   assert.equal((await fetch(`${url}/5/attachments`)).status, 401);
   assert.equal(reads.mock.callCount(), 1);
+  for (const suffix of ["0/attachments/10/download", "5/attachments/0/download", "5/attachments/18446744073709551616/download"]) {
+    const response = await fetch(`${url}/${suffix}`, { headers: { authorization: "test" } });
+    assert.equal(response.status, 422);
+  }
+  assert.equal((await fetch(`${url}/5/attachments/10/download`)).status, 401);
 });
 
 test("attachment listing reuses resource access and trusted visibility with safe mapping", async (t) => {
@@ -221,7 +308,7 @@ test("attachment listing reuses resource access and trusted visibility with safe
     assert.deepEqual(read.mock.calls.at(-1).arguments, ["5", { includeInternal }]);
     assert.deepEqual(result.map(value => value.id), [12, 13]);
     assert.deepEqual(result[0], { id: 12, ticketId: 5, commentId: 21, originalName: "report.txt",
-      fileUrl: row.file_url, resourceType: "raw", mimeType: "text/plain", fileSize: 3, createdAt: "now",
+      downloadPath: "/api/v1/tickets/5/attachments/12/download", resourceType: "raw", mimeType: "text/plain", fileSize: 3, createdAt: "now",
       uploadedBy: { id: 7, firstName: "Tech", lastName: "User", email: "tech@example.com", role: "TECHNICIAN", profileImageUrl: null } });
   }
   const before = read.mock.callCount();

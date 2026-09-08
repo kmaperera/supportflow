@@ -137,10 +137,39 @@ async function getTicketAttachments(ticketId, currentUser) {
   return rows.map(mapAttachment);
 }
 
+async function getAttachmentForDownload(ticketId, attachmentId, currentUser) {
+  if (!validId(ticketId)) throw new ApiError(422, "Ticket ID must be a positive integer");
+  if (!validId(attachmentId)) throw new ApiError(422, "Attachment ID must be a positive integer");
+  if (!currentUser || typeof currentUser !== "object" || Array.isArray(currentUser) ||
+      !validId(currentUser.id) || typeof currentUser.role !== "string" || !currentUser.role) {
+    throw new ApiError(401, "Authentication required");
+  }
+  if (!Object.values(USER_ROLES).includes(currentUser.role)) {
+    throw new ApiError(403, "You do not have permission to access this resource");
+  }
+  const ticket = await ticketRepository.findById(ticketId);
+  if (!ticket) throw new ApiError(404, "Ticket not found");
+  const attachment = await attachmentRepository.findById(attachmentId);
+  if (!attachment || String(attachment.ticket_id) !== String(ticket.id)) {
+    throw new ApiError(404, "Attachment not found");
+  }
+  const { includeInternal } = getCommentVisibilityOptions(ticket, currentUser);
+  if (attachment.comment_id !== null &&
+      (attachment.comment_type !== COMMENT_TYPES.PUBLIC &&
+       !(attachment.comment_type === COMMENT_TYPES.INTERNAL && includeInternal))) {
+    throw new ApiError(404, "Attachment not found");
+  }
+  return {
+    originalName: attachment.original_name, mimeType: attachment.mime_type,
+    fileSize: attachment.file_size, fileUrl: attachment.file_url,
+  };
+}
+
 function mapAttachment(attachment) {
   return {
     id: attachment.id, ticketId: attachment.ticket_id, commentId: attachment.comment_id,
-    originalName: attachment.original_name, fileUrl: attachment.file_url,
+    originalName: attachment.original_name,
+    downloadPath: `/api/v1/tickets/${attachment.ticket_id}/attachments/${attachment.id}/download`,
     resourceType: attachment.resource_type, mimeType: attachment.mime_type,
     fileSize: attachment.file_size, createdAt: attachment.created_at,
     uploadedBy: {
@@ -151,4 +180,4 @@ function mapAttachment(attachment) {
   };
 }
 
-module.exports = { uploadTicketAttachment, uploadCommentAttachment, getTicketAttachments };
+module.exports = { uploadTicketAttachment, uploadCommentAttachment, getTicketAttachments, getAttachmentForDownload };

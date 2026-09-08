@@ -24,9 +24,10 @@ async function findById(attachmentId, db = pool) {
       uploader.last_name AS uploader_last_name,
       uploader.email AS uploader_email,
       uploader.role AS uploader_role,
-      uploader.profile_image_url AS uploader_profile_image_url
+      uploader.profile_image_url AS uploader_profile_image_url, c.comment_type
      FROM ticket_attachments AS a
      INNER JOIN users AS uploader ON uploader.id = a.uploaded_by
+     LEFT JOIN ticket_comments AS c ON c.id = a.comment_id AND c.ticket_id = a.ticket_id
      WHERE a.id = ? LIMIT 1`,
     [attachmentId]
   );
