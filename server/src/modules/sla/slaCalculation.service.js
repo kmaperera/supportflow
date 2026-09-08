@@ -69,6 +69,36 @@ function calculateResolutionSla({ createdAt = null, resolutionDueAt = null, reso
   return { result, resolutionDueAt, resolvedAt, resolutionTimeMinutes, differenceMinutes };
 }
 
+function calculateOverallSlaStatus({ responseResult, resolutionResult } = {}) {
+  const validResults = Object.values(SLA_RESULTS);
+  if (!validResults.includes(responseResult) || !validResults.includes(resolutionResult)) {
+    throw new TypeError("Response and resolution results must be valid SLA results");
+  }
+  const responseUntracked = responseResult === SLA_RESULTS.NOT_TRACKED;
+  const resolutionUntracked = resolutionResult === SLA_RESULTS.NOT_TRACKED;
+  // Inconsistent tracking is invalid even when the tracked target was missed.
+  if (responseUntracked !== resolutionUntracked) {
+    throw new RangeError("Inconsistent SLA tracking data");
+  }
+  if (responseUntracked) return SLA_RESULTS.NOT_TRACKED;
+  if (responseResult === SLA_RESULTS.MISSED || resolutionResult === SLA_RESULTS.MISSED) {
+    return SLA_RESULTS.MISSED;
+  }
+  if (responseResult === SLA_RESULTS.MET && resolutionResult === SLA_RESULTS.MET) {
+    return SLA_RESULTS.MET;
+  }
+  return SLA_RESULTS.PENDING;
+}
+
+function calculateTicketSlaStatus({ createdAt, responseDueAt, firstResponseAt, resolutionDueAt, resolvedAt } = {}) {
+  const response = calculateFirstResponseSla({ createdAt, responseDueAt, firstResponseAt });
+  const resolution = calculateResolutionSla({ createdAt, resolutionDueAt, resolvedAt });
+  const status = calculateOverallSlaStatus({
+    responseResult: response.result, resolutionResult: resolution.result,
+  });
+  return { status, response, resolution };
+}
+
 function calculateDeadline(startAt, durationMinutes, durationName, deadlineName) {
   validateStartAt(startAt);
   if (!Number.isSafeInteger(durationMinutes) || durationMinutes <= 0) {
@@ -112,6 +142,8 @@ async function calculateResolutionDeadlineForPriority({ startAt, priorityId, db 
 }
 
 module.exports = {
+  calculateOverallSlaStatus,
+  calculateTicketSlaStatus,
   calculateResolutionSla,
   calculateFirstResponseSla,
   calculateResponseDeadline,
