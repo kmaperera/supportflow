@@ -8,7 +8,8 @@
     "dev": "nodemon src/server.js",
     "seed:admin": "node database/seeds/001_seed_initial_admin.js",
     "seed:categories": "node database/seeds/002_seed_ticket_categories.js",
-    "seed:priorities": "node database/seeds/003_seed_ticket_priorities.js"
+    "seed:priorities": "node database/seeds/003_seed_ticket_priorities.js",
+    "seed:sla": "node database/seeds/004_seed_sla_policies.js"
   },
   "keywords": [],
   "author": "",
