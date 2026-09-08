@@ -60,4 +60,9 @@ const downloadTicketAttachment = asyncHandler(async (req, res) => {
   res.status(200).send(buffer);
 });
 
-module.exports = { uploadTicketAttachment, uploadCommentAttachment, getTicketAttachments, downloadTicketAttachment };
+const deleteTicketAttachment = asyncHandler(async (req, res) => {
+  await service.deleteTicketAttachment(req.params.id, req.params.attachmentId, req.user);
+  res.status(200).json({ success: true, message: "Attachment deleted successfully", data: null });
+});
+
+module.exports = { uploadTicketAttachment, uploadCommentAttachment, getTicketAttachments, downloadTicketAttachment, deleteTicketAttachment };

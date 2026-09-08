@@ -56,4 +56,9 @@ async function findByTicketId(ticketId, options = {}, db = pool) {
   return rows;
 }
 
-module.exports = { createAttachment, findById, findByTicketId };
+async function deleteById(attachmentId, db = pool) {
+  const [result] = await db.query("DELETE FROM ticket_attachments WHERE id = ?", [attachmentId]);
+  return result.affectedRows;
+}
+
+module.exports = { createAttachment, findById, findByTicketId, deleteById };

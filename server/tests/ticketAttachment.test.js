@@ -15,6 +15,91 @@ const file = { originalname: "report.txt", mimetype: "text/plain", size: 3, buff
 const ticket = { id: 5, ticket_number: "TKT-000005", created_by: 3, assigned_to: 7, status: "OPEN" };
 const asset = { publicId: "asset-id", secureUrl: "https://example.com/file", resourceType: "raw", bytes: 3 };
 
+test("deletion role, ownership, visibility and status matrix", async (t) => {
+  const currentTicket = { ...ticket };
+  const attachment = { id: 10, ticket_id: "5", comment_id: null, public_id: "trusted", resource_type: "raw", uploaded_by: 3 };
+  t.mock.method(tickets, "findById", async () => currentTicket);
+  t.mock.method(attachments, "findById", async () => attachment);
+  const events = [];
+  t.mock.method(upload, "deleteCloudinaryAsset", async value => {
+    assert.deepEqual(value, { publicId: "trusted", resourceType: "raw" });
+    events.push("cloud"); return { result: "ok" };
+  });
+  t.mock.method(attachments, "deleteById", async id => { assert.equal(id, "10"); events.push("db"); return 1; });
+  for (const status of ["OPEN", "ASSIGNED", "IN_PROGRESS", "WAITING_FOR_USER", "REOPENED", "RESOLVED", "CLOSED"]) {
+    currentTicket.status = status;
+    for (const type of [null, "PUBLIC", "INTERNAL", "INVALID"]) {
+      attachment.comment_id = type === null ? null : 22;
+      attachment.comment_type = type;
+      for (const uploadedBy of [3, 7, 9]) {
+        attachment.uploaded_by = uploadedBy;
+        for (const user of [{ id: "3", role: "EMPLOYEE" }, { id: "7", role: "TECHNICIAN" }, { id: "9", role: "ADMIN" }]) {
+          events.length = 0;
+          const hidden = type === "INVALID" || (type === "INTERNAL" && user.role === "EMPLOYEE");
+          const inactive = ["RESOLVED", "CLOSED"].includes(status);
+          const notOwner = user.role !== "ADMIN" && String(uploadedBy) !== user.id;
+          if (hidden || inactive || notOwner) {
+            await assert.rejects(service.deleteTicketAttachment("5", "10", user), { statusCode: hidden ? 404 : inactive ? 409 : 404 });
+            assert.deepEqual(events, []);
+          } else {
+            assert.equal(await service.deleteTicketAttachment("5", "10", user), "10");
+            assert.deepEqual(events, ["cloud", "db"]);
+          }
+        }
+      }
+    }
+  }
+  currentTicket.status = "OPEN";
+  attachment.comment_id = null;
+  attachment.uploaded_by = 7;
+  for (const assignedTo of [null, 8]) {
+    currentTicket.assigned_to = assignedTo;
+    await assert.rejects(service.deleteTicketAttachment(5, 10, { id: 7, role: "TECHNICIAN" }), { statusCode: 404 });
+  }
+  attachment.uploaded_by = 4;
+  await assert.rejects(service.deleteTicketAttachment(5, 10, { id: 4, role: "EMPLOYEE" }), { statusCode: 404 });
+});
+
+test("deletion failures preserve rows and surface database failure", async (t) => {
+  let currentTicket = ticket;
+  let attachment = { id: 10, ticket_id: 5, comment_id: null, public_id: "asset", resource_type: "raw" };
+  t.mock.method(tickets, "findById", async () => currentTicket);
+  t.mock.method(attachments, "findById", async () => attachment);
+  const cloudError = new Error("cloud failed");
+  const destroy = t.mock.method(upload, "deleteCloudinaryAsset", async () => { throw cloudError; });
+  const remove = t.mock.method(attachments, "deleteById", async () => 1);
+  const admin = { id: 9, role: "ADMIN" };
+  await assert.rejects(service.deleteTicketAttachment(5, 10, admin), err => err === cloudError);
+  destroy.mock.mockImplementation(async () => ({ result: "failed" }));
+  await assert.rejects(service.deleteTicketAttachment(5, 10, admin), { statusCode: 502 });
+  assert.equal(remove.mock.callCount(), 0);
+  destroy.mock.mockImplementation(async () => ({ result: "ok" }));
+  const dbError = new Error("db failed");
+  remove.mock.mockImplementation(async () => { throw dbError; });
+  await assert.rejects(service.deleteTicketAttachment(5, 10, admin), err => err === dbError);
+  remove.mock.mockImplementation(async () => 0);
+  await assert.rejects(service.deleteTicketAttachment(5, 10, admin), { statusCode: 500 });
+  remove.mock.mockImplementation(async () => 1);
+  destroy.mock.mockImplementation(async () => ({ result: "not found" }));
+  await service.deleteTicketAttachment(5, 10, admin);
+  const before = destroy.mock.callCount();
+  attachment.ticket_id = 6;
+  await assert.rejects(service.deleteTicketAttachment(5, 10, admin), { statusCode: 404 });
+  attachment = null;
+  await assert.rejects(service.deleteTicketAttachment(5, 10, admin), { statusCode: 404 });
+  currentTicket = null;
+  await assert.rejects(service.deleteTicketAttachment(5, 10, admin), { statusCode: 404 });
+  for (const [id, aid, user, status] of [[0, 10, admin, 422], [5, 0, admin, 422], [5, 10, null, 401], [5, 10, { id: 9, role: "OTHER" }, 403]]) {
+    await assert.rejects(service.deleteTicketAttachment(id, aid, user), { statusCode: status });
+  }
+  assert.equal(destroy.mock.callCount(), before);
+  remove.mock.restore();
+  assert.equal(await attachments.deleteById("10", { async query(sql, values) {
+    assert.equal(sql, "DELETE FROM ticket_attachments WHERE id = ?");
+    assert.deepEqual(values, ["10"]); return [{ affectedRows: 1 }];
+  } }), 1);
+});
+
 test("downloads enforce ownership and internal visibility across historical statuses", async (t) => {
   let currentTicket = { ...ticket };
   let attachment = { id: 10, ticket_id: "5", comment_id: null, comment_type: null,
@@ -288,6 +373,18 @@ test("route parses one file, ignores spoofed fields and normalizes Multer errors
     assert.equal(response.status, 422);
   }
   assert.equal((await fetch(`${url}/5/attachments/10/download`)).status, 401);
+  const deletes = t.mock.method(service, "deleteTicketAttachment", async (id, attachmentId, user) => {
+    assert.equal(id, "5"); assert.equal(attachmentId, "10"); assert.equal(user.id, 3);
+  });
+  const deleted = await fetch(`${url}/5/attachments/10`, { method: "DELETE", headers: { authorization: "test" } });
+  assert.equal(deleted.status, 200);
+  assert.deepEqual(await deleted.json(), { success: true, message: "Attachment deleted successfully", data: null });
+  for (const suffix of ["0/attachments/10", "5/attachments/0", "5/attachments/10?publicId=spoofed"]) {
+    const response = await fetch(`${url}/${suffix}`, { method: "DELETE", headers: { authorization: "test" } });
+    assert.equal(response.status, 422);
+  }
+  assert.equal((await fetch(`${url}/5/attachments/10`, { method: "DELETE" })).status, 401);
+  assert.equal(deletes.mock.callCount(), 1);
 });
 
 test("attachment listing reuses resource access and trusted visibility with safe mapping", async (t) => {

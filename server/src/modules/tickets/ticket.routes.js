@@ -7,6 +7,9 @@ const { reopenTicketValidation, closeTicketValidation, resolveTicketValidation, 
 const { getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket } = require("./ticket.controller");
 
 const router = express.Router();
+const { deleteTicketAttachmentValidation } = require("./ticketAttachment.validation");
+const { deleteTicketAttachment } = require("./ticketAttachment.controller");
+router.delete("/:id/attachments/:attachmentId", authenticate, deleteTicketAttachmentValidation, validate, deleteTicketAttachment);
 const { unassignTicketValidation } = require("./ticket.validation");
 const { unassignTicketByAdmin } = require("./ticket.controller");
 const { assignedTicketsValidation } = require("./ticket.validation");

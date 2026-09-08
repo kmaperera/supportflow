@@ -165,6 +165,50 @@ async function getAttachmentForDownload(ticketId, attachmentId, currentUser) {
   };
 }
 
+async function deleteTicketAttachment(ticketId, attachmentId, currentUser) {
+  if (!validId(ticketId)) throw new ApiError(422, "Ticket ID must be a positive integer");
+  if (!validId(attachmentId)) throw new ApiError(422, "Attachment ID must be a positive integer");
+  if (!currentUser || typeof currentUser !== "object" || Array.isArray(currentUser) ||
+      !validId(currentUser.id) || typeof currentUser.role !== "string" || !currentUser.role) {
+    throw new ApiError(401, "Authentication required");
+  }
+  if (!Object.values(USER_ROLES).includes(currentUser.role)) {
+    throw new ApiError(403, "You do not have permission to access this resource");
+  }
+  const ticket = await ticketRepository.findById(ticketId);
+  if (!ticket) throw new ApiError(404, "Ticket not found");
+  const attachment = await attachmentRepository.findById(attachmentId);
+  if (!attachment || String(attachment.ticket_id) !== String(ticket.id)) {
+    throw new ApiError(404, "Attachment not found");
+  }
+  if (attachment.comment_id !== null &&
+      (![COMMENT_TYPES.PUBLIC, COMMENT_TYPES.INTERNAL].includes(attachment.comment_type) ||
+       (attachment.comment_type === COMMENT_TYPES.INTERNAL && currentUser.role === USER_ROLES.EMPLOYEE))) {
+    throw new ApiError(404, "Attachment not found");
+  }
+  if (![TICKET_STATUSES.OPEN, TICKET_STATUSES.ASSIGNED, TICKET_STATUSES.IN_PROGRESS,
+    TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.REOPENED].includes(ticket.status)) {
+    throw new ApiError(409, "Attachments cannot be deleted in the ticket's current status");
+  }
+  const userId = String(currentUser.id);
+  const allowed = currentUser.role === USER_ROLES.ADMIN ||
+    (String(attachment.uploaded_by) === userId &&
+      ((currentUser.role === USER_ROLES.EMPLOYEE && String(ticket.created_by) === userId) ||
+       (currentUser.role === USER_ROLES.TECHNICIAN && ticket.assigned_to != null && String(ticket.assigned_to) === userId)));
+  if (!allowed) throw new ApiError(404, "Attachment not found");
+
+  const result = await cloudinaryUpload.deleteCloudinaryAsset({
+    publicId: attachment.public_id, resourceType: attachment.resource_type,
+  });
+  // An already-absent asset is safe to remove from MySQL, including on a retry.
+  if (!["ok", "not found"].includes(result?.result)) {
+    throw new ApiError(502, "Attachment asset deletion failed");
+  }
+  const affectedRows = await attachmentRepository.deleteById(attachmentId);
+  if (affectedRows !== 1) throw new ApiError(500, "Attachment database deletion failed");
+  return attachmentId;
+}
+
 function mapAttachment(attachment) {
   return {
     id: attachment.id, ticketId: attachment.ticket_id, commentId: attachment.comment_id,
@@ -180,4 +224,4 @@ function mapAttachment(attachment) {
   };
 }
 
-module.exports = { uploadTicketAttachment, uploadCommentAttachment, getTicketAttachments, getAttachmentForDownload };
+module.exports = { uploadTicketAttachment, uploadCommentAttachment, getTicketAttachments, getAttachmentForDownload, deleteTicketAttachment };

@@ -27,4 +27,6 @@ const downloadTicketAttachmentValidation = [
   }).withMessage("Attachment ID must be a positive integer"),
 ];
 
-module.exports = { uploadTicketAttachmentValidation, uploadCommentAttachmentValidation, getTicketAttachmentsValidation, downloadTicketAttachmentValidation };
+const deleteTicketAttachmentValidation = [...downloadTicketAttachmentValidation];
+
+module.exports = { uploadTicketAttachmentValidation, uploadCommentAttachmentValidation, getTicketAttachmentsValidation, downloadTicketAttachmentValidation, deleteTicketAttachmentValidation };
