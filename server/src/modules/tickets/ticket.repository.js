@@ -169,7 +169,7 @@ async function countByCreator(userId, filters = {}) {
   return Number(rows[0].total);
 }
 
-async function updateEmployeeDetails(id, data) {
+async function updateEmployeeDetails(id, data, db = pool) {
   const columns = {
     categoryId: "category_id", priorityId: "priority_id",
     title: "title", description: "description",
@@ -179,7 +179,7 @@ async function updateEmployeeDetails(id, data) {
     throw new TypeError("Only categoryId, priorityId, title, and description may be updated");
   }
   const assignments = entries.map(([key]) => `${columns[key]} = ?`).join(", ");
-  const [result] = await pool.query(
+  const [result] = await db.query(
     `UPDATE tickets SET ${assignments} WHERE id = ?`,
     [...entries.map(([, value]) => value), id]
   );

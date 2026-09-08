@@ -212,11 +212,33 @@ async function getTicketById(ticketId, currentUser) {
   return mapTicket(ticket);
 }
 
+async function calculatePriorityDeadlines(ticket, priorityId, db) {
+  const policy = await slaPolicyService.resolvePolicyForPriority(priorityId, db);
+  return {
+    responseDueAt: slaCalculationService.calculateResponseDeadline({
+      startAt: ticket.created_at, responseTimeMinutes: policy.responseTimeMinutes,
+    }),
+    resolutionDueAt: slaCalculationService.calculateResolutionDeadline({
+      startAt: ticket.created_at, resolutionTimeMinutes: policy.resolutionTimeMinutes,
+    }),
+  };
+}
+
+async function persistPriorityDeadlines(ticketId, deadlines, db) {
+  if (await ticketRepository.updateSlaDeadlines(ticketId, deadlines, db) !== 1) {
+    throw new Error("Ticket SLA deadline update failed");
+  }
+}
+
 async function updateEmployeeTicket(ticketId, currentUserId, updateData) {
   if (!isValidTicketUserId(ticketId) || !isValidTicketUserId(currentUserId)) {
     throw new ApiError(400, "Ticket ID and user ID must be positive integers");
   }
-  const ticket = await ticketRepository.findById(ticketId);
+  const connection = await pool.getConnection();
+  try {
+  await connection.beginTransaction();
+  await ticketRepository.lockById(ticketId, connection);
+  const ticket = await ticketRepository.findById(ticketId, connection);
   if (!ticket || String(ticket.created_by) !== String(currentUserId)) {
     throw new ApiError(404, "Ticket not found");
   }
@@ -232,19 +254,30 @@ async function updateEmployeeTicket(ticketId, currentUserId, updateData) {
   if (!Object.keys(details).length) throw new ApiError(400, "At least one editable field is required");
 
   if (details.categoryId !== undefined && String(details.categoryId) !== String(ticket.category_id)) {
-    const category = await ticketRepository.findCategoryById(details.categoryId);
+    const category = await ticketRepository.findCategoryById(details.categoryId, connection);
     if (!category) throw new ApiError(404, "Ticket category not found");
     if (!category.is_active) throw new ApiError(400, "Selected ticket category is inactive");
   }
   if (details.priorityId !== undefined && String(details.priorityId) !== String(ticket.priority_id)) {
-    const priority = await ticketRepository.findPriorityById(details.priorityId);
+    const priority = await ticketRepository.findPriorityById(details.priorityId, connection);
     if (!priority) throw new ApiError(404, "Ticket priority not found");
     if (!priority.is_active) throw new ApiError(400, "Selected ticket priority is inactive");
   }
-  await ticketRepository.updateEmployeeDetails(ticketId, details);
-  const updated = await ticketRepository.findById(ticketId);
+  const priorityChanged = details.priorityId !== undefined && String(details.priorityId) !== String(ticket.priority_id);
+  const deadlines = priorityChanged ? await calculatePriorityDeadlines(ticket, details.priorityId, connection) : null;
+  await ticketRepository.updateEmployeeDetails(ticketId, details, connection);
+  if (deadlines) await persistPriorityDeadlines(ticketId, deadlines, connection);
+  const updated = await ticketRepository.findById(ticketId, connection);
   if (!updated) throw new ApiError(404, "Ticket not found");
-  return mapTicket(updated);
+  const result = mapTicket(updated);
+  await connection.commit();
+  return result;
+  } catch (error) {
+    try { await connection.rollback(); } catch { /* Preserve original error. */ }
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 async function getAssignmentWorkflowSummary() {
@@ -628,8 +661,10 @@ async function updateTicketPriority(ticketId, priorityId, currentUser) {
       return result;
     }
 
+    const deadlines = await calculatePriorityDeadlines(ticket, priorityId, connection);
     const affectedRows = await ticketRepository.updatePriority(ticketId, priorityId, connection);
     if (affectedRows !== 1) throw new Error("Unexpected ticket priority update count");
+    await persistPriorityDeadlines(ticketId, deadlines, connection);
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Updated ticket could not be retrieved");
     const result = mapTicket(updated);
