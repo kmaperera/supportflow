@@ -1,9 +1,43 @@
 const policyService = require("./slaPolicy.service");
+const { SLA_RESULTS } = require("../../constants/slaResults");
+
+function validateDate(value, name) {
+  if (!(value instanceof Date) || !Number.isFinite(value.getTime())) {
+    throw new TypeError(`${name} must be a valid Date`);
+  }
+}
 
 function validateStartAt(startAt) {
-  if (!(startAt instanceof Date) || !Number.isFinite(startAt.getTime())) {
-    throw new TypeError("startAt must be a valid Date");
+  validateDate(startAt, "startAt");
+}
+
+function calculateFirstResponseSla({ createdAt = null, responseDueAt = null, firstResponseAt = null } = {}) {
+  for (const [name, value] of Object.entries({ createdAt, responseDueAt, firstResponseAt })) {
+    if (value !== null) validateDate(value, name);
   }
+  if (createdAt !== null) {
+    if (responseDueAt !== null && responseDueAt.getTime() < createdAt.getTime()) {
+      throw new RangeError("responseDueAt cannot precede createdAt");
+    }
+    if (firstResponseAt !== null && firstResponseAt.getTime() < createdAt.getTime()) {
+      throw new RangeError("firstResponseAt cannot precede createdAt");
+    }
+  }
+
+  let result = SLA_RESULTS.NOT_TRACKED;
+  let differenceMinutes = null;
+  if (responseDueAt !== null) {
+    result = SLA_RESULTS.PENDING;
+    if (firstResponseAt !== null) {
+      differenceMinutes = (responseDueAt.getTime() - firstResponseAt.getTime()) / 60000;
+      result = firstResponseAt.getTime() <= responseDueAt.getTime() ? SLA_RESULTS.MET : SLA_RESULTS.MISSED;
+    }
+  }
+  // Preserve fractional elapsed minutes; pending results never consult the clock.
+  const responseTimeMinutes = createdAt !== null && firstResponseAt !== null
+    ? (firstResponseAt.getTime() - createdAt.getTime()) / 60000
+    : null;
+  return { result, responseDueAt, firstResponseAt, responseTimeMinutes, differenceMinutes };
 }
 
 function calculateDeadline(startAt, durationMinutes, durationName, deadlineName) {
@@ -49,6 +83,7 @@ async function calculateResolutionDeadlineForPriority({ startAt, priorityId, db 
 }
 
 module.exports = {
+  calculateFirstResponseSla,
   calculateResponseDeadline,
   calculateResponseDeadlineForPriority,
   calculateResolutionDeadline,
