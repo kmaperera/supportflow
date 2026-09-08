@@ -18,6 +18,7 @@ const TICKET_SELECT = `
     t.first_response_at, t.resolved_at, t.closed_at, t.resolution_summary,
     t.sla_response_due_at, t.sla_resolution_due_at,
     t.sla_response_breached, t.sla_resolution_breached,
+    t.response_due_at, t.resolution_due_at,
     t.created_at, t.updated_at
   FROM tickets AS t
   INNER JOIN ticket_categories AS c ON c.id = t.category_id
@@ -64,6 +65,14 @@ async function create(ticketData, db = pool) {
     [createdBy, categoryId, priorityId, title, description]
   );
   return result.insertId;
+}
+
+async function updateSlaDeadlines(ticketId, { responseDueAt, resolutionDueAt }, db = pool) {
+  const [result] = await db.query(
+    "UPDATE tickets SET response_due_at = ?, resolution_due_at = ? WHERE id = ?",
+    [responseDueAt, resolutionDueAt, ticketId]
+  );
+  return result.affectedRows;
 }
 
 async function assignTicketNumber(id, ticketNumber, db = pool) {
@@ -342,7 +351,7 @@ module.exports = { reopenTicket, closeTicket, resolveTicket, updatePriority, upd
   findQueue, countQueue, findAssignedToTechnician, countAssignedToTechnician,
   updateEmployeeDetails,
   findByCreator, countByCreator,
-  getWorkflowSummary, create, assignTicketNumber, findById, findByTicketNumber,
+  getWorkflowSummary, create, updateSlaDeadlines, assignTicketNumber, findById, findByTicketNumber,
   findCategoryById, findPriorityById,
 };
 

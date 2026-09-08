@@ -11,6 +11,8 @@ const ticketRepository = require("./ticket.repository");
 const { generateTicketNumber } = require("../../utils/ticketNumber");
 const ApiError = require("../../utils/ApiError");
 const notificationService = require("../notifications/notification.service");
+const slaPolicyService = require("../sla/slaPolicy.service");
+const slaCalculationService = require("../sla/slaCalculation.service");
 const notificationRealtime = require("../notifications/notificationRealtime.service");
 const { NOTIFICATION_TYPES } = require("../../constants/notificationTypes");
 
@@ -37,6 +39,8 @@ function mapTicket(row) {
     slaResponseDueAt: row.sla_response_due_at, slaResolutionDueAt: row.sla_resolution_due_at,
     slaResponseBreached: Boolean(row.sla_response_breached),
     slaResolutionBreached: Boolean(row.sla_resolution_breached),
+    responseDueAt: row.response_due_at ?? null,
+    resolutionDueAt: row.resolution_due_at ?? null,
     createdAt: row.created_at, updatedAt: row.updated_at,
   };
 }
@@ -68,7 +72,20 @@ async function createTicket(userId, ticketData) {
     if (affectedRows !== 1) throw new Error("Ticket number assignment failed");
     const row = await ticketRepository.findById(ticketId, connection);
     if (!row) throw new Error("Created ticket could not be retrieved");
-    const ticket = mapTicket(row);
+    const policy = await slaPolicyService.resolvePolicyForPriority(row.priority_id, connection);
+    const responseDueAt = slaCalculationService.calculateResponseDeadline({
+      startAt: row.created_at, responseTimeMinutes: policy.responseTimeMinutes,
+    });
+    const resolutionDueAt = slaCalculationService.calculateResolutionDeadline({
+      startAt: row.created_at, resolutionTimeMinutes: policy.resolutionTimeMinutes,
+    });
+    const slaUpdated = await ticketRepository.updateSlaDeadlines(ticketId, {
+      responseDueAt, resolutionDueAt,
+    }, connection);
+    if (slaUpdated !== 1) throw new Error("Ticket SLA deadline update failed");
+    const updated = await ticketRepository.findById(ticketId, connection);
+    if (!updated) throw new Error("Created ticket could not be retrieved");
+    const ticket = mapTicket(updated);
     createdNotifications.push(await notificationService.createNotification({
       userId,
       ticketId: ticket.id,
@@ -839,7 +856,6 @@ async function getTicketStatusHistory(ticketId, currentUser) {
 }
 
 module.exports = { getAssignmentWorkflowSummary, getAssignedTicketsForTechnician, unassignTicketByAdmin, getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket };
-
 
 
 
