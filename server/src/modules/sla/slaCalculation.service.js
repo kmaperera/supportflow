@@ -99,6 +99,31 @@ function calculateTicketSlaStatus({ createdAt, responseDueAt, firstResponseAt, r
   return { status, response, resolution };
 }
 
+function detectResponseBreach({ responseDueAt = null, firstResponseAt = null, now } = {}) {
+  validateDate(now, "now");
+  if (responseDueAt !== null) validateDate(responseDueAt, "responseDueAt");
+  if (firstResponseAt !== null) validateDate(firstResponseAt, "firstResponseAt");
+  if (responseDueAt === null) {
+    return { isTracked: false, isBreached: false, breachedAt: null, overdueMinutes: null };
+  }
+  // Completed responses are evaluated by calculateFirstResponseSla, even if late.
+  if (firstResponseAt !== null || now.getTime() <= responseDueAt.getTime()) {
+    return { isTracked: true, isBreached: false, breachedAt: null, overdueMinutes: 0 };
+  }
+  return {
+    isTracked: true,
+    isBreached: true,
+    breachedAt: responseDueAt,
+    overdueMinutes: (now.getTime() - responseDueAt.getTime()) / 60000,
+  };
+}
+
+function calculateResponseSlaState({ createdAt, responseDueAt, firstResponseAt, now } = {}) {
+  const calculation = calculateFirstResponseSla({ createdAt, responseDueAt, firstResponseAt });
+  const breach = detectResponseBreach({ responseDueAt, firstResponseAt, now });
+  return { calculation, breach };
+}
+
 function calculateDeadline(startAt, durationMinutes, durationName, deadlineName) {
   validateStartAt(startAt);
   if (!Number.isSafeInteger(durationMinutes) || durationMinutes <= 0) {
@@ -142,6 +167,8 @@ async function calculateResolutionDeadlineForPriority({ startAt, priorityId, db 
 }
 
 module.exports = {
+  detectResponseBreach,
+  calculateResponseSlaState,
   calculateOverallSlaStatus,
   calculateTicketSlaStatus,
   calculateResolutionSla,
