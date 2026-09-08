@@ -7,6 +7,7 @@ const { COMMENT_TYPES } = require("../../constants/commentTypes");
 const ApiError = require("../../utils/ApiError");
 const pool = require("../../config/database");
 const notificationService = require("../notifications/notification.service");
+const notificationRealtime = require("../notifications/notificationRealtime.service");
 const { NOTIFICATION_TYPES } = require("../../constants/notificationTypes");
 
 function validId(value) {
@@ -47,8 +48,9 @@ async function createPublicComment(ticketId, content, currentUser) {
     if ([USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN].includes(currentUser.role)) {
       await ticketRepository.setFirstResponseIfUnset(ticketId, connection);
     }
-    await notifyComment(ticket, commentId, COMMENT_TYPES.PUBLIC, currentUser, connection);
+    const notification = await notifyComment(ticket, commentId, COMMENT_TYPES.PUBLIC, currentUser, connection);
     await connection.commit();
+    if (notification) notificationRealtime.emitNotification(notification);
   } catch (error) {
     try {
       await connection.rollback();
@@ -84,8 +86,9 @@ async function createInternalNote(ticketId, content, currentUser) {
       throw new ApiError(409, "Internal notes cannot be added to a closed ticket");
     }
     commentId = await insertComment(ticketId, content, currentUser.id, COMMENT_TYPES.INTERNAL, connection);
-    await notifyComment(ticket, commentId, COMMENT_TYPES.INTERNAL, currentUser, connection);
+    const notification = await notifyComment(ticket, commentId, COMMENT_TYPES.INTERNAL, currentUser, connection);
     await connection.commit();
+    if (notification) notificationRealtime.emitNotification(notification);
   } catch (error) {
     try { await connection.rollback(); } catch {
       // Preserve the original failure if rollback also fails.
@@ -133,7 +136,7 @@ async function notifyComment(ticket, commentId, commentType, currentUser, db) {
       : `Support replied to ${ticket.ticket_number}.`;
   }
   if (userId == null || String(userId) === String(currentUser.id)) return;
-  await notificationService.createNotification({
+  return notificationService.createNotification({
     userId, ticketId: ticket.id, commentId, type, title, message,
   }, db);
 }

@@ -1,3 +1,4 @@
+const realtime = require("../src/modules/notifications/notificationRealtime.service");
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const pool = require("../src/config/database");
@@ -13,6 +14,15 @@ for (const [method, target, verb] of [["resolveTicket", "RESOLVED", "resolved"],
       for (const fail of assignedTo === null ? [false] : [false, true]) {
         test(`${method} ${role} assigned=${assignedTo} ${fail ? "rollback" : "success"}`, async (t) => {
           const events = [];
+      const emissions = [];
+      t.mock.method(realtime, "emitNotifications", rows => {
+        assert.equal(events.at(-1), "commit");
+        emissions.push(...rows); return true;
+      });
+      t.mock.method(realtime, "emitNotification", row => {
+        assert.equal(events.at(-1), "commit");
+        emissions.push(row); return true;
+      });
           const failure = new Error("notification failed");
           const db = { async beginTransaction() { events.push("begin"); }, async commit() { events.push("commit"); },
             async rollback() { events.push("rollback"); }, release() { events.push("release"); } };
@@ -44,6 +54,7 @@ for (const [method, target, verb] of [["resolveTicket", "RESOLVED", "resolved"],
             assert.equal("notification" in result, false);
           }
           assert.equal(notify.mock.callCount(), assignedTo === null ? 0 : 1);
+          assert.equal(emissions.length, fail || assignedTo === null ? 0 : 1);
           assert.deepEqual(events, ["begin", "update", "history", ...(assignedTo === null ? [] : ["notification"]),
             fail ? "rollback" : "commit", "release"]);
         });

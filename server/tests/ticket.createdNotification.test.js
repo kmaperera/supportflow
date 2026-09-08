@@ -1,3 +1,4 @@
+const realtime = require("../src/modules/notifications/notificationRealtime.service");
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const pool = require("../src/config/database");
@@ -8,6 +9,15 @@ const service = require("../src/modules/tickets/ticket.service");
 for (const failureAt of [null, "category", "priority", "insert", "number", "ticketRead", "notificationInsert", "notificationRead", "commit"]) {
   test(`ticket creation notification transaction: ${failureAt || "success"}`, async (t) => {
     const events = [];
+      const emissions = [];
+      t.mock.method(realtime, "emitNotifications", rows => {
+        assert.equal(events.at(-1), "commit");
+        emissions.push(...rows); return true;
+      });
+      t.mock.method(realtime, "emitNotification", row => {
+        assert.equal(events.at(-1), "commit");
+        emissions.push(row); return true;
+      });
     const failure = new Error("simulated failure");
     const step = name => { events.push(name); if (failureAt === name) throw failure; };
     const connection = {
@@ -45,6 +55,7 @@ for (const failureAt of [null, "category", "priority", "insert", "number", "tick
     });
     const promise = service.createTicket("3", { categoryId: 1, priorityId: 1, title: "Title", description: "Description",
       userId: 999, ticketNumber: "spoofed", notificationType: "INTERNAL_NOTE" });
+    assert.equal(emissions.length, 0);
     if (failureAt) {
       await assert.rejects(promise, err => err === failure);
       assert.deepEqual(events.slice(-2), ["rollback", "release"]);
@@ -55,6 +66,7 @@ for (const failureAt of [null, "category", "priority", "insert", "number", "tick
     } else {
       const result = await promise;
       assert.equal(result.ticketNumber, number);
+      assert.equal(emissions.length, 1);
       assert.match(number, /^SUP-\d{4}-000123$/);
       assert.equal(result.status, "OPEN");
       assert.equal("notification" in result, false);

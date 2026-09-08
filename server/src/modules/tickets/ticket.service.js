@@ -11,6 +11,7 @@ const ticketRepository = require("./ticket.repository");
 const { generateTicketNumber } = require("../../utils/ticketNumber");
 const ApiError = require("../../utils/ApiError");
 const notificationService = require("../notifications/notification.service");
+const notificationRealtime = require("../notifications/notificationRealtime.service");
 const { NOTIFICATION_TYPES } = require("../../constants/notificationTypes");
 
 const WORKING_STATUS_LABELS = Object.freeze({
@@ -49,6 +50,7 @@ async function createTicket(userId, ticketData) {
   }
   const { categoryId, priorityId, title, description } = ticketData;
   const connection = await pool.getConnection();
+  const createdNotifications = [];
   try {
     await connection.beginTransaction();
     const category = await ticketRepository.findCategoryById(categoryId, connection);
@@ -67,15 +69,16 @@ async function createTicket(userId, ticketData) {
     const row = await ticketRepository.findById(ticketId, connection);
     if (!row) throw new Error("Created ticket could not be retrieved");
     const ticket = mapTicket(row);
-    await notificationService.createNotification({
+    createdNotifications.push(await notificationService.createNotification({
       userId,
       ticketId: ticket.id,
       commentId: null,
       type: NOTIFICATION_TYPES.TICKET_CREATED,
       title: "Ticket created",
       message: `${ticket.ticketNumber} was created successfully.`,
-    }, connection);
+    }, connection));
     await connection.commit();
+    notificationRealtime.emitNotifications(createdNotifications);
     return ticket;
   } catch (error) {
     try {
@@ -322,6 +325,7 @@ async function selfAssignTicket(ticketId, currentUser) {
   }
 
   const connection = await pool.getConnection();
+  const createdNotifications = [];
   try {
     await connection.beginTransaction();
     if (!(await ticketRepository.lockById(ticketId, connection))) {
@@ -347,12 +351,13 @@ async function selfAssignTicket(ticketId, currentUser) {
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Assigned ticket could not be retrieved");
     const result = mapTicket(updated);
-    await notificationService.createNotification({
+    createdNotifications.push(await notificationService.createNotification({
       userId: currentUser.id, ticketId: ticket.id, commentId: null,
       type: NOTIFICATION_TYPES.TICKET_ASSIGNED, title: "Ticket assigned",
       message: `${ticket.ticket_number} has been assigned to you.`,
-    }, connection);
+    }, connection));
     await connection.commit();
+    notificationRealtime.emitNotifications(createdNotifications);
     return result;
   } catch (error) {
     try {
@@ -377,6 +382,7 @@ async function unassignTicketByAdmin(ticketId, currentAdmin) {
   }
 
   const connection = await pool.getConnection();
+  const createdNotifications = [];
   try {
     await connection.beginTransaction();
     // Serialize with assignment/reassignment before any snapshot reads.
@@ -401,12 +407,13 @@ async function unassignTicketByAdmin(ticketId, currentAdmin) {
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Unassigned ticket could not be retrieved");
     const result = mapTicket(updated);
-    await notificationService.createNotification({
+    createdNotifications.push(await notificationService.createNotification({
       userId: ticket.assigned_to, ticketId: ticket.id, commentId: null,
       type: NOTIFICATION_TYPES.TICKET_UNASSIGNED, title: "Ticket unassigned",
       message: `${ticket.ticket_number} has been unassigned from you.`,
-    }, connection);
+    }, connection));
     await connection.commit();
+    notificationRealtime.emitNotifications(createdNotifications);
     return result;
   } catch (error) {
     try {
@@ -432,6 +439,7 @@ async function assignTicketByAdmin(ticketId, technicianId, currentAdmin) {
   }
 
   const connection = await pool.getConnection();
+  const createdNotifications = [];
   try {
     await connection.beginTransaction();
     // Lock before any snapshot reads; concurrent claims/assignments must wait.
@@ -475,22 +483,23 @@ async function assignTicketByAdmin(ticketId, technicianId, currentAdmin) {
     if (!updated) throw new Error("Assigned ticket could not be retrieved");
     const result = mapTicket(updated);
     const reassignment = ticket.assigned_to !== null;
-    await notificationService.createNotification({
+    createdNotifications.push(await notificationService.createNotification({
       userId: technician.id, ticketId: ticket.id, commentId: null,
       type: reassignment ? NOTIFICATION_TYPES.TICKET_REASSIGNED : NOTIFICATION_TYPES.TICKET_ASSIGNED,
       title: reassignment ? "Ticket reassigned" : "Ticket assigned",
       message: reassignment
         ? `${ticket.ticket_number} has been reassigned to you.`
         : `${ticket.ticket_number} has been assigned to you.`,
-    }, connection);
+    }, connection));
     if (reassignment) {
-      await notificationService.createNotification({
+      createdNotifications.push(await notificationService.createNotification({
         userId: ticket.assigned_to, ticketId: ticket.id, commentId: null,
         type: NOTIFICATION_TYPES.TICKET_REASSIGNED, title: "Ticket reassigned",
         message: `${ticket.ticket_number} has been reassigned to another technician.`,
-      }, connection);
+      }, connection));
     }
     await connection.commit();
+    notificationRealtime.emitNotifications(createdNotifications);
     return result;
   } catch (error) {
     try {
@@ -515,6 +524,7 @@ async function updateTicketStatus(ticketId, newStatus, currentUser) {
   }
 
   const connection = await pool.getConnection();
+  const createdNotifications = [];
   try {
     await connection.beginTransaction();
     // Keep assignment and lifecycle checks valid until the update commits.
@@ -544,12 +554,13 @@ async function updateTicketStatus(ticketId, newStatus, currentUser) {
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Updated ticket could not be retrieved");
     const result = mapTicket(updated);
-    await notificationService.createNotification({
+    createdNotifications.push(await notificationService.createNotification({
       userId: ticket.created_by, ticketId: ticket.id, commentId: null,
       type: NOTIFICATION_TYPES.STATUS_CHANGED, title: "Ticket status updated",
       message: `${ticket.ticket_number} status changed to ${WORKING_STATUS_LABELS[newStatus]}.`,
-    }, connection);
+    }, connection));
     await connection.commit();
+    notificationRealtime.emitNotifications(createdNotifications);
     return result;
   } catch (error) {
     try {
@@ -630,6 +641,7 @@ async function resolveTicket(ticketId, resolutionSummary, currentUser) {
   }
 
   const connection = await pool.getConnection();
+  const createdNotifications = [];
   try {
     await connection.beginTransaction();
     // Keep assignment and lifecycle checks valid until resolution commits.
@@ -662,12 +674,13 @@ async function resolveTicket(ticketId, resolutionSummary, currentUser) {
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Resolved ticket could not be retrieved");
     const result = mapTicket(updated);
-    await notificationService.createNotification({
+    createdNotifications.push(await notificationService.createNotification({
       userId: ticket.created_by, ticketId: ticket.id, commentId: null,
       type: NOTIFICATION_TYPES.TICKET_RESOLVED, title: "Ticket resolved",
       message: `${ticket.ticket_number} has been resolved.`,
-    }, connection);
+    }, connection));
     await connection.commit();
+    notificationRealtime.emitNotifications(createdNotifications);
     return result;
   } catch (error) {
     try {
@@ -692,6 +705,7 @@ async function closeTicket(ticketId, currentUser) {
   }
 
   const connection = await pool.getConnection();
+  const createdNotifications = [];
   try {
     await connection.beginTransaction();
     // Keep ownership and lifecycle checks valid until closure commits.
@@ -714,13 +728,14 @@ async function closeTicket(ticketId, currentUser) {
     if (!updated) throw new Error("Closed ticket could not be retrieved");
     const result = mapTicket(updated);
     if (ticket.assigned_to !== null) {
-      await notificationService.createNotification({
+      createdNotifications.push(await notificationService.createNotification({
         userId: ticket.assigned_to, ticketId: ticket.id, commentId: null,
         type: NOTIFICATION_TYPES.TICKET_CLOSED, title: "Ticket closed",
         message: `${ticket.ticket_number} has been closed.`,
-      }, connection);
+      }, connection));
     }
     await connection.commit();
+    notificationRealtime.emitNotifications(createdNotifications);
     return result;
   } catch (error) {
     try {
@@ -745,6 +760,7 @@ async function reopenTicket(ticketId, currentUser) {
   }
 
   const connection = await pool.getConnection();
+  const createdNotifications = [];
   try {
     await connection.beginTransaction();
     // Keep ownership and lifecycle checks valid until reopening commits.
@@ -767,13 +783,14 @@ async function reopenTicket(ticketId, currentUser) {
     if (!updated) throw new Error("Reopened ticket could not be retrieved");
     const result = mapTicket(updated);
     if (ticket.assigned_to !== null) {
-      await notificationService.createNotification({
+      createdNotifications.push(await notificationService.createNotification({
         userId: ticket.assigned_to, ticketId: ticket.id, commentId: null,
         type: NOTIFICATION_TYPES.TICKET_REOPENED, title: "Ticket reopened",
         message: `${ticket.ticket_number} has been reopened.`,
-      }, connection);
+      }, connection));
     }
     await connection.commit();
+    notificationRealtime.emitNotifications(createdNotifications);
     return result;
   } catch (error) {
     try {

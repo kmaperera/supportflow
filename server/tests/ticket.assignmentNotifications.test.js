@@ -1,3 +1,4 @@
+const realtime = require("../src/modules/notifications/notificationRealtime.service");
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const pool = require("../src/config/database");
@@ -13,6 +14,15 @@ for (const operation of ["self", "assign", "reassign", "noop", "unassign"]) {
   for (let failAt = 0; failAt <= count; failAt++) {
     test(`${operation}: ${failAt ? `notification ${failAt} failure rolls back` : "correct notifications before commit"}`, async (t) => {
       const events = [];
+      const emissions = [];
+      t.mock.method(realtime, "emitNotifications", rows => {
+        assert.equal(events.at(-1), "commit");
+        emissions.push(...rows); return true;
+      });
+      t.mock.method(realtime, "emitNotification", row => {
+        assert.equal(events.at(-1), "commit");
+        emissions.push(row); return true;
+      });
       const failure = new Error("notification failed");
       const connection = { async beginTransaction() { events.push("begin"); },
         async commit() { events.push("commit"); }, async rollback() { events.push("rollback"); }, release() { events.push("release"); } };
@@ -56,6 +66,7 @@ for (const operation of ["self", "assign", "reassign", "noop", "unassign"]) {
         assert.equal(saved.length, count);
         if (operation === "noop") assert.deepEqual(events, ["begin", "commit", "release"]);
       }
+      assert.equal(emissions.length, failAt ? 0 : count);
       const expected = operation === "unassign"
         ? [[7, "TICKET_UNASSIGNED", "Ticket unassigned", "has been unassigned from you."]]
         : operation === "reassign"

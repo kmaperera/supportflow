@@ -1,3 +1,4 @@
+const realtime = require("../src/modules/notifications/notificationRealtime.service");
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const pool = require("../src/config/database");
@@ -12,6 +13,15 @@ for (const role of ["TECHNICIAN", "ADMIN"]) {
     for (const failNotification of [false, true]) {
       test(`${role} ${from} to ${to}: ${failNotification ? "notification failure rolls back" : "one creator notification"}`, async (t) => {
         const events = [];
+      const emissions = [];
+      t.mock.method(realtime, "emitNotifications", rows => {
+        assert.equal(events.at(-1), "commit");
+        emissions.push(...rows); return true;
+      });
+      t.mock.method(realtime, "emitNotification", row => {
+        assert.equal(events.at(-1), "commit");
+        emissions.push(row); return true;
+      });
         const failure = new Error("notification failure");
         const db = { async beginTransaction() { events.push("begin"); }, async commit() { events.push("commit"); },
           async rollback() { events.push("rollback"); }, release() { events.push("release"); } };
@@ -37,6 +47,7 @@ for (const role of ["TECHNICIAN", "ADMIN"]) {
         if (failNotification) await assert.rejects(operation, err => err === failure);
         else assert.equal((await operation).id, 5);
         assert.equal(notify.mock.callCount(), 1);
+        assert.equal(emissions.length, failNotification ? 0 : 1);
         assert.deepEqual(events, ["begin", "status", "history", "notification", failNotification ? "rollback" : "commit", "release"]);
       });
     }
