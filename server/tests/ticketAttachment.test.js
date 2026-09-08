@@ -196,7 +196,7 @@ test("comment attachment role/type/status matrix and trusted metadata", async (t
   t.mock.method(comments, "findById", async () => comment);
   const send = t.mock.method(upload, "uploadAttachmentBuffer", async () => asset);
   let saved;
-  t.mock.method(attachments, "createAttachment", async value => { saved = value; return 15; });
+  const insert = t.mock.method(attachments, "createAttachment", async value => { saved = value; return 15; });
   t.mock.method(attachments, "findById", async () => ({ id: 15, ticket_id: saved.ticketId,
     comment_id: saved.commentId, uploaded_by: saved.uploadedBy, public_id: "hidden" }));
   for (const type of ["PUBLIC", "INTERNAL"]) {
@@ -205,7 +205,9 @@ test("comment attachment role/type/status matrix and trusted metadata", async (t
       currentTicket.status = status;
       for (const user of [{ id: "3", role: "EMPLOYEE" }, { id: "7", role: "TECHNICIAN" }, { id: 9, role: "ADMIN" }]) {
         const before = send.mock.callCount();
-        const hidden = type === "INTERNAL" && user.role === "EMPLOYEE";
+        const insertsBefore = insert.mock.callCount();
+        const hidden = type === "INTERNAL" && (user.role === "EMPLOYEE" ||
+          (user.role === "TECHNICIAN" && status === "OPEN"));
         const blocked = status === "CLOSED" || (type === "PUBLIC" && status === "RESOLVED");
         if (hidden || blocked) {
           await assert.rejects(service.uploadCommentAttachment("5", "22", file, user), {
@@ -215,6 +217,7 @@ test("comment attachment role/type/status matrix and trusted metadata", async (t
               : "Attachments cannot be added in the ticket's current status",
           });
           assert.equal(send.mock.callCount(), before);
+          assert.equal(insert.mock.callCount(), insertsBefore);
         } else {
           const result = await service.uploadCommentAttachment("5", "22", file, user);
           assert.equal(result.commentId, "22");
@@ -250,10 +253,13 @@ test("comment attachment rejects missing, mismatched and unauthorized resources 
   }
   currentTicket.assigned_to = null;
   await assert.rejects(service.uploadCommentAttachment(5, 22, file, { id: 7, role: "TECHNICIAN" }), { statusCode: 404 });
-  for (const value of [null, { ...comment, ticket_id: 6 }, { ...comment, comment_type: "OTHER" }]) {
+  const invalidTypeComment = { ...comment, comment_type: "OTHER" };
+  for (const value of [null, { ...comment, ticket_id: 6 }]) {
     comment = value;
     await assert.rejects(service.uploadCommentAttachment(5, 22, file, admin), { statusCode: 404, message: "Comment not found" });
   }
+  comment = invalidTypeComment;
+  await assert.rejects(service.uploadCommentAttachment(5, 22, file, admin), { statusCode: 500, message: "Invalid comment type" });
   currentTicket = null;
   await assert.rejects(service.uploadCommentAttachment(5, 22, file, admin), { statusCode: 404, message: "Ticket not found" });
   assert.equal(send.mock.callCount(), 0);

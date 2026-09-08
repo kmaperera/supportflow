@@ -1,7 +1,6 @@
 const ticketRepository = require("./ticket.repository");
 const attachmentRepository = require("./ticketAttachment.repository");
 const ticketCommentRepository = require("./ticketComment.repository");
-const commentAccess = require("./ticketCommentAccess.service");
 const { COMMENT_TYPES } = require("../../constants/commentTypes");
 const cloudinaryUpload = require("../../services/cloudinaryUpload.service");
 const { validateAttachmentFile } = require("../../middleware/attachmentValidation");
@@ -57,25 +56,28 @@ async function uploadCommentAttachment(ticketId, commentId, file, currentUser) {
   validateAttachmentFile(file);
   const ticket = await ticketRepository.findById(ticketId);
   if (!ticket) throw new ApiError(404, "Ticket not found");
-  commentAccess.assertCanViewTicketComments(ticket, currentUser);
-  // Read access permits unassigned tickets; attachment writes require assignment.
-  if (currentUser.role === USER_ROLES.TECHNICIAN &&
-      (ticket.assigned_to == null || String(ticket.assigned_to) !== String(currentUser.id))) {
-    throw new ApiError(404, "Ticket not found");
-  }
   const comment = await ticketCommentRepository.findById(commentId);
-  if (!comment || String(comment.ticket_id) !== String(ticket.id)) {
+  if (!comment || Number(comment.ticket_id) !== Number(ticket.id)) {
+    throw new ApiError(404, "Comment not found");
+  }
+  if (![COMMENT_TYPES.PUBLIC, COMMENT_TYPES.INTERNAL].includes(comment.comment_type)) {
+    throw new ApiError(500, "Invalid comment type");
+  }
+  // Authorize writes against the trusted parent comment before uploading any bytes.
+  if (currentUser.role === USER_ROLES.EMPLOYEE &&
+      (comment.comment_type === COMMENT_TYPES.INTERNAL ||
+       Number(ticket.created_by) !== Number(currentUser.id))) {
+    throw new ApiError(404, "Comment not found");
+  }
+  if (currentUser.role === USER_ROLES.TECHNICIAN &&
+      (ticket.assigned_to == null || Number(ticket.assigned_to) !== Number(currentUser.id) ||
+       (comment.comment_type === COMMENT_TYPES.INTERNAL && ticket.status === TICKET_STATUSES.OPEN))) {
     throw new ApiError(404, "Comment not found");
   }
   if (comment.comment_type === COMMENT_TYPES.INTERNAL) {
-    if (!commentAccess.canViewInternalComments(currentUser)) {
-      throw new ApiError(404, "Comment not found");
-    }
     if (ticket.status === TICKET_STATUSES.CLOSED) {
       throw new ApiError(409, "Attachments cannot be added to a closed ticket");
     }
-  } else if (comment.comment_type !== COMMENT_TYPES.PUBLIC) {
-    throw new ApiError(404, "Comment not found");
   }
   const allowedStatuses = [TICKET_STATUSES.OPEN, TICKET_STATUSES.ASSIGNED,
     TICKET_STATUSES.IN_PROGRESS, TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.REOPENED];
