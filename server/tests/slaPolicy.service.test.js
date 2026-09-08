@@ -88,7 +88,7 @@ test("invalid IDs, durations, immutable fields and non-booleans never query", as
   for (const id of [0, -1, 1.5, NaN, Infinity, "abc", "18446744073709551616"]) {
     await assert.rejects(service.getPolicyById(id, db), { statusCode: 422 });
   }
-  for (const value of [0, -1, 1.5, "60", NaN, Infinity, 4294967296]) {
+  for (const value of [0, -1, 1.5, "60", NaN, Infinity, 4294967296, null, undefined, true, {}, []]) {
     await assert.rejects(service.updatePolicy(1, { responseTimeMinutes: value, resolutionTimeMinutes: 480 }, db), { statusCode: 422 });
     await assert.rejects(service.updatePolicy(1, { responseTimeMinutes: 30, resolutionTimeMinutes: value }, db), { statusCode: 422 });
   }

@@ -6,6 +6,8 @@ const policies = require("../src/modules/sla/slaPolicy.service");
 test("response deadlines use elapsed minutes without mutating input", () => {
   for (const [instant, minutes, expected] of [
     ["2026-12-31T23:45:00.123Z", 30, "2027-01-01T00:15:00.123Z"],
+    ["2026-01-01T10:00:00Z", 240, "2026-01-01T14:00:00.000Z"],
+    ["2026-01-01T10:00:00Z", 480, "2026-01-01T18:00:00.000Z"],
     ["2028-02-28T23:00:00Z", 1440, "2028-02-29T23:00:00.000Z"],
     ["2026-09-11T23:00:00Z", 2880, "2026-09-13T23:00:00.000Z"],
     ["2026-09-08T12:00:00+05:30", 60, "2026-09-08T07:30:00.000Z"],

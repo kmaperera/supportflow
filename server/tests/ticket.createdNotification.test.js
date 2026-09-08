@@ -9,6 +9,7 @@ const service = require("../src/modules/tickets/ticket.service");
 
 for (const failureAt of [null, "category", "priority", "insert", "number", "ticketRead", "policy", "slaUpdate", "notificationInsert", "notificationRead", "commit"]) {
   test(`ticket creation notification transaction: ${failureAt || "success"}`, async (t) => {
+    t.mock.timers.enable({ apis: ["Date"], now: new Date("2026-09-08T23:45:00Z") });
     const events = [];
       const emissions = [];
       t.mock.method(realtime, "emitNotifications", rows => {

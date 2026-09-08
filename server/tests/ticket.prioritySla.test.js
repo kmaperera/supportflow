@@ -10,8 +10,12 @@ for (const employee of [false, true]) for (const scenario of ['escalate', 'deesc
     const row = { id: 5, priority_id: 1, created_by: 3, assigned_to: 7, status: 'ASSIGNED',
       created_at: new Date('2020-01-01T10:00:00Z'), first_response_at: new Date('2020-01-01T10:15:00Z'),
       resolved_at: null, response_due_at: null, resolution_due_at: null };
+    const initial = { ...row };
+    const realtime = require('../src/modules/notifications/notificationRealtime.service');
+    t.mock.method(realtime, 'emitNotification', () => assert.fail('unexpected priority notification'));
+    t.mock.method(realtime, 'emitNotifications', () => assert.fail('unexpected priority notifications'));
     const db = { async beginTransaction() {}, async commit() { events.push('commit'); },
-      async rollback() { events.push('rollback'); }, release() {} };
+      async rollback() { Object.assign(row, initial); events.push('rollback'); }, release() {} };
     t.mock.method(pool, 'getConnection', async () => db);
     t.mock.method(repo, 'lockById', async (_, connection) => { assert.equal(connection, db); return row; });
     t.mock.method(repo, 'findById', async (_, connection) => { assert.equal(connection, db); return row; });
@@ -40,6 +44,7 @@ for (const employee of [false, true]) for (const scenario of ['escalate', 'deesc
         e.message === (scenario === 'priorityNoRows' ? 'Unexpected ticket priority update count' : 'Ticket SLA deadline update failed'));
       if (scenario === 'priorityNoRows') assert.equal(update.mock.callCount(), 0);
       assert.equal(events.includes('commit'), false); assert.equal(events.at(-1), 'rollback');
+      assert.deepEqual(row, initial);
     } else {
       const result = await call;
       assert.equal(result.firstResponseAt, row.first_response_at);

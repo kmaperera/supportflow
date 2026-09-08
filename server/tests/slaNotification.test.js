@@ -43,8 +43,26 @@ test('warnings route per target and recipient, injected transactions never emit'
   await sla.createResponseWarningNotification({ ticket: { ...ticket, assignedTo: 8 }, now, db });
   assert.deepEqual(rows.map(r => r.dedupeKey), ['sla-warning:response:25:7', 'sla-warning:resolution:25:7', 'sla-warning:response:25:8']);
   assert.deepEqual(rows.map(r => r.userId), [7, 7, 8]);
+  assert.deepEqual(rows[0], { userId: 7, ticketId: 25, commentId: null, type: 'SLA_WARNING',
+    title: 'Response SLA approaching', message: 'SUP-25 is approaching its first-response SLA deadline.',
+    dedupeKey: 'sla-warning:response:25:7' });
+  assert.deepEqual(rows[1], { userId: 7, ticketId: 25, commentId: null, type: 'SLA_WARNING',
+    title: 'Resolution SLA approaching', message: 'SUP-25 is approaching its resolution SLA deadline.',
+    dedupeKey: 'sla-warning:resolution:25:7' });
   for (const changed of [{ assignedTo: null }, { firstResponseAt: now }, { responseDueAt: now }]) {
     assert.equal(await sla.createResponseWarningNotification({ ticket: { ...ticket, ...changed }, now, db }), null);
+  }
+});
+
+test('both targets skip notifications outside their active warning window', async t => {
+  t.mock.method(notifications, 'createNotification', () => assert.fail('unexpected notification'));
+  for (const [method, completion] of [['createResponseWarningNotification', 'firstResponseAt'],
+    ['createResolutionWarningNotification', 'resolvedAt']]) {
+    for (const [changed, instant] of [[{}, '2020-01-01T10:00:00Z'], [{}, '2020-01-01T11:00:00Z'],
+      [{}, '2020-01-01T11:00:00.001Z'], [{ assignedTo: null }, '2020-01-01T10:50:00Z'],
+      [{ [completion]: now }, '2020-01-01T10:50:00Z']]) {
+      assert.equal(await sla[method]({ ticket: { ...ticket, ...changed }, now: new Date(instant), db: {} }), null);
+    }
   }
 });
 

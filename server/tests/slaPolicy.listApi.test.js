@@ -14,6 +14,7 @@ cloudinaryVariables.forEach((name, index) => {
 });
 
 test("SLA listing authenticates, requires the database ADMIN role, and returns mapped policies read-only", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: new Date("2026-01-01T10:00:00Z") });
   const previousSecret = process.env.JWT_ACCESS_SECRET;
   process.env.JWT_ACCESS_SECRET = "sla-list-api-test-secret";
   t.after(() => {
@@ -73,6 +74,7 @@ test("SLA listing authenticates, requires the database ADMIN role, and returns m
 });
 
 test("SLA updates validate before SQL and update only durations, with refreshed GET output", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: new Date("2026-01-01T10:00:00Z") });
   const previousSecret = process.env.JWT_ACCESS_SECRET;
   process.env.JWT_ACCESS_SECRET = "sla-update-api-test-secret";
   t.after(() => {

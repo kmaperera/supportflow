@@ -34,13 +34,30 @@ test("historical and completed targets have no active warning", () => {
 
 test("wrappers delegate configurable percentage and completion fields", () => {
   const now = new Date("2020-01-01T10:50:00Z");
-  for (const warningThresholdPercent of [10, 20, 100, 16.5]) {
+  for (const warningThresholdPercent of [10, 20, 50, 100, 16.5]) {
     const expected = sla.calculateSlaWarning({ startAt, dueAt, now, warningThresholdPercent });
     assert.deepEqual(sla.calculateResponseSlaWarning({ createdAt: startAt, responseDueAt: dueAt, now, warningThresholdPercent }), expected);
     assert.deepEqual(sla.calculateResolutionSlaWarning({ createdAt: startAt, resolutionDueAt: dueAt, now, warningThresholdPercent }), expected);
   }
   assert.equal(sla.calculateResponseSlaWarning({ createdAt: startAt, responseDueAt: dueAt, firstResponseAt: now, now }).isWarning, false);
   assert.equal(sla.calculateResolutionSlaWarning({ createdAt: startAt, resolutionDueAt: dueAt, resolvedAt: now, now }).isWarning, false);
+});
+
+test("30-minute window defaults to six warning minutes", () => {
+  const dueAt = new Date("2020-01-01T10:30:00Z");
+  for (const [remaining, isWarning] of [[7, false], [6, true], [5, true], [0.5, true], [0, false], [-1, false]]) {
+    const result = sla.calculateSlaWarning({ startAt, dueAt,
+      now: new Date(dueAt.getTime() - remaining * 60000) });
+    assert.deepEqual(result, { isTracked: true, isWarning, thresholdPercent: 20,
+      totalMinutes: 30, remainingMinutes: remaining, warningThresholdMinutes: 6 });
+  }
+  for (const percent of [10, 50, 100]) {
+    const threshold = 30 * percent / 100;
+    const now = new Date(dueAt.getTime() - threshold * 60000);
+    assert.equal(sla.calculateSlaWarning({ startAt, dueAt, now, warningThresholdPercent: percent }).isWarning, true);
+    assert.equal(sla.calculateSlaWarning({ startAt, dueAt, now: new Date(now.getTime() - 1),
+      warningThresholdPercent: percent }).isWarning, false);
+  }
 });
 
 test("invalid thresholds, dates and impossible windows fail even for inactive warnings", () => {
