@@ -28,7 +28,12 @@ function validateNotification(notification) {
   if (typeof message !== "string" || !message.trim()) {
     throw new ApiError(422, "Notification message is required");
   }
-  return { userId, ticketId, commentId, type, title: title.trim(), message: message.trim() };
+  const { dedupeKey } = notification;
+  if (dedupeKey != null && (typeof dedupeKey !== "string" || !dedupeKey.trim() || dedupeKey.length > 191)) {
+    throw new ApiError(422, "Notification dedupe key must be 1 to 191 characters");
+  }
+  return { userId, ticketId, commentId, type, title: title.trim(), message: message.trim(),
+    ...(dedupeKey != null ? { dedupeKey } : {}) };
 }
 
 function mapNotification(row) {
@@ -49,6 +54,7 @@ async function getCreatedNotification(id, db) {
 async function createNotification(notification, db) {
   const data = validateNotification(notification);
   const id = await repository.createNotification(data, db);
+  if (id === null) return null;
   return getCreatedNotification(id, db);
 }
 

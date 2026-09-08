@@ -6,13 +6,21 @@ const NOTIFICATION_SELECT = `
   FROM notifications
 `;
 
-async function createNotification({ userId, ticketId = null, commentId = null, type, title, message }, db = pool) {
+async function createNotification({ userId, ticketId = null, commentId = null, type, title, message, dedupeKey = null }, db = pool) {
+  try {
   const [result] = await db.query(
-    `INSERT INTO notifications (user_id, ticket_id, comment_id, type, title, message)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [userId, ticketId, commentId, type, title, message]
+    `INSERT INTO notifications (user_id, ticket_id, comment_id, type, title, message, dedupe_key)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [userId, ticketId, commentId, type, title, message, dedupeKey]
   );
   return result.insertId;
+  } catch (error) {
+    if (dedupeKey !== null && error.code === "ER_DUP_ENTRY" &&
+        /for key ['`](?:notifications\.)?uq_notifications_dedupe_key['`]/.test(error.sqlMessage || error.message || "")) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 async function createNotifications(notifications, db = pool) {
@@ -20,7 +28,8 @@ async function createNotifications(notifications, db = pool) {
   // Individual inserts return exact IDs without assuming contiguous AUTO_INCREMENT values.
   const ids = [];
   for (const notification of notifications) {
-    ids.push(await createNotification(notification, db));
+    const id = await createNotification(notification, db);
+    if (id !== null) ids.push(id);
   }
   return ids;
 }
