@@ -7,4 +7,13 @@ const getUserNotifications = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Notifications retrieved successfully", data });
 });
 
-module.exports = { getUserNotifications };
+const markNotificationAsRead = asyncHandler(async (req, res) => {
+  const notification = await service.markNotificationAsRead(req.params.notificationId, req.user.id);
+  res.status(200).json({
+    success: true,
+    message: "Notification marked as read successfully",
+    data: { notification },
+  });
+});
+
+module.exports = { getUserNotifications, markNotificationAsRead };

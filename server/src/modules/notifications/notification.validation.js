@@ -1,4 +1,4 @@
-const { query } = require("express-validator");
+const { query, param } = require("express-validator");
 
 const getNotificationsValidation = [
   query().custom((value) => {
@@ -17,4 +17,11 @@ const getNotificationsValidation = [
     .withMessage("unreadOnly must be true or false"),
 ];
 
-module.exports = { getNotificationsValidation };
+const markNotificationAsReadValidation = [
+  param("notificationId").custom((value) => {
+    if (typeof value !== "string" || !/^[1-9]\d*$/.test(value) || value.length > 20) return false;
+    return BigInt(value) <= 18446744073709551615n;
+  }).withMessage("Notification ID must be a positive integer"),
+];
+
+module.exports = { getNotificationsValidation, markNotificationAsReadValidation };
