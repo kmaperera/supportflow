@@ -6,6 +6,7 @@ const controller = require("./notification.controller");
 
 const router = express.Router();
 router.get("/", authenticate, getNotificationsValidation, validate, controller.getUserNotifications);
+router.patch("/read-all", authenticate, controller.markAllNotificationsAsRead);
 router.patch("/:notificationId/read", authenticate, markNotificationAsReadValidation, validate, controller.markNotificationAsRead);
 
 module.exports = router;

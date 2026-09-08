@@ -16,4 +16,13 @@ const markNotificationAsRead = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { getUserNotifications, markNotificationAsRead };
+const markAllNotificationsAsRead = asyncHandler(async (req, res) => {
+  const data = await service.markAllNotificationsAsRead(req.user.id);
+  res.status(200).json({
+    success: true,
+    message: "All notifications marked as read successfully",
+    data,
+  });
+});
+
+module.exports = { getUserNotifications, markNotificationAsRead, markAllNotificationsAsRead };
