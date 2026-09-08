@@ -17,7 +17,7 @@ function mapSlaPolicy(row) {
     id: row.id, priorityId: row.priority_id, priorityName: row.priority_name,
     responseTimeMinutes: row.response_time_minutes,
     resolutionTimeMinutes: row.resolution_time_minutes,
-    isActive: Boolean(row.is_active), createdAt: row.created_at, updatedAt: row.updated_at,
+    isActive: [true, 1, "1"].includes(row.is_active), createdAt: row.created_at, updatedAt: row.updated_at,
   };
 }
 
@@ -48,9 +48,7 @@ async function getPolicyByPriorityName(priorityName, db) {
 }
 
 async function getActivePolicyByPriorityId(priorityId, db) {
-  const policy = await getPolicyByPriorityId(priorityId, db);
-  if (!policy.isActive) throw new ApiError(409, "Active SLA policy not available for this priority");
-  return policy;
+  return resolvePolicyForPriority(priorityId, db);
 }
 
 async function resolvePolicyForPriority(priorityId, db) {
@@ -60,7 +58,7 @@ async function resolvePolicyForPriority(priorityId, db) {
   const row = await repository.findByPriorityId(priorityId, db);
   if (!row) throw new ApiError(409, "SLA policy is not configured for this priority");
   const policy = mapSlaPolicy(row);
-  if (![true, 1, "1"].includes(row.is_active)) {
+  if (!policy.isActive) {
     throw new ApiError(409, "Active SLA policy is not available for this priority");
   }
   const durations = [policy.responseTimeMinutes, policy.resolutionTimeMinutes];

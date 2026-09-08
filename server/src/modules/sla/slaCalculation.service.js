@@ -11,18 +11,22 @@ function validateStartAt(startAt) {
   validateDate(startAt, "startAt");
 }
 
-function calculateFirstResponseSla({ createdAt = null, responseDueAt = null, firstResponseAt = null } = {}) {
-  for (const [name, value] of Object.entries({ createdAt, responseDueAt, firstResponseAt })) {
+function validateCompletionTiming(createdAt, dueAt, completedAt, dueName, completedName) {
+  for (const [name, value] of [["createdAt", createdAt], [dueName, dueAt], [completedName, completedAt]]) {
     if (value !== null) validateDate(value, name);
   }
   if (createdAt !== null) {
-    if (responseDueAt !== null && responseDueAt.getTime() < createdAt.getTime()) {
-      throw new RangeError("responseDueAt cannot precede createdAt");
+    if (dueAt !== null && dueAt.getTime() <= createdAt.getTime()) {
+      throw new RangeError(`${dueName} must be after createdAt`);
     }
-    if (firstResponseAt !== null && firstResponseAt.getTime() < createdAt.getTime()) {
-      throw new RangeError("firstResponseAt cannot precede createdAt");
+    if (completedAt !== null && completedAt.getTime() < createdAt.getTime()) {
+      throw new RangeError(`${completedName} cannot precede createdAt`);
     }
   }
+}
+
+function calculateFirstResponseSla({ createdAt = null, responseDueAt = null, firstResponseAt = null } = {}) {
+  validateCompletionTiming(createdAt, responseDueAt, firstResponseAt, "responseDueAt", "firstResponseAt");
 
   let result = SLA_RESULTS.NOT_TRACKED;
   let differenceMinutes = null;
@@ -41,17 +45,7 @@ function calculateFirstResponseSla({ createdAt = null, responseDueAt = null, fir
 }
 
 function calculateResolutionSla({ createdAt = null, resolutionDueAt = null, resolvedAt = null } = {}) {
-  for (const [name, value] of Object.entries({ createdAt, resolutionDueAt, resolvedAt })) {
-    if (value !== null) validateDate(value, name);
-  }
-  if (createdAt !== null) {
-    if (resolutionDueAt !== null && resolutionDueAt.getTime() < createdAt.getTime()) {
-      throw new RangeError("resolutionDueAt cannot precede createdAt");
-    }
-    if (resolvedAt !== null && resolvedAt.getTime() < createdAt.getTime()) {
-      throw new RangeError("resolvedAt cannot precede createdAt");
-    }
-  }
+  validateCompletionTiming(createdAt, resolutionDueAt, resolvedAt, "resolutionDueAt", "resolvedAt");
 
   let result = SLA_RESULTS.NOT_TRACKED;
   let differenceMinutes = null;
@@ -93,6 +87,14 @@ function calculateOverallSlaStatus({ responseResult, resolutionResult } = {}) {
 function calculateTicketSlaStatus({ createdAt, responseDueAt, firstResponseAt, resolutionDueAt, resolvedAt } = {}) {
   const response = calculateFirstResponseSla({ createdAt, responseDueAt, firstResponseAt });
   const resolution = calculateResolutionSla({ createdAt, resolutionDueAt, resolvedAt });
+  if (response.responseDueAt !== null && resolution.resolutionDueAt !== null &&
+      resolution.resolutionDueAt.getTime() < response.responseDueAt.getTime()) {
+    throw new RangeError("resolutionDueAt cannot precede responseDueAt");
+  }
+  if (response.firstResponseAt !== null && resolution.resolvedAt !== null &&
+      resolution.resolvedAt.getTime() < response.firstResponseAt.getTime()) {
+    throw new RangeError("resolvedAt cannot precede firstResponseAt");
+  }
   const status = calculateOverallSlaStatus({
     responseResult: response.result, resolutionResult: resolution.result,
   });

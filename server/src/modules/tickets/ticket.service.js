@@ -265,7 +265,10 @@ async function updateEmployeeTicket(ticketId, currentUserId, updateData) {
   }
   const priorityChanged = details.priorityId !== undefined && String(details.priorityId) !== String(ticket.priority_id);
   const deadlines = priorityChanged ? await calculatePriorityDeadlines(ticket, details.priorityId, connection) : null;
-  await ticketRepository.updateEmployeeDetails(ticketId, details, connection);
+  const affectedRows = await ticketRepository.updateEmployeeDetails(ticketId, details, connection);
+  if (priorityChanged && affectedRows !== 1) {
+    throw new Error("Unexpected ticket priority update count");
+  }
   if (deadlines) await persistPriorityDeadlines(ticketId, deadlines, connection);
   const updated = await ticketRepository.findById(ticketId, connection);
   if (!updated) throw new ApiError(404, "Ticket not found");

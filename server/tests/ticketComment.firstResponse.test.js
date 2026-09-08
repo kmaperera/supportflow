@@ -90,6 +90,10 @@ test("invalid content rolls back without inserting or setting the timestamp", as
 });
 
 test("internal notes use a transaction without updating first response", async (t) => {
+  t.mock.method(require("../src/modules/users/user.repository"), "findById", async id => {
+    assert.equal(id, 7);
+    return { id: 7, role: "TECHNICIAN" };
+  });
   const acquire = t.mock.method(pool, "getConnection", async () => ({ async beginTransaction() {}, async commit() {}, async rollback() {}, release() {} }));
   t.mock.method(tickets, "lockById", async () => ({ id: 5 }));
   const timestamp = t.mock.method(tickets, "setFirstResponseIfUnset", async () => { throw new Error("Unexpected timestamp update"); });
