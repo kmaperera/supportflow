@@ -100,27 +100,41 @@ function calculateTicketSlaStatus({ createdAt, responseDueAt, firstResponseAt, r
 }
 
 function detectResponseBreach({ responseDueAt = null, firstResponseAt = null, now } = {}) {
+  return detectPendingDeadlineBreach(responseDueAt, firstResponseAt, now, "responseDueAt", "firstResponseAt");
+}
+
+function detectResolutionBreach({ resolutionDueAt = null, resolvedAt = null, now } = {}) {
+  return detectPendingDeadlineBreach(resolutionDueAt, resolvedAt, now, "resolutionDueAt", "resolvedAt");
+}
+
+function detectPendingDeadlineBreach(dueAt, completedAt, now, dueName, completedName) {
   validateDate(now, "now");
-  if (responseDueAt !== null) validateDate(responseDueAt, "responseDueAt");
-  if (firstResponseAt !== null) validateDate(firstResponseAt, "firstResponseAt");
-  if (responseDueAt === null) {
+  if (dueAt !== null) validateDate(dueAt, dueName);
+  if (completedAt !== null) validateDate(completedAt, completedName);
+  if (dueAt === null) {
     return { isTracked: false, isBreached: false, breachedAt: null, overdueMinutes: null };
   }
-  // Completed responses are evaluated by calculateFirstResponseSla, even if late.
-  if (firstResponseAt !== null || now.getTime() <= responseDueAt.getTime()) {
+  // Completed performance is evaluated separately, even when completion was late.
+  if (completedAt !== null || now.getTime() <= dueAt.getTime()) {
     return { isTracked: true, isBreached: false, breachedAt: null, overdueMinutes: 0 };
   }
   return {
     isTracked: true,
     isBreached: true,
-    breachedAt: responseDueAt,
-    overdueMinutes: (now.getTime() - responseDueAt.getTime()) / 60000,
+    breachedAt: dueAt,
+    overdueMinutes: (now.getTime() - dueAt.getTime()) / 60000,
   };
 }
 
 function calculateResponseSlaState({ createdAt, responseDueAt, firstResponseAt, now } = {}) {
   const calculation = calculateFirstResponseSla({ createdAt, responseDueAt, firstResponseAt });
   const breach = detectResponseBreach({ responseDueAt, firstResponseAt, now });
+  return { calculation, breach };
+}
+
+function calculateResolutionSlaState({ createdAt, resolutionDueAt, resolvedAt, now } = {}) {
+  const calculation = calculateResolutionSla({ createdAt, resolutionDueAt, resolvedAt });
+  const breach = detectResolutionBreach({ resolutionDueAt, resolvedAt, now });
   return { calculation, breach };
 }
 
@@ -167,6 +181,8 @@ async function calculateResolutionDeadlineForPriority({ startAt, priorityId, db 
 }
 
 module.exports = {
+  detectResolutionBreach,
+  calculateResolutionSlaState,
   detectResponseBreach,
   calculateResponseSlaState,
   calculateOverallSlaStatus,
