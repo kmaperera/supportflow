@@ -14,6 +14,13 @@ const { getAssignedTicketsForTechnician } = require("./ticket.controller");
 const { getAssignmentWorkflowSummary } = require("./ticket.controller");
 const { createPublicCommentValidation, createInternalNoteValidation, getTicketCommentsValidation } = require("./ticketComment.validation");
 const { createPublicComment, createInternalNote, getTicketComments } = require("./ticketComment.controller");
+const { uploadSingleAttachment, handleMulterError } = require("../../middleware/upload");
+const { validateSingleAttachment } = require("../../middleware/attachmentValidation");
+const { uploadTicketAttachmentValidation } = require("./ticketAttachment.validation");
+const { uploadTicketAttachment } = require("./ticketAttachment.controller");
+
+router.post("/:id/attachments", authenticate, uploadSingleAttachment, handleMulterError,
+  validateSingleAttachment, uploadTicketAttachmentValidation, validate, uploadTicketAttachment);
 router.get("/my", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE), getMyTicketsValidation, validate, getMyTickets);
 router.post("/", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE), createTicketValidation, validate, createTicket);
 
