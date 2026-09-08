@@ -1,6 +1,7 @@
 const { Server } = require("socket.io");
 const { verifyAccessToken } = require("../utils/jwt");
 const userRepository = require("../modules/users/user.repository");
+const { USER_ROLES } = require("../constants/roles");
 
 let io;
 let httpServer;
@@ -26,7 +27,10 @@ function initializeSocket(server) {
         throw new Error("Invalid identity");
       }
       const user = await userRepository.findById(userId);
-      if (!user || !user.is_active) throw new Error("Unavailable user");
+      if (!user || ![true, 1, "1"].includes(user.is_active) ||
+          String(user.id) !== userId || !Object.values(USER_ROLES).includes(user.role)) {
+        throw new Error("Unavailable user");
+      }
       socket.user = { id: user.id, role: user.role };
     } catch {
       return next(new Error("Authentication error"));

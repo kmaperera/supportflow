@@ -6,6 +6,24 @@ const tickets = require("../src/modules/tickets/ticket.repository");
 const comments = require("../src/modules/tickets/ticketComment.repository");
 const notifications = require("../src/modules/notifications/notification.service");
 const service = require("../src/modules/tickets/ticketComment.service");
+const users = require("../src/modules/users/user.repository");
+
+test("stale employee assignee cannot receive an INTERNAL note notification", async (t) => {
+  const events = [];
+  const db = { async beginTransaction() {}, async commit() { events.push("commit"); },
+    async rollback() { events.push("rollback"); }, release() {} };
+  t.mock.method(pool, "getConnection", async () => db);
+  t.mock.method(tickets, "lockById", async () => ({ id: 5 }));
+  t.mock.method(tickets, "findById", async () => ({ id: 5, created_by: 3, assigned_to: 7, status: "ASSIGNED" }));
+  t.mock.method(comments, "createComment", async () => 22);
+  t.mock.method(users, "findById", async () => ({ id: 7, role: "EMPLOYEE" }));
+  const notify = t.mock.method(notifications, "createNotification", async () => {});
+  const emit = t.mock.method(realtime, "emitNotification", () => {});
+  await assert.rejects(service.createInternalNote(5, "Internal note", { id: 1, role: "ADMIN" }), { statusCode: 500 });
+  assert.deepEqual(events, ["rollback"]);
+  assert.equal(notify.mock.callCount(), 0);
+  assert.equal(emit.mock.callCount(), 0);
+});
 
 for (const [role, type, assignedTo, recipient] of [
   ["EMPLOYEE", "PUBLIC", 7, 7], ["EMPLOYEE", "PUBLIC", null, null],
@@ -29,6 +47,9 @@ for (const [role, type, assignedTo, recipient] of [
       const db = { async beginTransaction() { events.push("begin"); }, async commit() { events.push("commit"); },
         async rollback() { events.push("rollback"); }, release() { events.push("release"); } };
       t.mock.method(pool, "getConnection", async () => db);
+      t.mock.method(users, "findById", async (id, connection) => {
+        assert.equal(connection, db); return { id, role: "TECHNICIAN" };
+      });
       t.mock.method(tickets, "lockById", async (id, connection) => { assert.equal(connection, db); return { id }; });
       t.mock.method(tickets, "findById", async (id, connection) => {
         assert.equal(connection, db);

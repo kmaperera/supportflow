@@ -1,5 +1,6 @@
 const ticketRepository = require("./ticket.repository");
 const ticketCommentRepository = require("./ticketComment.repository");
+const userRepository = require("../users/user.repository");
 const { getCommentVisibilityOptions } = require("./ticketCommentAccess.service");
 const { USER_ROLES } = require("../../constants/roles");
 const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
@@ -124,6 +125,12 @@ async function notifyComment(ticket, commentId, commentType, currentUser, db) {
     userId = ticket.assigned_to;
     // Never persist internal-note metadata in the creator's notification feed.
     if (String(userId) === String(ticket.created_by)) return;
+    // A stale assignment must never send internal activity to a non-technician.
+    const recipient = await userRepository.findById(userId, db);
+    if (!recipient || recipient.role !== USER_ROLES.TECHNICIAN ||
+        String(recipient.id) !== String(userId)) {
+      throw new ApiError(500, "Internal notification recipient is inconsistent");
+    }
     type = NOTIFICATION_TYPES.INTERNAL_NOTE;
     title = "New internal note";
     message = `A new internal note was added to ${ticket.ticket_number}.`;

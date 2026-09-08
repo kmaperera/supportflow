@@ -12,6 +12,7 @@ test("socket initialization, authentication and private rooms use trusted identi
   const env = { CLIENT_URL: "http://localhost:5173", NODE_ENV: "test" };
   const context = { module: { exports: {} }, process: { env }, console,
     require(name) {
+      if (name.includes("constants/roles")) return require("../src/constants/roles");
       if (name === "socket.io") return { Server: class {
         constructor(server, config) { options = config; count++; }
         use(fn) { middleware = fn; }
@@ -68,7 +69,10 @@ test("socket initialization, authentication and private rooms use trusted identi
     assert.equal((await authenticate()).error.message, "Authentication error");
   }
   decoded = { sub: "5" };
-  for (const unavailable of [null, { id: 5, is_active: false }]) {
+  for (const unavailable of [null, { id: 5, is_active: false },
+    { id: 5, role: "EMPLOYEE", is_active: "0" },
+    { id: 6, role: "EMPLOYEE", is_active: true },
+    { id: 5, role: "UNKNOWN", is_active: true }]) {
     user = unavailable;
     assert.equal((await authenticate()).error.message, "Authentication error");
   }
