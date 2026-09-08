@@ -9,6 +9,7 @@ const ticketRoutes = require("./modules/tickets/ticket.routes");
 const userRoutes = require("./modules/users/user.routes");
 const authRoutes = require("./modules/auth/auth.routes");
 const healthRoutes = require("./modules/health/health.routes");
+const notificationRoutes = require("./modules/notifications/notification.routes");
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use("/api/v1/health", healthRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/tickets", ticketRoutes);
+app.use("/api/v1/notifications", notificationRoutes);
 
 app.use((req, res, next) => {
   next(new ApiError(404, `Route ${req.path} not found`));

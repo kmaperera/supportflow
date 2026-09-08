@@ -73,4 +73,35 @@ async function getUnreadCount(userId, db) {
   return repository.countUnreadByUserId(userId, db);
 }
 
-module.exports = { createNotification, createNotifications, getNotificationById, getUnreadCount, mapNotification };
+async function getUserNotifications(userId, { page = 1, limit = 20, unreadOnly = false } = {}) {
+  validateId(userId, "User ID");
+  for (const [value, label] of [[page, "Page"], [limit, "Limit"]]) {
+    if (!["string", "number"].includes(typeof value) || !/^[1-9]\d*$/.test(String(value)) ||
+        !Number.isSafeInteger(Number(value))) {
+      throw new ApiError(422, `${label} must be a positive integer`);
+    }
+  }
+  page = Number(page);
+  limit = Number(limit);
+  if (limit > 100) throw new ApiError(422, "Limit must be between 1 and 100");
+  if (![true, false, "true", "false"].includes(unreadOnly)) {
+    throw new ApiError(422, "unreadOnly must be true or false");
+  }
+  unreadOnly = unreadOnly === true || unreadOnly === "true";
+  const offset = (page - 1) * limit;
+  if (!Number.isSafeInteger(offset)) throw new ApiError(422, "Page exceeds the supported range");
+  const [rows, total, unreadCount] = await Promise.all([
+    repository.findByUserId(userId, { unreadOnly, limit, offset }),
+    repository.countByUserId(userId, { unreadOnly }),
+    repository.countUnreadByUserId(userId),
+  ]);
+  const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+  return {
+    notifications: rows.map(mapNotification),
+    pagination: { page, limit, total, totalPages, hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1 && totalPages > 0 },
+    unreadCount,
+  };
+}
+
+module.exports = { createNotification, createNotifications, getNotificationById, getUnreadCount, mapNotification, getUserNotifications };
