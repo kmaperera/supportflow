@@ -15,6 +15,39 @@ const file = { originalname: "report.txt", mimetype: "text/plain", size: 3, buff
 const ticket = { id: 5, ticket_number: "TKT-000005", created_by: 3, assigned_to: 7, status: "OPEN" };
 const asset = { publicId: "asset-id", secureUrl: "https://example.com/file", resourceType: "raw", bytes: 3 };
 
+test("central visibility fails closed and listing filters unexpected INTERNAL rows", async (t) => {
+  const access = require("../src/modules/tickets/ticketAttachmentAccess.service");
+  assert.equal(access.getAttachmentVisibilityType({ comment_id: null }), "DIRECT");
+  for (const type of ["PUBLIC", "INTERNAL"]) {
+    assert.equal(access.getAttachmentVisibilityType({ comment_id: 22, comment_type: type }), type);
+    assert.equal(access.isInternalAttachment({ comment_id: 22, comment_type: type }), type === "INTERNAL");
+  }
+  for (const malformed of [null, {}, { comment_type: "UNKNOWN" }]) {
+    if (malformed !== null) malformed.comment_id = 22;
+    assert.throws(() => access.getAttachmentVisibilityType(malformed), {
+      statusCode: 500, message: "Attachment visibility data is inconsistent",
+    });
+  }
+  t.mock.method(tickets, "findById", async () => ticket);
+  const rows = [{ id: 1, ticket_id: 5, comment_id: null },
+    { id: 2, ticket_id: 5, comment_id: 22, comment_type: "PUBLIC" },
+    { id: 3, ticket_id: 5, comment_id: 23, comment_type: "INTERNAL" }];
+  t.mock.method(attachments, "findByTicketId", async () => rows);
+  assert.deepEqual((await service.getTicketAttachments(5, { id: 3, role: "EMPLOYEE", includeInternal: true })).map(row => row.id), [1, 2]);
+  assert.deepEqual((await service.getTicketAttachments(5, { id: 7, role: "TECHNICIAN" })).map(row => row.id), [1, 2, 3]);
+  rows.push({ id: 4, ticket_id: 5, comment_id: 24, comment_type: null });
+  await assert.rejects(service.getTicketAttachments(5, { id: 3, role: "EMPLOYEE" }), {
+    statusCode: 500, message: "Attachment visibility data is inconsistent",
+  });
+  for (const method of [access.assertCanViewAttachment, access.assertCanDeleteAttachment]) {
+    assert.throws(() => method(ticket, rows[0], { id: 9, role: "UNKNOWN" }), { statusCode: 403 });
+  }
+  const largeTicket = { ...ticket, id: "9007199254740992", created_by: "9007199254740992" };
+  assert.throws(() => access.assertCanUploadToCommentAttachment(largeTicket,
+    { id: 22, ticket_id: largeTicket.id, comment_type: "PUBLIC" },
+    { id: "9007199254740993", role: "EMPLOYEE" }), { statusCode: 404 });
+});
+
 test("deletion role, ownership, visibility and status matrix", async (t) => {
   const currentTicket = { ...ticket };
   const attachment = { id: 10, ticket_id: "5", comment_id: null, public_id: "trusted", resource_type: "raw", uploaded_by: 3 };
@@ -39,7 +72,7 @@ test("deletion role, ownership, visibility and status matrix", async (t) => {
           const inactive = ["RESOLVED", "CLOSED"].includes(status);
           const notOwner = user.role !== "ADMIN" && String(uploadedBy) !== user.id;
           if (hidden || inactive || notOwner) {
-            await assert.rejects(service.deleteTicketAttachment("5", "10", user), { statusCode: hidden ? 404 : inactive ? 409 : 404 });
+            await assert.rejects(service.deleteTicketAttachment("5", "10", user), { statusCode: type === "INVALID" ? 500 : hidden ? 404 : inactive ? 409 : 404 });
             assert.deepEqual(events, []);
           } else {
             assert.equal(await service.deleteTicketAttachment("5", "10", user), "10");
@@ -113,7 +146,7 @@ test("downloads enforce ownership and internal visibility across historical stat
       attachment.comment_type = type;
       for (const user of [{ id: 3, role: "EMPLOYEE" }, { id: 7, role: "TECHNICIAN" }, { id: 9, role: "ADMIN" }]) {
         if (type === "INVALID" || (type === "INTERNAL" && user.role === "EMPLOYEE")) {
-          await assert.rejects(service.getAttachmentForDownload(5, 10, user), { statusCode: 404, message: "Attachment not found" });
+          await assert.rejects(service.getAttachmentForDownload(5, 10, user), { statusCode: type === "INVALID" ? 500 : 404, message: type === "INVALID" ? "Attachment visibility data is inconsistent" : "Attachment not found" });
         } else {
           assert.deepEqual(await service.getAttachmentForDownload(5, 10, user), {
             originalName: "report.txt", mimeType: "text/plain", fileSize: 3, fileUrl: asset.secureUrl,
@@ -131,7 +164,7 @@ test("downloads enforce ownership and internal visibility across historical stat
   }
   const admin = { id: 9, role: "ADMIN" };
   attachment.comment_type = null;
-  await assert.rejects(service.getAttachmentForDownload(5, 10, admin), { statusCode: 404 });
+  await assert.rejects(service.getAttachmentForDownload(5, 10, admin), { statusCode: 500 });
   attachment.ticket_id = 6;
   await assert.rejects(service.getAttachmentForDownload(5, 10, admin), { statusCode: 404 });
   attachment = null;
@@ -511,7 +544,7 @@ test("comment attachment rejects missing, mismatched and unauthorized resources 
     await assert.rejects(service.uploadCommentAttachment(5, 22, file, admin), { statusCode: 404, message: "Comment not found" });
   }
   comment = invalidTypeComment;
-  await assert.rejects(service.uploadCommentAttachment(5, 22, file, admin), { statusCode: 500, message: "Invalid comment type" });
+  await assert.rejects(service.uploadCommentAttachment(5, 22, file, admin), { statusCode: 500, message: "Attachment visibility data is inconsistent" });
   currentTicket = null;
   await assert.rejects(service.uploadCommentAttachment(5, 22, file, admin), { statusCode: 404, message: "Ticket not found" });
   assert.equal(send.mock.callCount(), 0);

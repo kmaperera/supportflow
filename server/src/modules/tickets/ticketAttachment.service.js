@@ -2,7 +2,7 @@ const ticketRepository = require("./ticket.repository");
 const attachmentRepository = require("./ticketAttachment.repository");
 const ticketCommentRepository = require("./ticketComment.repository");
 const { getCommentVisibilityOptions } = require("./ticketCommentAccess.service");
-const { COMMENT_TYPES } = require("../../constants/commentTypes");
+const attachmentAccess = require("./ticketAttachmentAccess.service");
 const cloudinaryUpload = require("../../services/cloudinaryUpload.service");
 const { validateAttachmentFile } = require("../../middleware/attachmentValidation");
 const { USER_ROLES } = require("../../constants/roles");
@@ -58,34 +58,7 @@ async function uploadCommentAttachment(ticketId, commentId, file, currentUser) {
   const ticket = await ticketRepository.findById(ticketId);
   if (!ticket) throw new ApiError(404, "Ticket not found");
   const comment = await ticketCommentRepository.findById(commentId);
-  if (!comment || Number(comment.ticket_id) !== Number(ticket.id)) {
-    throw new ApiError(404, "Comment not found");
-  }
-  if (![COMMENT_TYPES.PUBLIC, COMMENT_TYPES.INTERNAL].includes(comment.comment_type)) {
-    throw new ApiError(500, "Invalid comment type");
-  }
-  // Authorize writes against the trusted parent comment before uploading any bytes.
-  if (currentUser.role === USER_ROLES.EMPLOYEE &&
-      (comment.comment_type === COMMENT_TYPES.INTERNAL ||
-       Number(ticket.created_by) !== Number(currentUser.id))) {
-    throw new ApiError(404, "Comment not found");
-  }
-  if (currentUser.role === USER_ROLES.TECHNICIAN &&
-      (ticket.assigned_to == null || Number(ticket.assigned_to) !== Number(currentUser.id) ||
-       (comment.comment_type === COMMENT_TYPES.INTERNAL && ticket.status === TICKET_STATUSES.OPEN))) {
-    throw new ApiError(404, "Comment not found");
-  }
-  if (comment.comment_type === COMMENT_TYPES.INTERNAL) {
-    if (ticket.status === TICKET_STATUSES.CLOSED) {
-      throw new ApiError(409, "Attachments cannot be added to a closed ticket");
-    }
-  }
-  const allowedStatuses = [TICKET_STATUSES.OPEN, TICKET_STATUSES.ASSIGNED,
-    TICKET_STATUSES.IN_PROGRESS, TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.REOPENED];
-  if (comment.comment_type === COMMENT_TYPES.INTERNAL) allowedStatuses.push(TICKET_STATUSES.RESOLVED);
-  if (!allowedStatuses.includes(ticket.status)) {
-    throw new ApiError(409, "Attachments cannot be added in the ticket's current status");
-  }
+  attachmentAccess.assertCanUploadToCommentAttachment(ticket, comment, currentUser);
   return persistAttachment(ticketId, commentId, file, currentUser,
     `supportflow/tickets/${ticket.ticket_number}/comments/${commentId}`);
 }
@@ -134,7 +107,12 @@ async function getTicketAttachments(ticketId, currentUser) {
   if (!ticket) throw new ApiError(404, "Ticket not found");
   const { includeInternal } = getCommentVisibilityOptions(ticket, currentUser);
   const rows = await attachmentRepository.findByTicketId(ticketId, { includeInternal });
-  return rows.map(mapAttachment);
+  return rows.filter((row) => {
+    const internal = attachmentAccess.isInternalAttachment(row);
+    if (internal && !includeInternal) return false;
+    attachmentAccess.assertCanViewAttachment(ticket, row, currentUser);
+    return true;
+  }).map(mapAttachment);
 }
 
 async function getAttachmentForDownload(ticketId, attachmentId, currentUser) {
@@ -153,12 +131,7 @@ async function getAttachmentForDownload(ticketId, attachmentId, currentUser) {
   if (!attachment || String(attachment.ticket_id) !== String(ticket.id)) {
     throw new ApiError(404, "Attachment not found");
   }
-  const { includeInternal } = getCommentVisibilityOptions(ticket, currentUser);
-  if (attachment.comment_id !== null &&
-      (attachment.comment_type !== COMMENT_TYPES.PUBLIC &&
-       !(attachment.comment_type === COMMENT_TYPES.INTERNAL && includeInternal))) {
-    throw new ApiError(404, "Attachment not found");
-  }
+  attachmentAccess.assertCanViewAttachment(ticket, attachment, currentUser);
   return {
     originalName: attachment.original_name, mimeType: attachment.mime_type,
     fileSize: attachment.file_size, fileUrl: attachment.file_url,
@@ -181,21 +154,7 @@ async function deleteTicketAttachment(ticketId, attachmentId, currentUser) {
   if (!attachment || String(attachment.ticket_id) !== String(ticket.id)) {
     throw new ApiError(404, "Attachment not found");
   }
-  if (attachment.comment_id !== null &&
-      (![COMMENT_TYPES.PUBLIC, COMMENT_TYPES.INTERNAL].includes(attachment.comment_type) ||
-       (attachment.comment_type === COMMENT_TYPES.INTERNAL && currentUser.role === USER_ROLES.EMPLOYEE))) {
-    throw new ApiError(404, "Attachment not found");
-  }
-  if (![TICKET_STATUSES.OPEN, TICKET_STATUSES.ASSIGNED, TICKET_STATUSES.IN_PROGRESS,
-    TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.REOPENED].includes(ticket.status)) {
-    throw new ApiError(409, "Attachments cannot be deleted in the ticket's current status");
-  }
-  const userId = String(currentUser.id);
-  const allowed = currentUser.role === USER_ROLES.ADMIN ||
-    (String(attachment.uploaded_by) === userId &&
-      ((currentUser.role === USER_ROLES.EMPLOYEE && String(ticket.created_by) === userId) ||
-       (currentUser.role === USER_ROLES.TECHNICIAN && ticket.assigned_to != null && String(ticket.assigned_to) === userId)));
-  if (!allowed) throw new ApiError(404, "Attachment not found");
+  attachmentAccess.assertCanDeleteAttachment(ticket, attachment, currentUser);
 
   const result = await cloudinaryUpload.deleteCloudinaryAsset({
     publicId: attachment.public_id, resourceType: attachment.resource_type,
