@@ -138,6 +138,43 @@ function calculateResolutionSlaState({ createdAt, resolutionDueAt, resolvedAt, n
   return { calculation, breach };
 }
 
+function calculateSlaWarning({ startAt, dueAt = null, completedAt = null, now, warningThresholdPercent = 20 } = {}) {
+  validateDate(startAt, "startAt");
+  validateDate(now, "now");
+  if (dueAt !== null) validateDate(dueAt, "dueAt");
+  if (completedAt !== null) validateDate(completedAt, "completedAt");
+  if (!Number.isFinite(warningThresholdPercent) || warningThresholdPercent <= 0 || warningThresholdPercent > 100) {
+    throw new TypeError("warningThresholdPercent must be a finite number greater than 0 and at most 100");
+  }
+  if (completedAt !== null && completedAt.getTime() < startAt.getTime()) {
+    throw new RangeError("completedAt cannot precede startAt");
+  }
+  if (dueAt === null) {
+    return { isTracked: false, isWarning: false, thresholdPercent: warningThresholdPercent,
+      totalMinutes: null, remainingMinutes: null, warningThresholdMinutes: null };
+  }
+  if (dueAt.getTime() <= startAt.getTime()) {
+    throw new RangeError("dueAt must be after startAt");
+  }
+  const totalMinutes = (dueAt.getTime() - startAt.getTime()) / 60000;
+  const warningThresholdMinutes = totalMinutes * warningThresholdPercent / 100;
+  // Completed targets have no remaining active window; overdue pending values stay signed.
+  const remainingMinutes = completedAt === null ? (dueAt.getTime() - now.getTime()) / 60000 : null;
+  const isWarning = completedAt === null && remainingMinutes > 0 && remainingMinutes <= warningThresholdMinutes;
+  return { isTracked: true, isWarning, thresholdPercent: warningThresholdPercent,
+    totalMinutes, remainingMinutes, warningThresholdMinutes };
+}
+
+function calculateResponseSlaWarning({ createdAt, responseDueAt, firstResponseAt, now, warningThresholdPercent = 20 } = {}) {
+  return calculateSlaWarning({ startAt: createdAt, dueAt: responseDueAt,
+    completedAt: firstResponseAt, now, warningThresholdPercent });
+}
+
+function calculateResolutionSlaWarning({ createdAt, resolutionDueAt, resolvedAt, now, warningThresholdPercent = 20 } = {}) {
+  return calculateSlaWarning({ startAt: createdAt, dueAt: resolutionDueAt,
+    completedAt: resolvedAt, now, warningThresholdPercent });
+}
+
 function calculateDeadline(startAt, durationMinutes, durationName, deadlineName) {
   validateStartAt(startAt);
   if (!Number.isSafeInteger(durationMinutes) || durationMinutes <= 0) {
@@ -181,6 +218,9 @@ async function calculateResolutionDeadlineForPriority({ startAt, priorityId, db 
 }
 
 module.exports = {
+  calculateSlaWarning,
+  calculateResponseSlaWarning,
+  calculateResolutionSlaWarning,
   detectResolutionBreach,
   calculateResolutionSlaState,
   detectResponseBreach,
