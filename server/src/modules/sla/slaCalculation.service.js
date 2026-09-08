@@ -40,6 +40,35 @@ function calculateFirstResponseSla({ createdAt = null, responseDueAt = null, fir
   return { result, responseDueAt, firstResponseAt, responseTimeMinutes, differenceMinutes };
 }
 
+function calculateResolutionSla({ createdAt = null, resolutionDueAt = null, resolvedAt = null } = {}) {
+  for (const [name, value] of Object.entries({ createdAt, resolutionDueAt, resolvedAt })) {
+    if (value !== null) validateDate(value, name);
+  }
+  if (createdAt !== null) {
+    if (resolutionDueAt !== null && resolutionDueAt.getTime() < createdAt.getTime()) {
+      throw new RangeError("resolutionDueAt cannot precede createdAt");
+    }
+    if (resolvedAt !== null && resolvedAt.getTime() < createdAt.getTime()) {
+      throw new RangeError("resolvedAt cannot precede createdAt");
+    }
+  }
+
+  let result = SLA_RESULTS.NOT_TRACKED;
+  let differenceMinutes = null;
+  if (resolutionDueAt !== null) {
+    result = SLA_RESULTS.PENDING;
+    if (resolvedAt !== null) {
+      differenceMinutes = (resolutionDueAt.getTime() - resolvedAt.getTime()) / 60000;
+      result = resolvedAt.getTime() <= resolutionDueAt.getTime() ? SLA_RESULTS.MET : SLA_RESULTS.MISSED;
+    }
+  }
+  // Match first-response precision; unresolved tickets never consult the clock.
+  const resolutionTimeMinutes = createdAt !== null && resolvedAt !== null
+    ? (resolvedAt.getTime() - createdAt.getTime()) / 60000
+    : null;
+  return { result, resolutionDueAt, resolvedAt, resolutionTimeMinutes, differenceMinutes };
+}
+
 function calculateDeadline(startAt, durationMinutes, durationName, deadlineName) {
   validateStartAt(startAt);
   if (!Number.isSafeInteger(durationMinutes) || durationMinutes <= 0) {
@@ -83,6 +112,7 @@ async function calculateResolutionDeadlineForPriority({ startAt, priorityId, db 
 }
 
 module.exports = {
+  calculateResolutionSla,
   calculateFirstResponseSla,
   calculateResponseDeadline,
   calculateResponseDeadlineForPriority,
