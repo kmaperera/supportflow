@@ -342,6 +342,11 @@ async function selfAssignTicket(ticketId, currentUser) {
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Assigned ticket could not be retrieved");
     const result = mapTicket(updated);
+    await notificationService.createNotification({
+      userId: currentUser.id, ticketId: ticket.id, commentId: null,
+      type: NOTIFICATION_TYPES.TICKET_ASSIGNED, title: "Ticket assigned",
+      message: `${ticket.ticket_number} has been assigned to you.`,
+    }, connection);
     await connection.commit();
     return result;
   } catch (error) {
@@ -391,6 +396,11 @@ async function unassignTicketByAdmin(ticketId, currentAdmin) {
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Unassigned ticket could not be retrieved");
     const result = mapTicket(updated);
+    await notificationService.createNotification({
+      userId: ticket.assigned_to, ticketId: ticket.id, commentId: null,
+      type: NOTIFICATION_TYPES.TICKET_UNASSIGNED, title: "Ticket unassigned",
+      message: `${ticket.ticket_number} has been unassigned from you.`,
+    }, connection);
     await connection.commit();
     return result;
   } catch (error) {
@@ -459,6 +469,22 @@ async function assignTicketByAdmin(ticketId, technicianId, currentAdmin) {
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Assigned ticket could not be retrieved");
     const result = mapTicket(updated);
+    const reassignment = ticket.assigned_to !== null;
+    await notificationService.createNotification({
+      userId: technician.id, ticketId: ticket.id, commentId: null,
+      type: reassignment ? NOTIFICATION_TYPES.TICKET_REASSIGNED : NOTIFICATION_TYPES.TICKET_ASSIGNED,
+      title: reassignment ? "Ticket reassigned" : "Ticket assigned",
+      message: reassignment
+        ? `${ticket.ticket_number} has been reassigned to you.`
+        : `${ticket.ticket_number} has been assigned to you.`,
+    }, connection);
+    if (reassignment) {
+      await notificationService.createNotification({
+        userId: ticket.assigned_to, ticketId: ticket.id, commentId: null,
+        type: NOTIFICATION_TYPES.TICKET_REASSIGNED, title: "Ticket reassigned",
+        message: `${ticket.ticket_number} has been reassigned to another technician.`,
+      }, connection);
+    }
     await connection.commit();
     return result;
   } catch (error) {
