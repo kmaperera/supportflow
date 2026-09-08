@@ -104,4 +104,29 @@ async function getUserNotifications(userId, { page = 1, limit = 20, unreadOnly =
   };
 }
 
-module.exports = { createNotification, createNotifications, getNotificationById, getUnreadCount, mapNotification, getUserNotifications };
+async function markNotificationAsRead(notificationId, userId, db) {
+  validateId(notificationId, "Notification ID");
+  validateId(userId, "User ID");
+  const row = await repository.findByIdAndUserId(notificationId, userId, db);
+  if (!row) throw new ApiError(404, "Notification not found");
+  const notification = mapNotification(row);
+  if (notification.isRead) return notification;
+  await repository.markAsRead(notificationId, userId, db);
+  const updated = await repository.findByIdAndUserId(notificationId, userId, db);
+  if (!updated) throw new ApiError(404, "Notification not found");
+  const result = mapNotification(updated);
+  if (!result.isRead || result.readAt == null) {
+    throw new ApiError(500, "Notification read state could not be updated");
+  }
+  return result;
+}
+
+async function markAllNotificationsAsRead(userId, db) {
+  validateId(userId, "User ID");
+  const updatedCount = await repository.markAllAsReadByUserId(userId, db);
+  const unreadCount = await repository.countUnreadByUserId(userId, db);
+  return { updatedCount, unreadCount };
+}
+
+module.exports = { createNotification, createNotifications, getNotificationById, getUnreadCount, mapNotification, getUserNotifications,
+  markNotificationAsRead, markAllNotificationsAsRead };

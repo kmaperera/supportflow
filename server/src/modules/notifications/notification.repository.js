@@ -54,4 +54,32 @@ async function countUnreadByUserId(userId, db = pool) {
   return countByUserId(userId, { unreadOnly: true }, db);
 }
 
-module.exports = { createNotification, createNotifications, findById, findByUserId, countByUserId, countUnreadByUserId };
+async function findByIdAndUserId(notificationId, userId, db = pool) {
+  const [rows] = await db.query(
+    `${NOTIFICATION_SELECT} WHERE id = ? AND user_id = ? LIMIT 1`,
+    [notificationId, userId]
+  );
+  return rows[0] || null;
+}
+
+async function markAsRead(notificationId, userId, db = pool) {
+  const [result] = await db.query(
+    `UPDATE notifications
+     SET is_read = TRUE, read_at = COALESCE(read_at, CURRENT_TIMESTAMP)
+     WHERE id = ? AND user_id = ? AND is_read = FALSE`,
+    [notificationId, userId]
+  );
+  return result.affectedRows;
+}
+
+async function markAllAsReadByUserId(userId, db = pool) {
+  const [result] = await db.query(
+    `UPDATE notifications SET is_read = TRUE, read_at = CURRENT_TIMESTAMP
+     WHERE user_id = ? AND is_read = FALSE`,
+    [userId]
+  );
+  return result.affectedRows;
+}
+
+module.exports = { createNotification, createNotifications, findById, findByUserId, countByUserId, countUnreadByUserId,
+  findByIdAndUserId, markAsRead, markAllAsReadByUserId };
