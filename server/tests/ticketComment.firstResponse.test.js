@@ -89,8 +89,9 @@ test("invalid content rolls back without inserting or setting the timestamp", as
   assert.deepEqual(events.slice(-2), ["rollback", "release"]);
 });
 
-test("internal notes never acquire a transaction or update first response", async (t) => {
-  const acquire = t.mock.method(pool, "getConnection", async () => { throw new Error("Unexpected transaction"); });
+test("internal notes use a transaction without updating first response", async (t) => {
+  const acquire = t.mock.method(pool, "getConnection", async () => ({ async beginTransaction() {}, async commit() {}, async rollback() {}, release() {} }));
+  t.mock.method(tickets, "lockById", async () => ({ id: 5 }));
   const timestamp = t.mock.method(tickets, "setFirstResponseIfUnset", async () => { throw new Error("Unexpected timestamp update"); });
   t.mock.method(tickets, "findById", async () => ({ assigned_to: 7, status: "ASSIGNED" }));
   t.mock.method(comments, "createComment", async (data) => {
@@ -101,7 +102,7 @@ test("internal notes never acquire a transaction or update first response", asyn
   for (const role of ["TECHNICIAN", "ADMIN"]) {
     assert.equal((await service.createInternalNote(5, "Note", { id: 7, role })).commentType, "INTERNAL");
   }
-  assert.equal(acquire.mock.callCount(), 0);
+  assert.equal(acquire.mock.callCount(), 2);
   assert.equal(timestamp.mock.callCount(), 0);
 });
 

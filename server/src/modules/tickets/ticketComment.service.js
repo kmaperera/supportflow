@@ -6,6 +6,8 @@ const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
 const { COMMENT_TYPES } = require("../../constants/commentTypes");
 const ApiError = require("../../utils/ApiError");
 const pool = require("../../config/database");
+const notificationService = require("../notifications/notification.service");
+const { NOTIFICATION_TYPES } = require("../../constants/notificationTypes");
 
 function validId(value) {
   if (!["string", "number"].includes(typeof value) ||
@@ -45,6 +47,7 @@ async function createPublicComment(ticketId, content, currentUser) {
     if ([USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN].includes(currentUser.role)) {
       await ticketRepository.setFirstResponseIfUnset(ticketId, connection);
     }
+    await notifyComment(ticket, commentId, COMMENT_TYPES.PUBLIC, currentUser, connection);
     await connection.commit();
   } catch (error) {
     try {
@@ -67,16 +70,31 @@ async function createInternalNote(ticketId, content, currentUser) {
   if (![USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN].includes(currentUser.role)) {
     throw new ApiError(403, "You do not have permission to access this resource");
   }
-  const ticket = await ticketRepository.findById(ticketId);
-  if (!ticket) throw new ApiError(404, "Ticket not found");
-  if (currentUser.role === USER_ROLES.TECHNICIAN &&
-      String(ticket.assigned_to) !== String(currentUser.id)) {
-    throw new ApiError(404, "Ticket not found");
+  const connection = await pool.getConnection();
+  let commentId;
+  try {
+    await connection.beginTransaction();
+    if (!(await ticketRepository.lockById(ticketId, connection))) throw new ApiError(404, "Ticket not found");
+    const ticket = await ticketRepository.findById(ticketId, connection);
+    if (!ticket) throw new ApiError(404, "Ticket not found");
+    if (currentUser.role === USER_ROLES.TECHNICIAN && String(ticket.assigned_to) !== String(currentUser.id)) {
+      throw new ApiError(404, "Ticket not found");
+    }
+    if (ticket.status === TICKET_STATUSES.CLOSED) {
+      throw new ApiError(409, "Internal notes cannot be added to a closed ticket");
+    }
+    commentId = await insertComment(ticketId, content, currentUser.id, COMMENT_TYPES.INTERNAL, connection);
+    await notifyComment(ticket, commentId, COMMENT_TYPES.INTERNAL, currentUser, connection);
+    await connection.commit();
+  } catch (error) {
+    try { await connection.rollback(); } catch {
+      // Preserve the original failure if rollback also fails.
+    }
+    throw error;
+  } finally {
+    connection.release();
   }
-  if (ticket.status === TICKET_STATUSES.CLOSED) {
-    throw new ApiError(409, "Internal notes cannot be added to a closed ticket");
-  }
-  return createComment(ticketId, content, currentUser.id, COMMENT_TYPES.INTERNAL);
+  return getCreatedComment(commentId);
 }
 
 async function getTicketComments(ticketId, currentUser) {
@@ -93,9 +111,31 @@ async function getTicketComments(ticketId, currentUser) {
   return rows.map(mapComment);
 }
 
-async function createComment(ticketId, content, userId, commentType) {
-  const commentId = await insertComment(ticketId, content, userId, commentType);
-  return getCreatedComment(commentId);
+async function notifyComment(ticket, commentId, commentType, currentUser, db) {
+  let userId;
+  let type;
+  let title;
+  let message;
+  if (commentType === COMMENT_TYPES.INTERNAL) {
+    if (currentUser.role !== USER_ROLES.ADMIN || ticket.assigned_to == null) return;
+    userId = ticket.assigned_to;
+    // Never persist internal-note metadata in the creator's notification feed.
+    if (String(userId) === String(ticket.created_by)) return;
+    type = NOTIFICATION_TYPES.INTERNAL_NOTE;
+    title = "New internal note";
+    message = `A new internal note was added to ${ticket.ticket_number}.`;
+  } else {
+    const employeeReply = currentUser.role === USER_ROLES.EMPLOYEE;
+    userId = employeeReply ? ticket.assigned_to : ticket.created_by;
+    type = NOTIFICATION_TYPES.PUBLIC_COMMENT;
+    title = employeeReply ? "New ticket reply" : "New support reply";
+    message = employeeReply ? `A new reply was added to ${ticket.ticket_number}.`
+      : `Support replied to ${ticket.ticket_number}.`;
+  }
+  if (userId == null || String(userId) === String(currentUser.id)) return;
+  await notificationService.createNotification({
+    userId, ticketId: ticket.id, commentId, type, title, message,
+  }, db);
 }
 
 async function insertComment(ticketId, content, userId, commentType, db = pool) {
