@@ -6,4 +6,9 @@ const getEmployeeSummary = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Employee dashboard summary retrieved successfully", data: { summary } });
 });
 
-module.exports = { getEmployeeSummary };
+const getTechnicianSummary = asyncHandler(async (req, res) => {
+  const summary = await service.getTechnicianDashboardSummary(req.user.id);
+  res.status(200).json({ success: true, message: "Technician dashboard summary retrieved successfully", data: { summary } });
+});
+
+module.exports = { getEmployeeSummary, getTechnicianSummary };
