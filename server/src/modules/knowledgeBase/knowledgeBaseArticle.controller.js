@@ -12,4 +12,14 @@ const updateArticle = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Knowledge Base article updated successfully", data: { article } });
 });
 
-module.exports = { createArticle, updateArticle };
+const publishArticle = asyncHandler(async (req, res) => {
+  const article = await service.publishArticle(req.params.articleId);
+  res.status(200).json({ success: true, message: "Knowledge Base article published successfully", data: { article } });
+});
+
+const unpublishArticle = asyncHandler(async (req, res) => {
+  const article = await service.unpublishArticle(req.params.articleId);
+  res.status(200).json({ success: true, message: "Knowledge Base article unpublished successfully", data: { article } });
+});
+
+module.exports = { createArticle, updateArticle, publishArticle, unpublishArticle };

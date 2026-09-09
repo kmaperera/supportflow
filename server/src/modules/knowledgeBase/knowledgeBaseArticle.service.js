@@ -54,11 +54,15 @@ function mapArticle(row) {
   };
 }
 
-async function updateArticle(articleId, values, db) {
+function validateArticleId(articleId) {
   if (!["string", "number"].includes(typeof articleId) ||
       (typeof articleId === "number" && !Number.isSafeInteger(articleId)) ||
       !/^[1-9]\d*$/.test(String(articleId)) || String(articleId).length > 20 ||
       BigInt(articleId) > 18446744073709551615n) throw new ApiError(422, "Article ID must be a positive integer");
+}
+
+async function updateArticle(articleId, values, db) {
+  validateArticleId(articleId);
   const existing = await repository.findById(articleId, db);
   if (!existing) throw new ApiError(404, "Knowledge Base article not found");
   if (!values || typeof values !== "object" || Array.isArray(values) || !Object.keys(values).length ||
@@ -113,4 +117,33 @@ async function updateArticle(articleId, values, db) {
   return mapArticle(row);
 }
 
-module.exports = { createArticle, updateArticle };
+async function requireArticle(articleId, db) {
+  const row = await repository.findById(articleId, db);
+  if (!row) throw new ApiError(404, "Knowledge Base article not found");
+  return row;
+}
+
+async function publishArticle(articleId, db) {
+  validateArticleId(articleId);
+  const existing = await requireArticle(articleId, db);
+  if (existing.status === "PUBLISHED") return mapArticle(existing);
+  if (existing.status === "ARCHIVED") throw new ApiError(409, "Archived Knowledge Base article cannot be published");
+  if (existing.status !== "DRAFT") throw new ApiError(409, "Knowledge Base article cannot be published from its current status");
+  const category = await categories.findById(existing.category_id, db);
+  if (!category) throw new ApiError(409, "Knowledge Base article category is missing");
+  if (![true, 1, "1"].includes(category.is_active)) throw new ApiError(409, "Knowledge Base category is inactive");
+  await repository.updateStatus(articleId, "PUBLISHED", new Date(), db);
+  return mapArticle(await requireArticle(articleId, db));
+}
+
+async function unpublishArticle(articleId, db) {
+  validateArticleId(articleId);
+  const existing = await requireArticle(articleId, db);
+  if (existing.status === "DRAFT") return mapArticle(existing);
+  if (existing.status === "ARCHIVED") throw new ApiError(409, "Archived Knowledge Base article cannot be unpublished");
+  if (existing.status !== "PUBLISHED") throw new ApiError(409, "Knowledge Base article cannot be unpublished from its current status");
+  await repository.updateStatus(articleId, "DRAFT", null, db);
+  return mapArticle(await requireArticle(articleId, db));
+}
+
+module.exports = { createArticle, updateArticle, publishArticle, unpublishArticle };

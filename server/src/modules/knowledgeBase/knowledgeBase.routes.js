@@ -5,7 +5,7 @@ const validate = require("../../middleware/validate");
 const { USER_ROLES } = require("../../constants/roles");
 const controller = require("./knowledgeBaseCategory.controller");
 const articleController = require("./knowledgeBaseArticle.controller");
-const { createArticleValidation, updateArticleValidation } = require("./knowledgeBaseArticle.validation");
+const { createArticleValidation, updateArticleValidation, articleStatusValidation } = require("./knowledgeBaseArticle.validation");
 const { createCategoryValidation, updateCategoryValidation, setCategoryActiveStatusValidation } = require("./knowledgeBaseCategory.validation");
 
 const router = express.Router();
@@ -23,5 +23,10 @@ router.post("/articles", authenticate, authorizeRoles(USER_ROLES.ADMIN),
 
 router.patch("/articles/:articleId", authenticate, authorizeRoles(USER_ROLES.ADMIN),
   updateArticleValidation, validate, articleController.updateArticle);
+
+router.patch("/articles/:articleId/publish", authenticate, authorizeRoles(USER_ROLES.ADMIN),
+  articleStatusValidation, validate, articleController.publishArticle);
+router.patch("/articles/:articleId/unpublish", authenticate, authorizeRoles(USER_ROLES.ADMIN),
+  articleStatusValidation, validate, articleController.unpublishArticle);
 
 module.exports = router;

@@ -16,13 +16,17 @@ const createArticleValidation = [
     .notEmpty().withMessage("Content must not be empty"),
 ];
 
-const updateArticleValidation = [
-  param("articleId").custom(value => {
+const articleIdValidation = () => param("articleId").custom(value => {
     if (!/^[1-9]\d*$/.test(value) || value.length > 20 || BigInt(value) > 18446744073709551615n) {
       throw new Error("Article ID must be a positive integer");
     }
     return true;
-  }),
+  });
+
+const articleStatusValidation = [articleIdValidation()];
+
+const updateArticleValidation = [
+  articleIdValidation(),
   body().custom(value => {
     if (!value || typeof value !== "object" || Array.isArray(value) || !Object.keys(value).length ||
         Object.keys(value).some(key => !["categoryId", "title", "content"].includes(key))) {
@@ -38,4 +42,4 @@ const updateArticleValidation = [
     .notEmpty().withMessage("Content must not be empty"),
 ];
 
-module.exports = { createArticleValidation, updateArticleValidation };
+module.exports = { createArticleValidation, updateArticleValidation, articleStatusValidation };
