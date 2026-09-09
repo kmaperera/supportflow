@@ -101,4 +101,24 @@ async function getTicketPriorityDistribution({ createdBy, assignedTo } = {}, db 
   return rows;
 }
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution };
+async function getTechnicianWorkloadAnalytics(db = pool) {
+  // Current ownership only: resolution retains assigned_to; reassignment replaces it.
+  const [rows] = await db.query(
+    `SELECT u.id AS technician_id, u.first_name, u.last_name,
+       CONCAT_WS(' ', NULLIF(TRIM(u.first_name), ''), NULLIF(TRIM(u.last_name), '')) AS technician_name,
+       u.email, u.is_active,
+       COALESCE(SUM(t.status = 'ASSIGNED'), 0) AS assigned_tickets,
+       COALESCE(SUM(t.status = 'IN_PROGRESS'), 0) AS in_progress_tickets,
+       COALESCE(SUM(t.status = 'WAITING_FOR_USER'), 0) AS waiting_for_user_tickets,
+       COALESCE(SUM(t.status = 'REOPENED'), 0) AS reopened_tickets,
+       COALESCE(SUM(t.status IN ('ASSIGNED', 'IN_PROGRESS', 'WAITING_FOR_USER', 'REOPENED')), 0) AS active_tickets,
+       COALESCE(SUM(t.status = 'RESOLVED'), 0) AS resolved_tickets
+     FROM users AS u LEFT JOIN tickets AS t ON t.assigned_to = u.id
+     WHERE u.role = 'TECHNICIAN'
+     GROUP BY u.id, u.first_name, u.last_name, u.email, u.is_active
+     ORDER BY active_tickets DESC, technician_name ASC, technician_id ASC`
+  );
+  return rows;
+}
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics };

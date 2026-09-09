@@ -106,4 +106,16 @@ async function getTicketPriorityDistribution(user, db) {
   return order.map(name => priorities.get(name));
 }
 
-module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution };
+async function getTechnicianWorkloadAnalytics(db) {
+  const rows = await repository.getTechnicianWorkloadAnalytics(db);
+  return rows.map(row => ({
+    technicianId: Number(row.technician_id),
+    technicianName: [row.first_name, row.last_name].map(name => (name ?? "").trim()).filter(Boolean).join(" "),
+    email: row.email, isActive: [true, 1, "1"].includes(row.is_active),
+    assignedTickets: Number(row.assigned_tickets ?? 0), inProgressTickets: Number(row.in_progress_tickets ?? 0),
+    waitingForUserTickets: Number(row.waiting_for_user_tickets ?? 0), reopenedTickets: Number(row.reopened_tickets ?? 0),
+    activeTickets: Number(row.active_tickets ?? 0), resolvedTickets: Number(row.resolved_tickets ?? 0),
+  }));
+}
+
+module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics };

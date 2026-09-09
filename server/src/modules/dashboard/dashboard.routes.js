@@ -28,4 +28,8 @@ router.get("/priority-distribution", authenticate,
   query().custom(value => Object.keys(value).length === 0).withMessage("Query parameters are not supported"),
   validate, controller.getTicketPriorityDistribution);
 
+router.get("/technician-workload", authenticate, authorizeRoles(USER_ROLES.ADMIN),
+  query().custom(value => Object.keys(value).length === 0).withMessage("Query parameters are not supported"),
+  validate, controller.getTechnicianWorkload);
+
 module.exports = router;

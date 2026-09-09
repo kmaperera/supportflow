@@ -36,4 +36,9 @@ const getTicketPriorityDistribution = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Ticket priority distribution retrieved successfully", data: { distribution } });
 });
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, getAdminSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution };
+const getTechnicianWorkload = asyncHandler(async (req, res) => {
+  const technicians = await service.getTechnicianWorkloadAnalytics();
+  res.status(200).json({ success: true, message: "Technician workload retrieved successfully", data: { technicians } });
+});
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, getAdminSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkload };
