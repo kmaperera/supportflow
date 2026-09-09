@@ -175,7 +175,13 @@ async function listArticles(options = {}, user, db) {
   if (!user) throw new ApiError(401, "Authentication required");
   if (!Object.values(USER_ROLES).includes(user.role)) throw new ApiError(403, "You do not have permission to access this resource");
   if (!options || typeof options !== "object" || Array.isArray(options) ||
-      Object.keys(options).some(key => !["page", "limit"].includes(key))) throw new ApiError(422, "Only page and limit are supported");
+      Object.keys(options).some(key => !["page", "limit", "search"].includes(key))) throw new ApiError(422, "Only page, limit and search are supported");
+  let search;
+  if (options.search !== undefined) {
+    if (typeof options.search !== "string") throw new ApiError(422, "Search must be a string");
+    search = options.search.trim();
+    if (Array.from(search).length > 200) throw new ApiError(422, "Search must not exceed 200 characters");
+  }
   const normalized = {};
   for (const [key, fallback] of [["page", 1], ["limit", 10]]) {
     const value = options[key] === undefined ? fallback : options[key];
@@ -187,6 +193,7 @@ async function listArticles(options = {}, user, db) {
   const offset = (page - 1) * limit;
   if (limit > 100 || !Number.isSafeInteger(offset)) throw new ApiError(422, "Invalid pagination range");
   const filters = user.role === USER_ROLES.ADMIN ? {} : { status: "PUBLISHED", activeCategoryOnly: true };
+  if (search) filters.search = search;
   const rows = await repository.findAll({ ...filters, limit, offset }, db);
   const totalRecords = await repository.countAll(filters, db);
   const totalPages = Math.ceil(totalRecords / limit);

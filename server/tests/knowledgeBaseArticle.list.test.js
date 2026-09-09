@@ -7,19 +7,27 @@ const jwt = require("jsonwebtoken");
 
 function database() {
   const rows = Array.from({ length: 30 }, (_, i) => ({ id: 30 - i, category_id: 1, category_name: "Network",
-    title: "Title", slug: `article-${i}`, status: i < 12 ? "PUBLISHED" : i < 20 ? "DRAFT" : "ARCHIVED",
+    title: i % 2 === 0 ? "Password guide" : "Title", content: i % 3 === 0 ? "Password body" : "Body",
+    slug: `article-${i}`, status: i < 12 ? "PUBLISHED" : i < 20 ? "DRAFT" : "ARCHIVED",
     active: i < 10, view_count: 17, created_by: 7, published_at: null, created_at: "created", updated_at: "updated" }));
   const calls = [];
   return { calls, async query(sql, values) {
     calls.push({ sql, values });
     assert.match(sql, /^SELECT /);
-    assert.doesNotMatch(sql, /a.content|UPDATE|INSERT|DELETE/);
-    const filtered = sql.includes("WHERE");
+    assert.doesNotMatch(sql.split("FROM")[0], /a.content/);
+    assert.doesNotMatch(sql, /UPDATE|INSERT|DELETE/);
+    const filtered = sql.includes("a.status = ?");
     if (filtered) {
       assert.match(sql, /WHERE a.status = \? AND c.is_active = TRUE/);
       assert.equal(values[0], "PUBLISHED");
     }
-    const visible = filtered ? rows.filter(row => row.status === "PUBLISHED" && row.active) : rows;
+    let visible = filtered ? rows.filter(row => row.status === "PUBLISHED" && row.active) : rows;
+    if (sql.includes("LIKE")) {
+      assert.match(sql, /\(a.title LIKE \? OR a.content LIKE \?\)/);
+      const term = values[filtered ? 1 : 0].slice(1, -1).toLowerCase();
+      assert.equal(values[filtered ? 1 : 0], values[filtered ? 2 : 1]);
+      visible = visible.filter(row => row.title.toLowerCase().includes(term) || row.content.toLowerCase().includes(term));
+    }
     if (sql.includes("COUNT(*)")) return [[{ total: String(visible.length) }]];
     assert.match(sql, /ORDER BY a.created_at DESC, a.id DESC LIMIT \? OFFSET \?/);
     const [limit, offset] = values.slice(-2);
@@ -43,7 +51,7 @@ test("list pagination and counts share visibility; invalid and unsupported optio
   const noQuery = { async query() { assert.fail("Invalid options reached SQL"); } };
   for (const options of [{ page: 0 }, { page: -1 }, { page: "abc" }, { page: "1.5" }, { limit: 0 }, { limit: 1000 },
     { page: [] }, { limit: null }, { page: Number.MAX_SAFE_INTEGER, limit: 100 },
-    ...["search", "q", "keyword", "categoryId", "category", "sort", "userRole"].map(key => ({ [key]: "x" }))]) {
+    ...["q", "keyword", "categoryId", "category", "sort", "userRole"].map(key => ({ [key]: "x" }))]) {
     await assert.rejects(service.listArticles(options, { role: "ADMIN" }, noQuery), { statusCode: 422 });
   }
   await assert.rejects(service.listArticles({}, null, noQuery), { statusCode: 401 });
@@ -75,7 +83,7 @@ test("collection endpoint authenticates and uses database roles for list and cou
     authorization: `Bearer ${jwt.sign({ role: "ADMIN" }, process.env.JWT_ACCESS_SECRET, { subject: String(actor), expiresIn: "5m" })}`,
   } : {} });
   assert.equal((await get(null)).status, 401);
-  for (const query of ["?page=0", "?limit=1000", "?page=abc", "?search=x", "?categoryId=1", "?page=1&page=2"]) {
+  for (const query of ["?page=0", "?limit=1000", "?page=abc", "?search=x&search=y", "?categoryId=1", "?page=1&page=2"]) {
     assert.equal((await get(1, query)).status, 422);
   }
   assert.equal(db.calls.length, 0);
@@ -88,5 +96,47 @@ test("collection endpoint authenticates and uses database roles for list and cou
     assert.equal(body.data.articles.length, 10);
     assert.equal(body.data.pagination.totalRecords, actor === 1 ? 30 : 10);
     assert.ok(body.data.articles.every(article => !("content" in article)));
+  }
+  for (const actor of [1, 2, 3]) {
+    const response = await get(actor, "?search=%20Password%20&page=2&limit=5");
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.data.pagination.totalRecords, actor === 1 ? 20 : 7);
+    assert.equal(body.data.articles.length, actor === 1 ? 5 : 2);
+  }
+  const empty = await get(2, "?search=missing");
+  assert.equal(empty.status, 200);
+  const emptyBody = await empty.json();
+  assert.deepEqual(emptyBody.data.articles, []);
+  assert.equal(emptyBody.data.pagination.totalRecords, 0);
+  assert.equal(emptyBody.data.pagination.totalPages, 0);
+  assert.equal((await get(1, `?search=${"x".repeat(201)}`)).status, 422);
+  assert.equal((await get(1, "?search=%20%20")).status, 200);
+});
+
+test("search validation and bound list/count predicates preserve visibility and pagination", async () => {
+  const noQuery = { async query() { assert.fail("Invalid search queried database"); } };
+  for (const search of [null, 1, true, [], {}, "x".repeat(201)]) {
+    await assert.rejects(service.listArticles({ search }, { role: "ADMIN" }, noQuery), { statusCode: 422 });
+  }
+  for (const search of [undefined, "", "   "]) {
+    const db = database();
+    await service.listArticles({ search }, { role: "EMPLOYEE" }, db);
+    assert.ok(db.calls.every(call => !call.sql.includes("LIKE")));
+  }
+  for (const role of ["ADMIN", "EMPLOYEE", "TECHNICIAN"]) {
+    const calls = [];
+    const search = "x' OR 1=1 --";
+    await service.listArticles({ search: ` ${search} `, page: "2", limit: "5" }, { role }, {
+      async query(sql, values) {
+        calls.push({ sql, values });
+        assert.ok(!sql.includes(search));
+        return sql.includes("COUNT(*)") ? [[{ total: 0 }]] : [[]];
+      },
+    });
+    const filters = role === "ADMIN" ? [] : ["PUBLISHED"];
+    assert.deepEqual(calls[0].values, [...filters, `%${search}%`, `%${search}%`, 5, 5]);
+    assert.deepEqual(calls[1].values, [...filters, `%${search}%`, `%${search}%`]);
+    assert.equal(calls[0].sql.split("WHERE")[1].split("ORDER BY")[0].trim(), calls[1].sql.split("WHERE")[1].trim());
   }
 });

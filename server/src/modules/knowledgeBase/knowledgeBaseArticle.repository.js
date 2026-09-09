@@ -46,11 +46,15 @@ async function updateStatus(articleId, status, publishedAt, db = pool) {
   return result.affectedRows;
 }
 
-function listVisibility({ status, activeCategoryOnly } = {}) {
+function listVisibility({ status, activeCategoryOnly, search } = {}) {
   const clauses = [];
   const values = [];
   if (status !== undefined) { clauses.push("a.status = ?"); values.push(status); }
   if (activeCategoryOnly === true) clauses.push("c.is_active = TRUE");
+  if (search) {
+    clauses.push("(a.title LIKE ? OR a.content LIKE ?)");
+    values.push(`%${search}%`, `%${search}%`);
+  }
   return { where: clauses.length ? ` WHERE ${clauses.join(" AND ")}` : "", values };
 }
 
