@@ -217,4 +217,24 @@ async function listArticles(options = {}, user, db) {
     hasNext: page < totalPages, hasPrevious: page > 1 } };
 }
 
-module.exports = { createArticle, updateArticle, publishArticle, unpublishArticle, archiveArticle, getArticleById, listArticles };
+async function getSuggestedArticles(values = {}, db) {
+  if (!values || typeof values !== "object" || Array.isArray(values) ||
+      Object.keys(values).some(key => !["title", "description"].includes(key))) throw new ApiError(422, "Only title and description are supported");
+  const normalized = {};
+  for (const key of ["title", "description"]) {
+    if (values[key] !== undefined && typeof values[key] !== "string") throw new ApiError(422, `${key} must be a string`);
+    normalized[key] = (values[key] || "").trim();
+  }
+  if (Array.from(normalized.title).length > 200) throw new ApiError(422, "Title must not exceed 200 characters");
+  if (!normalized.title && !normalized.description) throw new ApiError(422, "Provide a non-empty title or description");
+  const stopWords = new Set(["the", "a", "an", "to", "is", "my", "and", "or", "of", "for", "in", "on"]);
+  const tokens = `${normalized.title} ${normalized.description}`.toLowerCase().match(/[\p{L}\p{N}]+/gu) || [];
+  // Title terms come first; deduplicate and bound the SQL scoring expressions.
+  const terms = [...new Set(tokens.filter(term => Array.from(term).length >= 3 && !stopWords.has(term)))].slice(0, 8);
+  if (!terms.length) return [];
+  const rows = await repository.findSuggestedArticles({ terms, limit: 5 }, db);
+  return rows.map(row => ({ id: row.id, categoryId: row.category_id, categoryName: row.category_name,
+    title: row.title, slug: row.slug, viewCount: row.view_count, publishedAt: row.published_at }));
+}
+
+module.exports = { createArticle, updateArticle, publishArticle, unpublishArticle, archiveArticle, getArticleById, listArticles, getSuggestedArticles };

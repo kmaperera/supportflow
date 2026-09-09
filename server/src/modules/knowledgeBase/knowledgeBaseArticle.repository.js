@@ -105,7 +105,26 @@ async function incrementViewCount(articleId, db = pool) {
   return result.affectedRows;
 }
 
+async function findSuggestedArticles({ terms, limit = 5 }, db = pool) {
+  if (!Array.isArray(terms) || terms.length > 8 || terms.some(term => typeof term !== "string" || !term) ||
+      !Number.isInteger(limit) || limit < 1 || limit > 10) throw new TypeError("Invalid article suggestion options");
+  if (!terms.length) return [];
+  const score = terms.map(() => "(CASE WHEN a.title LIKE ? THEN 3 ELSE 0 END + CASE WHEN a.content LIKE ? THEN 1 ELSE 0 END)").join(" + ");
+  const values = terms.flatMap(term => [`%${term}%`, `%${term}%`]);
+  const [rows] = await db.query(
+    `SELECT a.id, a.category_id, c.name AS category_name, a.title, a.slug, a.view_count, a.published_at,
+       (${score}) AS relevance_score
+     FROM knowledge_base_articles AS a
+     INNER JOIN knowledge_base_categories AS c ON c.id = a.category_id
+     WHERE a.status = 'PUBLISHED' AND c.is_active = TRUE
+     HAVING relevance_score > 0
+     ORDER BY relevance_score DESC, a.view_count DESC, a.published_at DESC, a.id DESC LIMIT ?`,
+    [...values, limit]
+  );
+  return rows;
+}
+
 module.exports = {
   findById, findBySlug, create, updateById, updateStatus,
-  findAll, countAll, findByStatus, findByCategoryId, incrementViewCount,
+  findAll, countAll, findByStatus, findByCategoryId, incrementViewCount, findSuggestedArticles,
 };

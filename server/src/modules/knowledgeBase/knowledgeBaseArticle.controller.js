@@ -37,4 +37,9 @@ const listArticles = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Knowledge Base articles retrieved successfully", data });
 });
 
-module.exports = { createArticle, updateArticle, publishArticle, unpublishArticle, archiveArticle, getArticleById, listArticles };
+const getSuggestedArticles = asyncHandler(async (req, res) => {
+  const articles = await service.getSuggestedArticles(req.body);
+  res.status(200).json({ success: true, message: "Knowledge Base article suggestions retrieved successfully", data: { articles } });
+});
+
+module.exports = { createArticle, updateArticle, publishArticle, unpublishArticle, archiveArticle, getArticleById, listArticles, getSuggestedArticles };
