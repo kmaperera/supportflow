@@ -1,3 +1,4 @@
+const pool = require("../../config/database");
 const ticketFeedbackRepository = require("../ticketFeedback/ticketFeedback.repository");
 const repository = require("./dashboard.repository");
 const ApiError = require("../../utils/ApiError");
@@ -27,10 +28,21 @@ function mapTicketSummary(row) {
   };
 }
 
+// Pool queries may use separate connections. Injected connections remain sequential,
+// including transaction connections whose statements must not overlap.
+async function independentReads(reads, db) {
+  if (db === undefined || db === pool) return Promise.all(reads.map(read => read()));
+  const results = [];
+  for (const read of reads) results.push(await read());
+  return results;
+}
+
 async function getTechnicianDashboardSummary(technicianId, db) {
   validateUserId(technicianId);
-  const row = await repository.getTechnicianSummary(technicianId, db);
-  const queueCount = await repository.countUnassignedQueue(db);
+  const [row, queueCount] = await independentReads([
+    () => repository.getTechnicianSummary(technicianId, db),
+    () => repository.countUnassignedQueue(db),
+  ], db);
   return {
     assignedTickets: Number(row.assigned_tickets ?? 0), inProgressTickets: Number(row.in_progress_tickets ?? 0),
     waitingForUserTickets: Number(row.waiting_for_user_tickets ?? 0), reopenedTickets: Number(row.reopened_tickets ?? 0),
@@ -40,9 +52,11 @@ async function getTechnicianDashboardSummary(technicianId, db) {
 }
 
 async function getAdminDashboardSummary(db) {
-  const tickets = await repository.getAdminTicketSummary(db);
-  const unassigned = await repository.countUnassignedQueue(db);
-  const users = await repository.getAdminUserSummary(db);
+  const [tickets, unassigned, users] = await independentReads([
+    () => repository.getAdminTicketSummary(db),
+    () => repository.countUnassignedQueue(db),
+    () => repository.getAdminUserSummary(db),
+  ], db);
   return {
     ...mapTicketSummary(tickets), unassignedTickets: Number(unassigned ?? 0),
     totalEmployees: Number(users.total_employees ?? 0), activeEmployees: Number(users.active_employees ?? 0),
@@ -202,8 +216,8 @@ async function getRecentTicketActivity(user, limit = 10, db) {
   }
   const includeInternal = require("../tickets/ticketCommentAccess.service").canViewInternalComments(user);
   const sources = ["status", "assignment", "assignmentEnd", "comment"];
-  const batches = await Promise.all(sources.map(source => repository.getRecentActivitySource(source,
-    { ...scope, includeInternal, limit: Number(limit) }, db)));
+  const batches = await independentReads(sources.map(source => () => repository.getRecentActivitySource(source,
+    { ...scope, includeInternal, limit: Number(limit) }, db)), db);
   const events = batches.flatMap((rows, rank) => rows
     .filter(row => sources[rank] !== "comment" || row.comment_type === "PUBLIC" || (includeInternal && row.comment_type === "INTERNAL"))
     .map(row => ({ row, source: sources[rank], rank })));

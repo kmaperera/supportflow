@@ -1,0 +1,715 @@
+{
+  "indexes": {
+    "tickets": [
+      {
+        "name": "PRIMARY",
+        "column": "id",
+        "sequence": 1
+      },
+      {
+        "name": "ticket_number",
+        "column": "ticket_number",
+        "sequence": 1
+      },
+      {
+        "name": "idx_tickets_created_by",
+        "column": "created_by",
+        "sequence": 1
+      },
+      {
+        "name": "idx_tickets_category_id",
+        "column": "category_id",
+        "sequence": 1
+      },
+      {
+        "name": "idx_tickets_priority_id",
+        "column": "priority_id",
+        "sequence": 1
+      },
+      {
+        "name": "idx_tickets_assigned_to",
+        "column": "assigned_to",
+        "sequence": 1
+      },
+      {
+        "name": "idx_tickets_created_at",
+        "column": "created_at",
+        "sequence": 1
+      },
+      {
+        "name": "idx_tickets_status_priority",
+        "column": "status",
+        "sequence": 1
+      },
+      {
+        "name": "idx_tickets_status_priority",
+        "column": "priority_id",
+        "sequence": 2
+      }
+    ],
+    "users": [
+      {
+        "name": "PRIMARY",
+        "column": "id",
+        "sequence": 1
+      },
+      {
+        "name": "email",
+        "column": "email",
+        "sequence": 1
+      },
+      {
+        "name": "idx_users_role",
+        "column": "role",
+        "sequence": 1
+      },
+      {
+        "name": "idx_users_is_active",
+        "column": "is_active",
+        "sequence": 1
+      },
+      {
+        "name": "idx_users_department",
+        "column": "department",
+        "sequence": 1
+      }
+    ],
+    "ticket_categories": [
+      {
+        "name": "PRIMARY",
+        "column": "id",
+        "sequence": 1
+      },
+      {
+        "name": "name",
+        "column": "name",
+        "sequence": 1
+      },
+      {
+        "name": "idx_ticket_categories_is_active",
+        "column": "is_active",
+        "sequence": 1
+      },
+      {
+        "name": "fk_ticket_categories_created_by",
+        "column": "created_by",
+        "sequence": 1
+      }
+    ],
+    "ticket_priorities": [
+      {
+        "name": "PRIMARY",
+        "column": "id",
+        "sequence": 1
+      },
+      {
+        "name": "name",
+        "column": "name",
+        "sequence": 1
+      },
+      {
+        "name": "sort_order",
+        "column": "sort_order",
+        "sequence": 1
+      },
+      {
+        "name": "idx_ticket_priorities_is_active",
+        "column": "is_active",
+        "sequence": 1
+      }
+    ],
+    "ticket_status_history": [
+      {
+        "name": "PRIMARY",
+        "column": "id",
+        "sequence": 1
+      },
+      {
+        "name": "idx_ticket_status_history_ticket_changed",
+        "column": "ticket_id",
+        "sequence": 1
+      },
+      {
+        "name": "idx_ticket_status_history_ticket_changed",
+        "column": "changed_at",
+        "sequence": 2
+      },
+      {
+        "name": "idx_ticket_status_history_changed_by",
+        "column": "changed_by",
+        "sequence": 1
+      },
+      {
+        "name": "idx_ticket_status_history_changed_at",
+        "column": "changed_at",
+        "sequence": 1
+      }
+    ],
+    "ticket_assignments": [
+      {
+        "name": "PRIMARY",
+        "column": "id",
+        "sequence": 1
+      },
+      {
+        "name": "idx_ticket_assignments_ticket_active",
+        "column": "ticket_id",
+        "sequence": 1
+      },
+      {
+        "name": "idx_ticket_assignments_ticket_active",
+        "column": "unassigned_at",
+        "sequence": 2
+      },
+      {
+        "name": "idx_ticket_assignments_technician_id",
+        "column": "technician_id",
+        "sequence": 1
+      },
+      {
+        "name": "fk_ticket_assignments_assigned_by",
+        "column": "assigned_by",
+        "sequence": 1
+      }
+    ],
+    "ticket_comments": [
+      {
+        "name": "PRIMARY",
+        "column": "id",
+        "sequence": 1
+      },
+      {
+        "name": "idx_ticket_comments_ticket_id",
+        "column": "ticket_id",
+        "sequence": 1
+      },
+      {
+        "name": "idx_ticket_comments_user_id",
+        "column": "user_id",
+        "sequence": 1
+      },
+      {
+        "name": "idx_ticket_comments_comment_type",
+        "column": "comment_type",
+        "sequence": 1
+      },
+      {
+        "name": "idx_ticket_comments_ticket_created",
+        "column": "ticket_id",
+        "sequence": 1
+      },
+      {
+        "name": "idx_ticket_comments_ticket_created",
+        "column": "created_at",
+        "sequence": 2
+      }
+    ],
+    "ticket_feedback": [
+      {
+        "name": "PRIMARY",
+        "column": "id",
+        "sequence": 1
+      },
+      {
+        "name": "uq_ticket_feedback_ticket_id",
+        "column": "ticket_id",
+        "sequence": 1
+      },
+      {
+        "name": "idx_ticket_feedback_user_id",
+        "column": "user_id",
+        "sequence": 1
+      },
+      {
+        "name": "idx_ticket_feedback_rating",
+        "column": "rating",
+        "sequence": 1
+      },
+      {
+        "name": "idx_ticket_feedback_created_at",
+        "column": "created_at",
+        "sequence": 1
+      }
+    ]
+  },
+  "plans": {
+    "employeeRecentTickets": [
+      {
+        "table": "t",
+        "type": "ref",
+        "possible_keys": "idx_tickets_created_by,idx_tickets_category_id,idx_tickets_priority_id",
+        "key": "idx_tickets_created_by",
+        "rows": 1,
+        "Extra": "Using filesort"
+      },
+      {
+        "table": "p",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      },
+      {
+        "table": "c",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      }
+    ],
+    "employeeTrend": [
+      {
+        "table": "tickets",
+        "type": "ref",
+        "possible_keys": "idx_tickets_created_by,idx_tickets_created_at",
+        "key": "idx_tickets_created_by",
+        "rows": 1,
+        "Extra": "Using where; Using temporary; Using filesort"
+      }
+    ],
+    "employeeCategory": [
+      {
+        "table": "t",
+        "type": "ref",
+        "possible_keys": "idx_tickets_created_by,idx_tickets_category_id",
+        "key": "idx_tickets_created_by",
+        "rows": 1,
+        "Extra": "Using temporary; Using filesort"
+      },
+      {
+        "table": "c",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY,name",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      }
+    ],
+    "employeeActivity_status": [
+      {
+        "table": "t",
+        "type": "ref",
+        "possible_keys": "PRIMARY,idx_tickets_created_by",
+        "key": "idx_tickets_created_by",
+        "rows": 1,
+        "Extra": "Using temporary; Using filesort"
+      },
+      {
+        "table": "e",
+        "type": "ref",
+        "possible_keys": "idx_ticket_status_history_ticket_changed",
+        "key": "idx_ticket_status_history_ticket_changed",
+        "rows": 3,
+        "Extra": "Using where"
+      },
+      {
+        "table": "actor",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      }
+    ],
+    "employeeActivity_assignment": [
+      {
+        "table": "t",
+        "type": "ref",
+        "possible_keys": "PRIMARY,idx_tickets_created_by",
+        "key": "idx_tickets_created_by",
+        "rows": 1,
+        "Extra": "Using temporary; Using filesort"
+      },
+      {
+        "table": "e",
+        "type": "ref",
+        "possible_keys": "idx_ticket_assignments_ticket_active",
+        "key": "idx_ticket_assignments_ticket_active",
+        "rows": 1,
+        "Extra": null
+      },
+      {
+        "table": "actor",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      }
+    ],
+    "employeeActivity_assignmentEnd": [
+      {
+        "table": "t",
+        "type": "ref",
+        "possible_keys": "PRIMARY,idx_tickets_created_by",
+        "key": "idx_tickets_created_by",
+        "rows": 1,
+        "Extra": "Using temporary; Using filesort"
+      },
+      {
+        "table": "e",
+        "type": "ref",
+        "possible_keys": "idx_ticket_assignments_ticket_active",
+        "key": "idx_ticket_assignments_ticket_active",
+        "rows": 1,
+        "Extra": "Using index condition"
+      }
+    ],
+    "employeeActivity_comment": [
+      {
+        "table": "e",
+        "type": "ref",
+        "possible_keys": "idx_ticket_comments_ticket_id,idx_ticket_comments_comment_type,idx_ticket_comments_ticket_created",
+        "key": "idx_ticket_comments_comment_type",
+        "rows": 2,
+        "Extra": "Using filesort"
+      },
+      {
+        "table": "t",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY,idx_tickets_created_by",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": "Using where"
+      },
+      {
+        "table": "actor",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      }
+    ],
+    "technicianRecentTickets": [
+      {
+        "table": "t",
+        "type": "ref",
+        "possible_keys": "idx_tickets_category_id,idx_tickets_priority_id,idx_tickets_assigned_to",
+        "key": "idx_tickets_assigned_to",
+        "rows": 1,
+        "Extra": "Using filesort"
+      },
+      {
+        "table": "p",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      },
+      {
+        "table": "c",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      }
+    ],
+    "technicianTrend": [
+      {
+        "table": "tickets",
+        "type": "ref",
+        "possible_keys": "idx_tickets_assigned_to,idx_tickets_created_at",
+        "key": "idx_tickets_assigned_to",
+        "rows": 1,
+        "Extra": "Using where; Using temporary; Using filesort"
+      }
+    ],
+    "technicianCategory": [
+      {
+        "table": "t",
+        "type": "ref",
+        "possible_keys": "idx_tickets_category_id,idx_tickets_assigned_to",
+        "key": "idx_tickets_assigned_to",
+        "rows": 1,
+        "Extra": "Using temporary; Using filesort"
+      },
+      {
+        "table": "c",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY,name",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      }
+    ],
+    "technicianActivity_status": [
+      {
+        "table": "t",
+        "type": "ref",
+        "possible_keys": "PRIMARY,idx_tickets_assigned_to",
+        "key": "idx_tickets_assigned_to",
+        "rows": 1,
+        "Extra": "Using temporary; Using filesort"
+      },
+      {
+        "table": "e",
+        "type": "ref",
+        "possible_keys": "idx_ticket_status_history_ticket_changed",
+        "key": "idx_ticket_status_history_ticket_changed",
+        "rows": 3,
+        "Extra": "Using where"
+      },
+      {
+        "table": "actor",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      }
+    ],
+    "technicianActivity_assignment": [
+      {
+        "table": "t",
+        "type": "ref",
+        "possible_keys": "PRIMARY,idx_tickets_assigned_to",
+        "key": "idx_tickets_assigned_to",
+        "rows": 1,
+        "Extra": "Using temporary; Using filesort"
+      },
+      {
+        "table": "e",
+        "type": "ref",
+        "possible_keys": "idx_ticket_assignments_ticket_active",
+        "key": "idx_ticket_assignments_ticket_active",
+        "rows": 1,
+        "Extra": null
+      },
+      {
+        "table": "actor",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      }
+    ],
+    "technicianActivity_assignmentEnd": [
+      {
+        "table": "t",
+        "type": "ref",
+        "possible_keys": "PRIMARY,idx_tickets_assigned_to",
+        "key": "idx_tickets_assigned_to",
+        "rows": 1,
+        "Extra": "Using temporary; Using filesort"
+      },
+      {
+        "table": "e",
+        "type": "ref",
+        "possible_keys": "idx_ticket_assignments_ticket_active",
+        "key": "idx_ticket_assignments_ticket_active",
+        "rows": 1,
+        "Extra": "Using index condition"
+      }
+    ],
+    "technicianActivity_comment": [
+      {
+        "table": "t",
+        "type": "ref",
+        "possible_keys": "PRIMARY,idx_tickets_assigned_to",
+        "key": "idx_tickets_assigned_to",
+        "rows": 1,
+        "Extra": "Using temporary; Using filesort"
+      },
+      {
+        "table": "e",
+        "type": "ALL",
+        "possible_keys": "idx_ticket_comments_ticket_id,idx_ticket_comments_ticket_created",
+        "key": null,
+        "rows": 2,
+        "Extra": "Using where; Using join buffer (hash join)"
+      },
+      {
+        "table": "actor",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      }
+    ],
+    "adminRecentTickets": [
+      {
+        "table": "t",
+        "type": "ALL",
+        "possible_keys": "idx_tickets_category_id,idx_tickets_priority_id",
+        "key": null,
+        "rows": 6,
+        "Extra": "Using filesort"
+      },
+      {
+        "table": "p",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      },
+      {
+        "table": "c",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      }
+    ],
+    "adminTrend": [
+      {
+        "table": "tickets",
+        "type": "index",
+        "possible_keys": "idx_tickets_created_at",
+        "key": "idx_tickets_created_at",
+        "rows": 6,
+        "Extra": "Using where; Using index; Using temporary; Using filesort"
+      }
+    ],
+    "adminCategory": [
+      {
+        "table": "t",
+        "type": "index",
+        "possible_keys": "idx_tickets_category_id",
+        "key": "idx_tickets_category_id",
+        "rows": 6,
+        "Extra": "Using index; Using temporary; Using filesort"
+      },
+      {
+        "table": "c",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY,name",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      }
+    ],
+    "adminActivity_status": [
+      {
+        "table": "e",
+        "type": "ALL",
+        "possible_keys": "idx_ticket_status_history_ticket_changed",
+        "key": null,
+        "rows": 11,
+        "Extra": "Using where; Using filesort"
+      },
+      {
+        "table": "t",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      },
+      {
+        "table": "actor",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      }
+    ],
+    "adminActivity_assignment": [
+      {
+        "table": "e",
+        "type": "ALL",
+        "possible_keys": "idx_ticket_assignments_ticket_active",
+        "key": null,
+        "rows": 5,
+        "Extra": "Using filesort"
+      },
+      {
+        "table": "actor",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      },
+      {
+        "table": "t",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      }
+    ],
+    "adminActivity_assignmentEnd": [
+      {
+        "table": "e",
+        "type": "ALL",
+        "possible_keys": "idx_ticket_assignments_ticket_active",
+        "key": null,
+        "rows": 5,
+        "Extra": "Using where; Using filesort"
+      },
+      {
+        "table": "t",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      }
+    ],
+    "adminActivity_comment": [
+      {
+        "table": "e",
+        "type": "ALL",
+        "possible_keys": "idx_ticket_comments_ticket_id,idx_ticket_comments_ticket_created",
+        "key": null,
+        "rows": 2,
+        "Extra": "Using filesort"
+      },
+      {
+        "table": "actor",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      },
+      {
+        "table": "t",
+        "type": "eq_ref",
+        "possible_keys": "PRIMARY",
+        "key": "PRIMARY",
+        "rows": 1,
+        "Extra": null
+      }
+    ],
+    "workload": [
+      {
+        "table": "u",
+        "type": "ref",
+        "possible_keys": "idx_users_role",
+        "key": "idx_users_role",
+        "rows": 2,
+        "Extra": "Using temporary; Using filesort"
+      },
+      {
+        "table": "t",
+        "type": "ref",
+        "possible_keys": "idx_tickets_assigned_to",
+        "key": "idx_tickets_assigned_to",
+        "rows": 2,
+        "Extra": null
+      }
+    ],
+    "satisfaction": [
+      {
+        "table": "ticket_feedback",
+        "type": "index",
+        "possible_keys": null,
+        "key": "idx_ticket_feedback_rating",
+        "rows": 2,
+        "Extra": "Using index"
+      }
+    ]
+  }
+}
