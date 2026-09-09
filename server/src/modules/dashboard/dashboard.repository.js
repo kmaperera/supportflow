@@ -147,4 +147,26 @@ async function getAverageResolutionTime({ createdBy, assignedTo } = {}, db = poo
   return rows[0];
 }
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime };
+async function getSlaComplianceMetrics({ createdBy, assignedTo } = {}, db = pool) {
+  const conditions = [];
+  const values = [];
+  if (createdBy !== undefined) { conditions.push("created_by = ?"); values.push(createdBy); }
+  if (assignedTo !== undefined) { conditions.push("assigned_to = ?"); values.push(assignedTo); }
+  const where = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
+  // Exclude invalid completions from their own dimension, including its tracked count.
+  // Pending remains pending even after the deadline; only persisted completions are classified.
+  const aggregates = [["response", "response_due_at", "first_response_at"],
+    ["resolution", "resolution_due_at", "resolved_at"]].flatMap(([name, due, completion]) => {
+    const tracked = `${due} IS NOT NULL AND (${completion} IS NULL OR ${completion} >= created_at)`;
+    return [
+      `COALESCE(SUM(${tracked}), 0) AS ${name}_tracked`,
+      `COALESCE(SUM(${due} IS NOT NULL AND ${completion} IS NULL), 0) AS ${name}_pending`,
+      `COALESCE(SUM(${due} IS NOT NULL AND ${completion} IS NOT NULL AND ${completion} >= created_at AND ${completion} <= ${due}), 0) AS ${name}_met`,
+      `COALESCE(SUM(${due} IS NOT NULL AND ${completion} IS NOT NULL AND ${completion} >= created_at AND ${completion} > ${due}), 0) AS ${name}_missed`,
+    ];
+  });
+  const [rows] = await db.query(`SELECT ${aggregates.join(", ")} FROM tickets${where}`, values);
+  return rows[0];
+}
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics };

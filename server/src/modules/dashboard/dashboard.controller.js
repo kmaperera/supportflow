@@ -51,4 +51,9 @@ const getAverageResolutionTime = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Average resolution time retrieved successfully", data: { summary } });
 });
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, getAdminSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkload, getAverageFirstResponseTime, getAverageResolutionTime };
+const getSlaComplianceMetrics = asyncHandler(async (req, res) => {
+  const summary = await service.getSlaComplianceMetrics(req.user);
+  res.status(200).json({ success: true, message: "SLA compliance metrics retrieved successfully", data: { summary } });
+});
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, getAdminSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkload, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics };

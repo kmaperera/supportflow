@@ -140,4 +140,21 @@ async function getAverageResolutionTime(user, db) {
   };
 }
 
-module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime };
+function mapSlaCompliance(row, dimension) {
+  const trackedTickets = Number(row[`${dimension}_tracked`] ?? 0);
+  const metTickets = Number(row[`${dimension}_met`] ?? 0);
+  const missedTickets = Number(row[`${dimension}_missed`] ?? 0);
+  const pendingTickets = Number(row[`${dimension}_pending`] ?? 0);
+  const completedTickets = metTickets + missedTickets;
+  return {
+    trackedTickets, metTickets, missedTickets, pendingTickets, completedTickets,
+    compliancePercentage: completedTickets === 0 ? null : Number((metTickets / completedTickets * 100).toFixed(2)),
+  };
+}
+
+async function getSlaComplianceMetrics(user, db) {
+  const row = await repository.getSlaComplianceMetrics(distributionScope(user), db);
+  return { response: mapSlaCompliance(row, "response"), resolution: mapSlaCompliance(row, "resolution") };
+}
+
+module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics };

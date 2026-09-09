@@ -42,4 +42,9 @@ router.get("/average-resolution-time", authenticate,
   query().custom(value => Object.keys(value).length === 0).withMessage("Query parameters are not supported"),
   validate, controller.getAverageResolutionTime);
 
+router.get("/sla-compliance", authenticate,
+  authorizeRoles(USER_ROLES.EMPLOYEE, USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN),
+  query().custom(value => Object.keys(value).length === 0).withMessage("Query parameters are not supported"),
+  validate, controller.getSlaComplianceMetrics);
+
 module.exports = router;
