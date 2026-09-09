@@ -1,6 +1,6 @@
 const pool = require("../../config/database");
 const repository = require("./reports.repository");
-const { normalizeReportQuery, dateBoundary, normalizeDateRangeQuery, parseCalendarDate, normalizePerformanceQuery, normalizeSlaReportQuery } = require("./reports.validation");
+const { normalizeReportQuery, dateBoundary, normalizeDateRangeQuery, parseCalendarDate, normalizePerformanceQuery, normalizeSlaReportQuery, normalizeCategoryReportQuery } = require("./reports.validation");
 const name = (first, last) => [first, last].map(value => (value ?? "").trim()).filter(Boolean).join(" ");
 async function getTicketReportQuery(params, db) {
   const { filters, pagination } = normalizeReportQuery(params);
@@ -102,4 +102,25 @@ async function getSlaReport(params = {}, db) {
   return { report: { filters, responseSla: metrics("response"), resolutionSla: metrics("resolution") } };
 }
 
-module.exports = { getTicketReportQuery, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport };
+async function getCategoryReport(params = {}, db) {
+  const filters = normalizeCategoryReportQuery(params);
+  const queryFilters = { ...filters };
+  delete queryFilters.startDate;
+  delete queryFilters.endDate;
+  if (filters.startDate) queryFilters.startAt = dateBoundary(filters.startDate);
+  if (filters.endDate) queryFilters.endExclusive = dateBoundary(filters.endDate, true);
+  const rows = await repository.getCategoryReport({ filters: queryFilters }, db);
+  // Sum grouped counts, not ticket rows: the category FK makes this the complete
+  // population, and one read keeps the denominator consistent during ticket writes.
+  const totalTickets = rows.reduce((sum, row) => sum + Number(row.total_tickets ?? 0), 0);
+  const categories = rows.map(row => {
+    const total = Number(row.total_tickets ?? 0);
+    return { categoryId: Number(row.category_id), categoryName: row.category_name,
+      isActive: [true, 1, "1"].includes(row.is_active), totalTickets: total,
+      activeTickets: Number(row.active_tickets ?? 0), resolvedTickets: Number(row.resolved_tickets ?? 0),
+      closedTickets: Number(row.closed_tickets ?? 0), percentageOfTickets: totalTickets === 0 ? 0 : Number((total / totalTickets * 100).toFixed(2)) };
+  });
+  return { report: { filters, totalTickets, categories } };
+}
+
+module.exports = { getTicketReportQuery, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport };
