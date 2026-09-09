@@ -68,4 +68,8 @@ router.get("/recent-activity", authenticate,
     .withMessage("Limit must be an integer from 1 to 20"),
   validate, controller.getRecentTicketActivity);
 
+router.get("/satisfaction-summary", authenticate, authorizeRoles(USER_ROLES.ADMIN),
+  query().custom(value => Object.keys(value).length === 0).withMessage("Query parameters are not supported"),
+  validate, controller.getSatisfactionSummary);
+
 module.exports = router;

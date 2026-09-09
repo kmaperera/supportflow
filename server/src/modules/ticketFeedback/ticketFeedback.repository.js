@@ -26,5 +26,18 @@ async function updateByTicketId({ ticketId, rating, comment = null }, db = pool)
   return result.affectedRows;
 }
 
-// Satisfaction aggregation is introduced in Phase 11.17.
-module.exports = { findByTicketId, create, updateByTicketId };
+async function getSatisfactionSummary(db = pool) {
+  const [rows] = await db.query(
+    `SELECT COUNT(*) AS total_ratings, AVG(rating) AS average_rating,
+       COALESCE(SUM(rating >= 4), 0) AS satisfied_ratings,
+       COALESCE(SUM(rating = 5), 0) AS rating_5,
+       COALESCE(SUM(rating = 4), 0) AS rating_4,
+       COALESCE(SUM(rating = 3), 0) AS rating_3,
+       COALESCE(SUM(rating = 2), 0) AS rating_2,
+       COALESCE(SUM(rating = 1), 0) AS rating_1
+     FROM ticket_feedback`
+  );
+  return rows[0];
+}
+
+module.exports = { findByTicketId, create, updateByTicketId, getSatisfactionSummary };

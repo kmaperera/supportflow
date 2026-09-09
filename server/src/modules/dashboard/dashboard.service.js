@@ -1,3 +1,4 @@
+const ticketFeedbackRepository = require("../ticketFeedback/ticketFeedback.repository");
 const repository = require("./dashboard.repository");
 const ApiError = require("../../utils/ApiError");
 const { USER_ROLES } = require("../../constants/roles");
@@ -229,4 +230,17 @@ async function getRecentTicketActivity(user, limit = 10, db) {
   });
 }
 
-module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics, getTicketTrend, getRecentTickets, getRecentTicketActivity };
+async function getSatisfactionSummary(db) {
+  const row = await ticketFeedbackRepository.getSatisfactionSummary(db);
+  const totalRatings = Number(row.total_ratings ?? 0);
+  const satisfiedRatings = Number(row.satisfied_ratings ?? 0);
+  return {
+    totalRatings,
+    averageRating: totalRatings === 0 || row.average_rating == null ? null : Number(Number(row.average_rating).toFixed(2)),
+    satisfiedRatings,
+    satisfactionPercentage: totalRatings === 0 ? null : Number((satisfiedRatings / totalRatings * 100).toFixed(2)),
+    ratingDistribution: [5, 4, 3, 2, 1].map(rating => ({ rating, count: Number(row[`rating_${rating}`] ?? 0) })),
+  };
+}
+
+module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics, getTicketTrend, getRecentTickets, getRecentTicketActivity, getSatisfactionSummary };
