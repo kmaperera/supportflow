@@ -23,8 +23,8 @@ async function getTicketReportQuery(params, db) {
     rows: rows.map(row => ({ id: Number(row.id), ticketNumber: row.ticket_number, title: row.title, status: row.status,
       category: { id: Number(row.category_id), name: row.category_name },
       priority: { id: Number(row.priority_id), name: row.priority_name },
-      requester: { id: Number(row.created_by), name: name(row.requester_first_name, row.requester_last_name) },
-      assignedTechnician: row.assigned_to == null ? null : { id: Number(row.assigned_to), name: name(row.technician_first_name, row.technician_last_name) },
+      requester: { id: Number(row.created_by), name: name(row.requester_first_name, row.requester_last_name), email: row.requester_email },
+      assignedTechnician: row.assigned_to == null ? null : { id: Number(row.assigned_to), name: name(row.technician_first_name, row.technician_last_name), email: row.technician_email },
       createdAt: row.created_at, firstResponseAt: row.first_response_at, resolvedAt: row.resolved_at,
       responseDueAt: row.response_due_at, resolutionDueAt: row.resolution_due_at })),
   } };

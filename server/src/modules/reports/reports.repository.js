@@ -20,8 +20,8 @@ async function getTicketReportRows({ filters, pagination }, db = pool) {
   const [rows] = await db.query(
     `SELECT t.id, t.ticket_number, t.title, t.status, t.category_id, c.name AS category_name,
        t.priority_id, p.name AS priority_name, t.created_by, requester.first_name AS requester_first_name,
-       requester.last_name AS requester_last_name, t.assigned_to,
-       technician.first_name AS technician_first_name, technician.last_name AS technician_last_name,
+       requester.last_name AS requester_last_name, requester.email AS requester_email, t.assigned_to,
+       technician.first_name AS technician_first_name, technician.last_name AS technician_last_name, technician.email AS technician_email,
        t.created_at, t.first_response_at, t.resolved_at, t.response_due_at, t.resolution_due_at
      FROM tickets AS t
      INNER JOIN ticket_categories AS c ON c.id = t.category_id

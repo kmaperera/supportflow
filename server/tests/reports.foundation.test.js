@@ -26,7 +26,7 @@ test("report filters validate real UTC dates, selectable filters and safe pagina
 test("report rows/count share bound predicates and return lightweight numeric metadata", async () => {
   const calls = [];
   const row = { id: "7", ticket_number: "SF-7", title: "Printer", status: "CLOSED", category_id: "3", category_name: "Hardware",
-    priority_id: "2", priority_name: "High", created_by: "1", requester_first_name: " Alice ", requester_last_name: " User ", assigned_to: null,
+    priority_id: "2", priority_name: "High", created_by: "1", requester_first_name: " Alice ", requester_last_name: " User ", requester_email: "alice@example.test", assigned_to: null,
     created_at: "created", first_response_at: null, resolved_at: "resolved", response_due_at: null, resolution_due_at: null };
   const db = { async query(sql, values) {
     calls.push({ sql, values });
@@ -40,7 +40,7 @@ test("report rows/count share bound predicates and return lightweight numeric me
   assert.deepEqual(calls[0].values, [...calls[1].values, 25, 25]);
   assert.match(calls[0].sql, /ORDER BY t.created_at DESC, t.id DESC LIMIT \? OFFSET \?/);
   assert.deepEqual(result.report.pagination, { page: 2, limit: 25, totalItems: 26, totalPages: 2 });
-  assert.deepEqual(result.report.rows[0].requester, { id: 1, name: "Alice User" });
+  assert.deepEqual(result.report.rows[0].requester, { id: 1, name: "Alice User", email: "alice@example.test" });
   assert.equal(result.report.rows[0].assignedTechnician, null);
   assert.equal(result.report.rows[0].id, 7);
   assert.equal(result.report.filters.technicianId, 4);
@@ -81,4 +81,34 @@ test("report endpoint is ADMIN-only and rejects invalid query before repository 
   const failure = await get(3);
   assert.equal(failure.status, 500);
   assert.equal((await failure.json()).message, "Internal server error");
+});
+
+
+test("final ticket report maps current technician emails and preserves nullable timestamps", async () => {
+  const row = { id: "8", ticket_number: "SF-8", title: "Printer", status: "OPEN", category_id: "3", category_name: "Inactive category",
+    priority_id: "2", priority_name: "HIGH", created_by: "1", requester_first_name: " Alice ", requester_last_name: " User ", requester_email: "alice@example.test",
+    assigned_to: "4", technician_first_name: " Bob ", technician_last_name: " Tech ", technician_email: "bob@example.test",
+    created_at: "2026-09-01T00:00:00.000Z", first_response_at: null, resolved_at: null, response_due_at: null, resolution_due_at: null };
+  const result = await service.getTicketReportQuery({ technicianId: "4", limit: "1" }, { async query(sql, values) {
+    assert.doesNotMatch(sql, /ticket_assignments|ticket_comments|ticket_status_history|ticket_attachments|notifications|sla_policies|knowledge_base|is_active|password|refresh|feedback/);
+    if (sql.includes("COUNT(*)")) {
+      assert.doesNotMatch(sql, /JOIN/);
+      assert.deepEqual(values, [4]);
+      return [[{ total: "2" }]];
+    }
+    assert.match(sql, /requester.email AS requester_email/);
+    assert.match(sql, /technician.email AS technician_email/);
+    assert.match(sql, /LEFT JOIN users AS technician ON technician.id = t.assigned_to/);
+    assert.match(sql, /INNER JOIN users AS requester ON requester.id = t.created_by/);
+    assert.match(sql, /INNER JOIN ticket_categories AS c ON c.id = t.category_id/);
+    assert.match(sql, /INNER JOIN ticket_priorities AS p ON p.id = t.priority_id/);
+    assert.deepEqual(values, [4, 1, 0]);
+    return [[row]];
+  } });
+  assert.deepEqual(result.report.rows, [{ id: 8, ticketNumber: "SF-8", title: "Printer", status: "OPEN",
+    category: { id: 3, name: "Inactive category" }, priority: { id: 2, name: "HIGH" },
+    requester: { id: 1, name: "Alice User", email: "alice@example.test" },
+    assignedTechnician: { id: 4, name: "Bob Tech", email: "bob@example.test" },
+    createdAt: "2026-09-01T00:00:00.000Z", firstResponseAt: null, resolvedAt: null, responseDueAt: null, resolutionDueAt: null }]);
+  assert.deepEqual(result.report.pagination, { page: 1, limit: 1, totalItems: 2, totalPages: 2 });
 });
