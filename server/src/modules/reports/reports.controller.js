@@ -12,4 +12,8 @@ const getTechnicianPerformanceReport = asyncHandler(async (req, res) => {
   const data = await service.getTechnicianPerformanceReport({ startDate: req.query.startDate, endDate: req.query.endDate });
   res.status(200).json({ success: true, message: "Technician performance report retrieved successfully", data });
 });
-module.exports = { getTicketReport, getDateRangeReport, getTechnicianPerformanceReport };
+const getSlaReport = asyncHandler(async (req, res) => {
+  const data = await service.getSlaReport(req.query);
+  res.status(200).json({ success: true, message: "SLA report retrieved successfully", data });
+});
+module.exports = { getTicketReport, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport };

@@ -62,4 +62,11 @@ function normalizePerformanceQuery(params = {}) {
 }
 const technicianPerformanceValidation = [query().custom(value => { normalizePerformanceQuery(value); return true; })];
 
-module.exports = { parseCalendarDate, dateBoundary, normalizeReportQuery, reportQueryValidation, normalizeDateRangeQuery, dateRangeValidation, normalizePerformanceQuery, technicianPerformanceValidation };
+function normalizeSlaReportQuery(params = {}) {
+  const allowed = ["startDate", "endDate", "priorityId", "categoryId", "technicianId"];
+  if (!params || typeof params !== "object" || Array.isArray(params) || Object.keys(params).some(key => !allowed.includes(key))) invalid("Unsupported SLA report query parameter");
+  return normalizeReportQuery(params, allowed).filters;
+}
+const slaReportValidation = [query().custom(value => { normalizeSlaReportQuery(value); return true; })];
+
+module.exports = { parseCalendarDate, dateBoundary, normalizeReportQuery, reportQueryValidation, normalizeDateRangeQuery, dateRangeValidation, normalizePerformanceQuery, technicianPerformanceValidation, normalizeSlaReportQuery, slaReportValidation };

@@ -107,4 +107,17 @@ async function getTechnicianCompletionMetrics(filters, kind, db = pool) {
   return rows;
 }
 
-module.exports = { buildTicketReportWhere, getTicketReportRows, countTicketReportRows, getDailyTicketCountsInDateRange, getPerformanceTechnicians, getTechnicianHistoricalCounts, getTechnicianCompletionMetrics };
+async function getSlaReportMetrics({ filters }, db = pool) {
+  const { whereSql, params } = buildTicketReportWhere(filters);
+  const aggregates = [["response", "response_due_at", "first_response_at"],
+    ["resolution", "resolution_due_at", "resolved_at"]].flatMap(([dimension, deadline, completion]) => [
+    `COALESCE(SUM(t.${deadline} IS NOT NULL), 0) AS ${dimension}_tracked`,
+    `COALESCE(SUM(t.${deadline} IS NOT NULL AND t.${completion} IS NULL), 0) AS ${dimension}_pending`,
+    `COALESCE(SUM(t.${deadline} IS NOT NULL AND t.${completion} IS NOT NULL AND t.${completion} <= t.${deadline}), 0) AS ${dimension}_met`,
+    `COALESCE(SUM(t.${deadline} IS NOT NULL AND t.${completion} IS NOT NULL AND t.${completion} > t.${deadline}), 0) AS ${dimension}_missed`,
+  ]);
+  const [rows] = await db.query(`SELECT ${aggregates.join(", ")} FROM tickets AS t${whereSql}`, params);
+  return rows[0];
+}
+
+module.exports = { buildTicketReportWhere, getTicketReportRows, countTicketReportRows, getDailyTicketCountsInDateRange, getPerformanceTechnicians, getTechnicianHistoricalCounts, getTechnicianCompletionMetrics, getSlaReportMetrics };

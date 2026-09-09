@@ -1,6 +1,6 @@
 const pool = require("../../config/database");
 const repository = require("./reports.repository");
-const { normalizeReportQuery, dateBoundary, normalizeDateRangeQuery, parseCalendarDate, normalizePerformanceQuery } = require("./reports.validation");
+const { normalizeReportQuery, dateBoundary, normalizeDateRangeQuery, parseCalendarDate, normalizePerformanceQuery, normalizeSlaReportQuery } = require("./reports.validation");
 const name = (first, last) => [first, last].map(value => (value ?? "").trim()).filter(Boolean).join(" ");
 async function getTicketReportQuery(params, db) {
   const { filters, pagination } = normalizeReportQuery(params);
@@ -83,4 +83,23 @@ async function getTechnicianPerformanceReport(params = {}, db) {
   return { report: { filters, technicians } };
 }
 
-module.exports = { getTicketReportQuery, getDateRangeReport, getTechnicianPerformanceReport };
+async function getSlaReport(params = {}, db) {
+  const filters = normalizeSlaReportQuery(params);
+  const queryFilters = { ...filters };
+  delete queryFilters.startDate;
+  delete queryFilters.endDate;
+  if (filters.startDate) queryFilters.startAt = dateBoundary(filters.startDate);
+  if (filters.endDate) queryFilters.endExclusive = dateBoundary(filters.endDate, true);
+  const row = await repository.getSlaReportMetrics({ filters: queryFilters }, db);
+  const metrics = dimension => {
+    const metTickets = Number(row[`${dimension}_met`] ?? 0);
+    const missedTickets = Number(row[`${dimension}_missed`] ?? 0);
+    const pendingTickets = Number(row[`${dimension}_pending`] ?? 0);
+    const completedTickets = metTickets + missedTickets;
+    return { trackedTickets: Number(row[`${dimension}_tracked`] ?? 0), metTickets, missedTickets, pendingTickets, completedTickets,
+      compliancePercentage: completedTickets === 0 ? null : Number((metTickets / completedTickets * 100).toFixed(2)) };
+  };
+  return { report: { filters, responseSla: metrics("response"), resolutionSla: metrics("resolution") } };
+}
+
+module.exports = { getTicketReportQuery, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport };
