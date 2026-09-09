@@ -47,4 +47,11 @@ router.get("/sla-compliance", authenticate,
   query().custom(value => Object.keys(value).length === 0).withMessage("Query parameters are not supported"),
   validate, controller.getSlaComplianceMetrics);
 
+router.get("/ticket-trend", authenticate,
+  authorizeRoles(USER_ROLES.EMPLOYEE, USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN),
+  query().custom(value => Object.keys(value).every(key => key === "period")).withMessage("Only period is supported"),
+  query("period").optional().custom(value => typeof value === "string" && ["daily", "monthly"].includes(value))
+    .withMessage("Period must be daily or monthly"),
+  validate, controller.getTicketTrend);
+
 module.exports = router;

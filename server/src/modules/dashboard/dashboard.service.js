@@ -157,4 +157,27 @@ async function getSlaComplianceMetrics(user, db) {
   return { response: mapSlaCompliance(row, "response"), resolution: mapSlaCompliance(row, "resolution") };
 }
 
-module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics };
+async function getTicketTrend(user, period = "monthly", db, now = new Date()) {
+  if (!["daily", "monthly"].includes(period)) throw new ApiError(422, "Period must be daily or monthly");
+  const scope = distributionScope(user);
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth();
+  const day = now.getUTCDate();
+  const daily = period === "daily";
+  const length = daily ? 30 : 12;
+  const dates = Array.from({ length }, (_, index) => new Date(daily
+    ? Date.UTC(year, month, day - 29 + index) : Date.UTC(year, month - 11 + index, 1)));
+  const end = new Date(daily ? Date.UTC(year, month, day + 1) : Date.UTC(year, month + 1, 1));
+  // Bind UTC calendar strings, avoiding mysql2's local-time serialization of JS Dates.
+  const boundary = date => `${date.toISOString().slice(0, 10)} 00:00:00`;
+  const rows = await repository.getTicketTrend({ ...scope, period,
+    startDate: boundary(dates[0]), endDate: boundary(end) }, db);
+  const counts = new Map(rows.map(row => [row.period_key, Number(row.ticket_count ?? 0)]));
+  const trend = dates.map(date => {
+    const key = date.toISOString().slice(0, daily ? 10 : 7);
+    return { [daily ? "date" : "month"]: key, count: counts.get(key) ?? 0 };
+  });
+  return { period, trend };
+}
+
+module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics, getTicketTrend };
