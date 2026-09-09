@@ -26,4 +26,9 @@ const getTicketStatusDistribution = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Ticket status distribution retrieved successfully", data: { distribution } });
 });
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, getAdminSummary, getTicketSummaryCards, getTicketStatusDistribution };
+const getTicketCategoryDistribution = asyncHandler(async (req, res) => {
+  const distribution = await service.getTicketCategoryDistribution(req.user);
+  res.status(200).json({ success: true, message: "Ticket category distribution retrieved successfully", data: { distribution } });
+});
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, getAdminSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution };

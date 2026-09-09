@@ -71,12 +71,16 @@ async function getTicketSummaryCards(user, db) {
   return cards.map(([key, label]) => ({ key, label, value: summary[key] }));
 }
 
-async function getTicketStatusDistribution(user, db) {
+function distributionScope(user) {
   if (!user) throw new ApiError(401, "Authentication required");
   if (!Object.values(USER_ROLES).includes(user.role)) throw new ApiError(403, "You do not have permission to access this resource");
   validateUserId(user.id);
-  const filters = user.role === USER_ROLES.EMPLOYEE ? { createdBy: user.id }
+  return user.role === USER_ROLES.EMPLOYEE ? { createdBy: user.id }
     : user.role === USER_ROLES.TECHNICIAN ? { assignedTo: user.id } : {};
+}
+
+async function getTicketStatusDistribution(user, db) {
+  const filters = distributionScope(user);
   const rows = await repository.getTicketStatusDistribution(filters, db);
   const counts = new Map(rows.map(row => [row.status, Number(row.count ?? 0)]));
   return [TICKET_STATUSES.OPEN, TICKET_STATUSES.ASSIGNED, TICKET_STATUSES.IN_PROGRESS,
@@ -84,4 +88,9 @@ async function getTicketStatusDistribution(user, db) {
     TICKET_STATUSES.REOPENED].map(status => ({ status, count: counts.get(status) ?? 0 }));
 }
 
-module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution };
+async function getTicketCategoryDistribution(user, db) {
+  const rows = await repository.getTicketCategoryDistribution(distributionScope(user), db);
+  return rows.map(row => ({ categoryId: Number(row.category_id), categoryName: row.category_name, count: Number(row.count ?? 0) }));
+}
+
+module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution };

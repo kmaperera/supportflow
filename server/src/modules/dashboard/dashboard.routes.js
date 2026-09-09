@@ -20,4 +20,8 @@ router.get("/status-distribution", authenticate,
   query().custom(value => Object.keys(value).length === 0).withMessage("Query parameters are not supported"),
   validate, controller.getTicketStatusDistribution);
 
+router.get("/category-distribution", authenticate,
+  query().custom(value => Object.keys(value).length === 0).withMessage("Query parameters are not supported"),
+  validate, controller.getTicketCategoryDistribution);
+
 module.exports = router;

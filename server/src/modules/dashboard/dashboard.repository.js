@@ -74,4 +74,18 @@ async function getTicketStatusDistribution({ createdBy, assignedTo } = {}, db = 
   return rows;
 }
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary, getTicketStatusDistribution };
+async function getTicketCategoryDistribution({ createdBy, assignedTo } = {}, db = pool) {
+  const conditions = [];
+  const values = [];
+  if (createdBy !== undefined) { conditions.push("t.created_by = ?"); values.push(createdBy); }
+  if (assignedTo !== undefined) { conditions.push("t.assigned_to = ?"); values.push(assignedTo); }
+  const where = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
+  const [rows] = await db.query(
+    `SELECT c.id AS category_id, c.name AS category_name, COUNT(*) AS count
+     FROM tickets AS t INNER JOIN ticket_categories AS c ON c.id = t.category_id${where}
+     GROUP BY c.id, c.name ORDER BY count DESC, c.name ASC`, values
+  );
+  return rows;
+}
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary, getTicketStatusDistribution, getTicketCategoryDistribution };
