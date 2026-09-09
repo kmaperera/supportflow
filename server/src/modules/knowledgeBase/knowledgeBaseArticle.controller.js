@@ -22,4 +22,9 @@ const unpublishArticle = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Knowledge Base article unpublished successfully", data: { article } });
 });
 
-module.exports = { createArticle, updateArticle, publishArticle, unpublishArticle };
+const archiveArticle = asyncHandler(async (req, res) => {
+  const article = await service.archiveArticle(req.params.articleId);
+  res.status(200).json({ success: true, message: "Knowledge Base article archived successfully", data: { article } });
+});
+
+module.exports = { createArticle, updateArticle, publishArticle, unpublishArticle, archiveArticle };

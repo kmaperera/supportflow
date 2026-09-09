@@ -29,4 +29,7 @@ router.patch("/articles/:articleId/publish", authenticate, authorizeRoles(USER_R
 router.patch("/articles/:articleId/unpublish", authenticate, authorizeRoles(USER_ROLES.ADMIN),
   articleStatusValidation, validate, articleController.unpublishArticle);
 
+router.patch("/articles/:articleId/archive", authenticate, authorizeRoles(USER_ROLES.ADMIN),
+  articleStatusValidation, validate, articleController.archiveArticle);
+
 module.exports = router;

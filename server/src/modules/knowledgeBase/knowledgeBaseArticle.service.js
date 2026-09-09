@@ -146,4 +146,16 @@ async function unpublishArticle(articleId, db) {
   return mapArticle(await requireArticle(articleId, db));
 }
 
-module.exports = { createArticle, updateArticle, publishArticle, unpublishArticle };
+async function archiveArticle(articleId, db) {
+  validateArticleId(articleId);
+  const existing = await requireArticle(articleId, db);
+  if (existing.status === "ARCHIVED" && existing.published_at === null) return mapArticle(existing);
+  if (!["DRAFT", "PUBLISHED", "ARCHIVED"].includes(existing.status)) {
+    throw new ApiError(409, "Knowledge Base article cannot be archived from its current status");
+  }
+  // Also repair an archived row with an inconsistent publication timestamp.
+  await repository.updateStatus(articleId, "ARCHIVED", null, db);
+  return mapArticle(await requireArticle(articleId, db));
+}
+
+module.exports = { createArticle, updateArticle, publishArticle, unpublishArticle, archiveArticle };
