@@ -7,4 +7,9 @@ const createArticle = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, message: "Knowledge Base article created successfully", data: { article } });
 });
 
-module.exports = { createArticle };
+const updateArticle = asyncHandler(async (req, res) => {
+  const article = await service.updateArticle(req.params.articleId, req.body);
+  res.status(200).json({ success: true, message: "Knowledge Base article updated successfully", data: { article } });
+});
+
+module.exports = { createArticle, updateArticle };

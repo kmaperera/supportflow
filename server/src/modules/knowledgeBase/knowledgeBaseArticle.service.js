@@ -42,6 +42,10 @@ async function createArticle(values, db) {
   }
   const row = await repository.findById(id, db);
   if (!row) throw new ApiError(500, "Created Knowledge Base article could not be retrieved");
+  return mapArticle(row);
+}
+
+function mapArticle(row) {
   return {
     id: row.id, categoryId: row.category_id, categoryName: row.category_name,
     title: row.title, slug: row.slug, content: row.content, status: row.status,
@@ -50,4 +54,63 @@ async function createArticle(values, db) {
   };
 }
 
-module.exports = { createArticle };
+async function updateArticle(articleId, values, db) {
+  if (!["string", "number"].includes(typeof articleId) ||
+      (typeof articleId === "number" && !Number.isSafeInteger(articleId)) ||
+      !/^[1-9]\d*$/.test(String(articleId)) || String(articleId).length > 20 ||
+      BigInt(articleId) > 18446744073709551615n) throw new ApiError(422, "Article ID must be a positive integer");
+  const existing = await repository.findById(articleId, db);
+  if (!existing) throw new ApiError(404, "Knowledge Base article not found");
+  if (!values || typeof values !== "object" || Array.isArray(values) || !Object.keys(values).length ||
+      Object.keys(values).some(key => !["categoryId", "title", "content"].includes(key))) {
+    throw new ApiError(422, "Provide at least one of categoryId, title or content only");
+  }
+  let categoryId = existing.category_id;
+  let title = existing.title;
+  let content = existing.content;
+  if (Object.hasOwn(values, "categoryId")) {
+    if (!Number.isSafeInteger(values.categoryId) || values.categoryId < 1) throw new ApiError(422, "Category ID must be a positive integer");
+    categoryId = values.categoryId;
+  }
+  if (Object.hasOwn(values, "title")) {
+    if (typeof values.title !== "string") throw new ApiError(422, "Title must be a string");
+    title = values.title.trim();
+    if (Array.from(title).length < 3 || Array.from(title).length > 200) throw new ApiError(422, "Title must be between 3 and 200 characters");
+  }
+  if (Object.hasOwn(values, "content")) {
+    if (typeof values.content !== "string" || !values.content.trim()) throw new ApiError(422, "Content must be a non-empty string");
+    content = values.content.trim();
+  }
+  if (String(categoryId) !== String(existing.category_id)) {
+    const category = await categories.findById(categoryId, db);
+    if (!category) throw new ApiError(404, "Knowledge Base category not found");
+    if (![true, 1, "1"].includes(category.is_active)) throw new ApiError(409, "Knowledge Base category is inactive");
+  }
+  const titleChanged = title !== existing.title;
+  if (!titleChanged && content === existing.content && String(categoryId) === String(existing.category_id)) return mapArticle(existing);
+  const base = titleChanged ? slugify(title) : null;
+  let suffix = 1;
+  let races = 0;
+  while (true) {
+    let slug = existing.slug;
+    if (titleChanged) {
+      const ending = suffix === 1 ? "" : `-${suffix}`;
+      slug = base.slice(0, 220 - ending.length).replace(/-+$/g, "") + ending;
+      suffix++;
+      const match = await repository.findBySlug(slug, db);
+      if (match && String(match.id) !== String(existing.id)) continue;
+    }
+    try {
+      await repository.updateById(articleId, { categoryId, title, slug, content }, db);
+      break;
+    } catch (error) {
+      if (error.code !== "ER_DUP_ENTRY") throw error;
+      if (!titleChanged || ++races >= 5) throw new ApiError(409, "Could not allocate a unique article slug. Please retry");
+    }
+  }
+  const row = await repository.findById(articleId, db);
+  if (!row) throw new ApiError(404, "Knowledge Base article not found");
+  return mapArticle(row);
+}
+
+module.exports = { createArticle, updateArticle };
