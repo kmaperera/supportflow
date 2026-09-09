@@ -2,6 +2,7 @@ const repository = require("./articleFeedback.repository");
 const articles = require("./knowledgeBaseArticle.repository");
 const ApiError = require("../../utils/ApiError");
 const { USER_ROLES } = require("../../constants/roles");
+const { canReadArticle } = require("./knowledgeBaseAccess");
 
 function validateId(value) {
   if (!["string", "number"].includes(typeof value) ||
@@ -17,8 +18,7 @@ async function checkAccess({ articleId, userId, userRole }, writing, db) {
   if (writing && userRole === USER_ROLES.ADMIN) throw new ApiError(403, "Administrators cannot submit Knowledge Base article feedback");
   if (!Object.values(USER_ROLES).includes(userRole)) throw new ApiError(403, "You do not have permission to access this resource");
   const article = await articles.findById(articleId, db);
-  if (!article || (userRole !== USER_ROLES.ADMIN &&
-      (article.status !== "PUBLISHED" || ![true, 1, "1"].includes(article.category_is_active)))) {
+  if (!canReadArticle(article, userRole)) {
     throw new ApiError(404, "Knowledge Base article not found");
   }
 }

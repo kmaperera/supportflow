@@ -3,6 +3,7 @@ const categories = require("./knowledgeBaseCategory.repository");
 const ApiError = require("../../utils/ApiError");
 const slugify = require("../../utils/slugify");
 const { USER_ROLES } = require("../../constants/roles");
+const { READER_FILTERS, isReader, canReadArticle } = require("./knowledgeBaseAccess");
 
 async function createArticle(values, db) {
   if (!values || typeof values !== "object" || Array.isArray(values) ||
@@ -163,15 +164,15 @@ async function getArticleById(articleId, user, db) {
   validateArticleId(articleId);
   if (!user) throw new ApiError(401, "Authentication required");
   const row = await requireArticle(articleId, db);
-  if (user.role !== USER_ROLES.ADMIN &&
-      (![USER_ROLES.EMPLOYEE, USER_ROLES.TECHNICIAN].includes(user.role) ||
-       row.status !== "PUBLISHED" || ![true, 1, "1"].includes(row.category_is_active))) {
+  if (!canReadArticle(row, user.role)) {
     throw new ApiError(404, "Knowledge Base article not found");
   }
-  if ([USER_ROLES.EMPLOYEE, USER_ROLES.TECHNICIAN].includes(user.role)) {
+  if (isReader(user.role)) {
     const affectedRows = await repository.incrementViewCount(articleId, db);
     if (affectedRows !== 1) throw new ApiError(500, "Knowledge Base article view count could not be updated");
-    return mapArticle(await requireArticle(articleId, db));
+    const refreshed = await requireArticle(articleId, db);
+    if (!canReadArticle(refreshed, user.role)) throw new ApiError(404, "Knowledge Base article not found");
+    return mapArticle(refreshed);
   }
   return mapArticle(row);
 }
@@ -197,7 +198,7 @@ async function listArticles(options = {}, user, db) {
   const { page, limit } = normalized;
   const offset = (page - 1) * limit;
   if (limit > 100 || !Number.isSafeInteger(offset)) throw new ApiError(422, "Invalid pagination range");
-  const filters = user.role === USER_ROLES.ADMIN ? {} : { status: "PUBLISHED", activeCategoryOnly: true };
+  const filters = user.role === USER_ROLES.ADMIN ? {} : { ...READER_FILTERS };
   if (search) filters.search = search;
   if (options.categoryId !== undefined) {
     const value = options.categoryId;
