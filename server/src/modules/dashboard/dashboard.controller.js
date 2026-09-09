@@ -46,4 +46,9 @@ const getAverageFirstResponseTime = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Average first-response time retrieved successfully", data: { summary } });
 });
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, getAdminSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkload, getAverageFirstResponseTime };
+const getAverageResolutionTime = asyncHandler(async (req, res) => {
+  const summary = await service.getAverageResolutionTime(req.user);
+  res.status(200).json({ success: true, message: "Average resolution time retrieved successfully", data: { summary } });
+});
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, getAdminSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkload, getAverageFirstResponseTime, getAverageResolutionTime };

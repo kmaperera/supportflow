@@ -134,4 +134,17 @@ async function getAverageFirstResponseTime({ createdBy, assignedTo } = {}, db = 
   return rows[0];
 }
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime };
+async function getAverageResolutionTime({ createdBy, assignedTo } = {}, db = pool) {
+  const conditions = ["resolved_at IS NOT NULL", "resolved_at >= created_at"];
+  const values = [];
+  if (createdBy !== undefined) { conditions.push("created_by = ?"); values.push(createdBy); }
+  if (assignedTo !== undefined) { conditions.push("assigned_to = ?"); values.push(assignedTo); }
+  const [rows] = await db.query(
+    `SELECT AVG(TIMESTAMPDIFF(SECOND, created_at, resolved_at)) AS average_resolution_seconds,
+       COUNT(*) AS resolved_tickets
+     FROM tickets WHERE ${conditions.join(" AND ")}`, values
+  );
+  return rows[0];
+}
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime };

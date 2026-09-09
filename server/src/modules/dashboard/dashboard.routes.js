@@ -37,4 +37,9 @@ router.get("/average-first-response-time", authenticate,
   query().custom(value => Object.keys(value).length === 0).withMessage("Query parameters are not supported"),
   validate, controller.getAverageFirstResponseTime);
 
+router.get("/average-resolution-time", authenticate,
+  authorizeRoles(USER_ROLES.EMPLOYEE, USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN),
+  query().custom(value => Object.keys(value).length === 0).withMessage("Query parameters are not supported"),
+  validate, controller.getAverageResolutionTime);
+
 module.exports = router;

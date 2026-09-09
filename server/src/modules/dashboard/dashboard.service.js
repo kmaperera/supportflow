@@ -118,14 +118,26 @@ async function getTechnicianWorkloadAnalytics(db) {
   }));
 }
 
+function averageSecondsToMinutes(seconds, sampleCount) {
+  return sampleCount === 0 || seconds == null ? null : Number((Number(seconds) / 60).toFixed(2));
+}
+
 async function getAverageFirstResponseTime(user, db) {
   const row = await repository.getAverageFirstResponseTime(distributionScope(user), db);
   const respondedTickets = Number(row.responded_tickets ?? 0);
   return {
-    averageFirstResponseMinutes: respondedTickets === 0 || row.average_first_response_seconds == null
-      ? null : Number((Number(row.average_first_response_seconds) / 60).toFixed(2)),
+    averageFirstResponseMinutes: averageSecondsToMinutes(row.average_first_response_seconds, respondedTickets),
     respondedTickets,
   };
 }
 
-module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime };
+async function getAverageResolutionTime(user, db) {
+  const row = await repository.getAverageResolutionTime(distributionScope(user), db);
+  const resolvedTickets = Number(row.resolved_tickets ?? 0);
+  return {
+    averageResolutionMinutes: averageSecondsToMinutes(row.average_resolution_seconds, resolvedTickets),
+    resolvedTickets,
+  };
+}
+
+module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime };
