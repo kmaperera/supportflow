@@ -1,5 +1,6 @@
 const repository = require("./dashboard.repository");
 const ApiError = require("../../utils/ApiError");
+const { USER_ROLES } = require("../../constants/roles");
 
 function validateUserId(userId) {
   if (!["string", "number"].includes(typeof userId) ||
@@ -47,4 +48,26 @@ async function getAdminDashboardSummary(db) {
   };
 }
 
-module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary };
+async function getTicketSummaryCards(user, db) {
+  if (!user) throw new ApiError(401, "Authentication required");
+  if (!Object.values(USER_ROLES).includes(user.role)) throw new ApiError(403, "You do not have permission to access this resource");
+  validateUserId(user.id);
+  let summary;
+  let cards;
+  if (user.role === USER_ROLES.EMPLOYEE) {
+    summary = await getEmployeeDashboardSummary(user.id, db);
+    cards = [["totalTickets", "Total Tickets"], ["activeTickets", "Active Tickets"],
+      ["resolvedTickets", "Resolved Tickets"], ["closedTickets", "Closed Tickets"]];
+  } else if (user.role === USER_ROLES.TECHNICIAN) {
+    summary = await getTechnicianDashboardSummary(user.id, db);
+    cards = [["activeAssignedTickets", "Active Assigned"], ["assignedTickets", "Assigned"],
+      ["waitingForUserTickets", "Waiting for User"], ["unassignedQueueTickets", "Unassigned Queue"]];
+  } else {
+    summary = await getAdminDashboardSummary(db);
+    cards = [["totalTickets", "Total Tickets"], ["activeTickets", "Active Tickets"],
+      ["unassignedTickets", "Unassigned Tickets"], ["resolvedTickets", "Resolved Tickets"]];
+  }
+  return cards.map(([key, label]) => ({ key, label, value: summary[key] }));
+}
+
+module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards };

@@ -16,4 +16,9 @@ const getAdminSummary = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Admin dashboard summary retrieved successfully", data: { summary } });
 });
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, getAdminSummary };
+const getTicketSummaryCards = asyncHandler(async (req, res) => {
+  const cards = await service.getTicketSummaryCards(req.user);
+  res.status(200).json({ success: true, message: "Ticket summary cards retrieved successfully", data: { cards } });
+});
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, getAdminSummary, getTicketSummaryCards };
