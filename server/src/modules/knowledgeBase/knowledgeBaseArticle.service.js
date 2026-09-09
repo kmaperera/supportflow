@@ -168,6 +168,11 @@ async function getArticleById(articleId, user, db) {
        row.status !== "PUBLISHED" || ![true, 1, "1"].includes(row.category_is_active))) {
     throw new ApiError(404, "Knowledge Base article not found");
   }
+  if ([USER_ROLES.EMPLOYEE, USER_ROLES.TECHNICIAN].includes(user.role)) {
+    const affectedRows = await repository.incrementViewCount(articleId, db);
+    if (affectedRows !== 1) throw new ApiError(500, "Knowledge Base article view count could not be updated");
+    return mapArticle(await requireArticle(articleId, db));
+  }
   return mapArticle(row);
 }
 

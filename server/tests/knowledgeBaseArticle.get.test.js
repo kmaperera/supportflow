@@ -19,31 +19,42 @@ test("get service validates IDs and enforces the role/status/category visibility
     for (const status of ["DRAFT", "PUBLISHED", "ARCHIVED"]) {
       for (const active of [true, 1, "1", false, 0, "0", null]) {
         let queries = 0;
+        let writes = 0;
+        const countable = ["EMPLOYEE", "TECHNICIAN"].includes(role) && status === "PUBLISHED" && [true, 1, "1"].includes(active);
         const db = { async query(sql, values) {
           queries++;
+          if (sql.startsWith("UPDATE")) {
+            assert.equal(queries, 2);
+            assert.ok(countable);
+            assert.equal(sql, "UPDATE knowledge_base_articles SET view_count = view_count + 1 WHERE id = ?");
+            assert.deepEqual(values, ["10"]);
+            writes++;
+            return [{ affectedRows: 1 }];
+          }
           assert.match(sql, /^\s*SELECT /);
           assert.match(sql, /c.is_active AS category_is_active/);
           assert.match(sql, /WHERE a.id = \? LIMIT 1/);
           assert.deepEqual(values, ["10"]);
-          return [[{ ...row, status, category_is_active: active }]];
+          return [[{ ...row, status, category_is_active: active, view_count: 17 + writes }]];
         } };
         const result = service.getArticleById("10", { role }, db);
         if (role === "ADMIN" || (role !== "UNKNOWN" && status === "PUBLISHED" && [true, 1, "1"].includes(active))) {
           const article = await result;
           assert.equal(article.status, status);
-          assert.equal(article.viewCount, 17);
+          assert.equal(article.viewCount, countable ? 18 : 17);
           assert.equal(article.content, "Body");
           assert.equal("category_is_active" in article, false);
           assert.equal("helpfulCount" in article, false);
         } else await assert.rejects(result, { statusCode: 404, message: "Knowledge Base article not found" });
-        assert.equal(queries, 1);
+        assert.equal(queries, countable ? 3 : 1);
+        assert.equal(writes, countable ? 1 : 0);
       }
     }
   }
   await assert.rejects(service.getArticleById(99, { role: "ADMIN" }, { async query() { return [[]]; } }), { statusCode: 404 });
 });
 
-test("GET endpoint uses authenticated database role and hides unavailable articles without writes", async (t) => {
+test("GET endpoint counts accessible reader requests and hides unavailable articles without writes", async (t) => {
   const variables = ["CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET", "JWT_ACCESS_SECRET"];
   const saved = variables.map(key => process.env[key]);
   variables.forEach(key => { process.env[key] = "kb-get-test"; });
@@ -53,7 +64,14 @@ test("GET endpoint uses authenticated database role and hides unavailable articl
   const app = require("../src/app");
   t.mock.method(users, "findById", async id => ({ id, role: { 1: "ADMIN", 2: "TECHNICIAN", 3: "EMPLOYEE" }[id], is_active: 1 }));
   let current = { ...row };
+  let writes = 0;
   const query = t.mock.method(pool, "query", async (sql, values) => {
+    if (sql.startsWith("UPDATE")) {
+      assert.equal(sql, "UPDATE knowledge_base_articles SET view_count = view_count + 1 WHERE id = ?");
+      writes++;
+      current.view_count++;
+      return [{ affectedRows: 1 }];
+    }
     assert.match(sql, /^\s*SELECT .*FROM knowledge_base_articles AS a.*WHERE a.id = \? LIMIT 1/s);
     return [values[0] === "10" ? [{ ...current }] : []];
   });
@@ -79,7 +97,7 @@ test("GET endpoint uses authenticated database role and hides unavailable articl
           assert.equal(response.status, 200);
           assert.deepEqual(await response.json(), { success: true, message: "Knowledge Base article retrieved successfully", data: {
             article: { id: 10, categoryId: 1, categoryName: "Network", title: "VPN Setup", slug: "vpn-setup", content: "Body",
-              status, viewCount: 17, createdBy: 7, publishedAt: "published", createdAt: "created", updatedAt: "updated" },
+              status, viewCount: actor === 1 ? 17 : 18, createdBy: 7, publishedAt: "published", createdAt: "created", updatedAt: "updated" },
           } });
         } else {
           assert.equal(response.status, 404);
@@ -88,5 +106,41 @@ test("GET endpoint uses authenticated database role and hides unavailable articl
       }
     }
   }
+  assert.equal(writes, 2);
+  current = { ...row };
+  for (let i = 1; i <= 3; i++) {
+    const response = await get(3);
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).data.article.viewCount, 17 + i);
+  }
+  assert.equal(writes, 5);
   assert.equal((await fetch(base)).status, 401);
+});
+
+test("view increment failures propagate and concurrent reads use atomic increments", async () => {
+  for (const affectedRows of [0, 2]) {
+    await assert.rejects(service.getArticleById(10, { role: "EMPLOYEE" }, { async query(sql) {
+      return sql.startsWith("UPDATE") ? [{ affectedRows }] : [[{ ...row }]];
+    } }), { statusCode: 500 });
+  }
+  const failure = new Error("database failure");
+  await assert.rejects(service.getArticleById(10, { role: "TECHNICIAN" }, { async query(sql) {
+    if (sql.startsWith("UPDATE")) throw failure;
+    return [[{ ...row }]];
+  } }), e => e === failure);
+  let count = 17;
+  let writes = 0;
+  const db = { async query(sql, values) {
+    if (sql.startsWith("UPDATE")) {
+      assert.equal(sql, "UPDATE knowledge_base_articles SET view_count = view_count + 1 WHERE id = ?");
+      assert.deepEqual(values, [10]);
+      count++;
+      writes++;
+      return [{ affectedRows: 1 }];
+    }
+    return [[{ ...row, view_count: count }]];
+  } };
+  await Promise.all(Array.from({ length: 10 }, () => service.getArticleById(10, { role: "EMPLOYEE" }, db)));
+  assert.equal(count, 27);
+  assert.equal(writes, 10);
 });
