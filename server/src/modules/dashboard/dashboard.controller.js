@@ -66,4 +66,9 @@ const getRecentTickets = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Recent tickets retrieved successfully", data: { tickets } });
 });
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, getAdminSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkload, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics, getTicketTrend, getRecentTickets };
+const getRecentTicketActivity = asyncHandler(async (req, res) => {
+  const activities = await service.getRecentTicketActivity(req.user, req.query.limit);
+  res.status(200).json({ success: true, message: "Recent ticket activity retrieved successfully", data: { activities } });
+});
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, getAdminSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkload, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics, getTicketTrend, getRecentTickets, getRecentTicketActivity };

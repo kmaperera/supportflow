@@ -194,4 +194,39 @@ async function getRecentTickets(user, limit = 5, db) {
   }));
 }
 
-module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics, getTicketTrend, getRecentTickets };
+async function getRecentTicketActivity(user, limit = 10, db) {
+  const scope = distributionScope(user);
+  if (!["string", "number"].includes(typeof limit) || !/^(?:[1-9]|1[0-9]|20)$/.test(String(limit))) {
+    throw new ApiError(422, "Limit must be an integer from 1 to 20");
+  }
+  const includeInternal = require("../tickets/ticketCommentAccess.service").canViewInternalComments(user);
+  const sources = ["status", "assignment", "assignmentEnd", "comment"];
+  const batches = await Promise.all(sources.map(source => repository.getRecentActivitySource(source,
+    { ...scope, includeInternal, limit: Number(limit) }, db)));
+  const events = batches.flatMap((rows, rank) => rows
+    .filter(row => sources[rank] !== "comment" || row.comment_type === "PUBLIC" || (includeInternal && row.comment_type === "INTERNAL"))
+    .map(row => ({ row, source: sources[rank], rank })));
+  events.sort((a, b) => new Date(b.row.created_at) - new Date(a.row.created_at) || a.rank - b.rank ||
+    (BigInt(a.row.event_id) === BigInt(b.row.event_id) ? 0 : BigInt(a.row.event_id) > BigInt(b.row.event_id) ? -1 : 1));
+  return events.slice(0, Number(limit)).map(({ row, source }) => {
+    const activity = {
+      type: source === "status" ? "STATUS_CHANGED" : source === "assignment" ? "ASSIGNED"
+        : source === "assignmentEnd" ? "ASSIGNMENT_ENDED" : row.comment_type === "PUBLIC" ? "PUBLIC_COMMENT" : "INTERNAL_NOTE",
+      ticketId: Number(row.ticket_id), ticketNumber: row.ticket_number, ticketTitle: row.ticket_title,
+      message: source === "status" ? `Ticket status changed from ${row.from_status} to ${row.to_status}`
+        : source === "assignment" ? "Ticket was assigned" : source === "assignmentEnd" ? "Ticket assignment ended"
+          : row.comment_type === "PUBLIC" ? "A public reply was added" : "An internal note was added",
+      actor: row.actor_id == null ? null : { id: Number(row.actor_id),
+        name: [row.actor_first_name, row.actor_last_name].map(name => (name ?? "").trim()).filter(Boolean).join(" ") },
+      createdAt: row.created_at,
+    };
+    if (source === "status") { activity.oldStatus = row.from_status; activity.newStatus = row.to_status; }
+    // SELF/ADMIN describes the assignment method, not whether it was a reassignment.
+    // unassigned_at also closes assignments on reassignment and records no ending actor.
+    if (source === "assignment" || source === "assignmentEnd") activity.technicianId = Number(row.technician_id);
+    if (source === "assignment") activity.assignmentType = row.assignment_type;
+    return activity;
+  });
+}
+
+module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics, getTicketTrend, getRecentTickets, getRecentTicketActivity };

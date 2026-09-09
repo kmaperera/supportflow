@@ -203,4 +203,34 @@ async function getRecentTickets({ createdBy, assignedTo, limit = 5 } = {}, db = 
   return rows;
 }
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics, getTicketTrend, getRecentTickets };
+async function getRecentActivitySource(source, { createdBy, assignedTo, includeInternal = false, limit = 10 } = {}, db = pool) {
+  if (!Number.isInteger(limit) || limit < 1 || limit > 20) throw new TypeError("Limit must be an integer from 1 to 20");
+  const sources = {
+    status: { table: "ticket_status_history", time: "changed_at", actor: "changed_by", extra: "e.from_status, e.to_status", filter: "e.from_status <> e.to_status" },
+    assignment: { table: "ticket_assignments", time: "assigned_at", actor: "assigned_by", extra: "e.assignment_type, e.technician_id" },
+    assignmentEnd: { table: "ticket_assignments", time: "unassigned_at", actor: null, extra: "e.technician_id", filter: "e.unassigned_at IS NOT NULL" },
+    comment: { table: "ticket_comments", time: "created_at", actor: "user_id", extra: "e.comment_type" },
+  };
+  if (!Object.hasOwn(sources, source)) throw new TypeError("Unsupported activity source");
+  const config = sources[source];
+  const conditions = [];
+  const values = [];
+  if (createdBy !== undefined) { conditions.push("t.created_by = ?"); values.push(createdBy); }
+  if (assignedTo !== undefined) { conditions.push("t.assigned_to = ?"); values.push(assignedTo); }
+  if (config.filter) conditions.push(config.filter);
+  if (source === "comment" && includeInternal !== true) { conditions.push("e.comment_type = ?"); values.push("PUBLIC"); }
+  const where = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
+  const actorFields = config.actor
+    ? `e.${config.actor} AS actor_id, actor.first_name AS actor_first_name, actor.last_name AS actor_last_name`
+    : "NULL AS actor_id, NULL AS actor_first_name, NULL AS actor_last_name";
+  const actorJoin = config.actor ? ` LEFT JOIN users AS actor ON actor.id = e.${config.actor}` : "";
+  const [rows] = await db.query(
+    `SELECT e.id AS event_id, t.id AS ticket_id, t.ticket_number, t.title AS ticket_title,
+       e.${config.time} AS created_at, ${actorFields}, ${config.extra}
+     FROM ${config.table} AS e INNER JOIN tickets AS t ON t.id = e.ticket_id${actorJoin}${where}
+     ORDER BY e.${config.time} DESC, e.id DESC LIMIT ?`, [...values, limit]
+  );
+  return rows;
+}
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics, getTicketTrend, getRecentTickets, getRecentActivitySource };

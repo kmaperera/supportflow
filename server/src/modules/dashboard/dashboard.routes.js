@@ -61,4 +61,11 @@ router.get("/recent-tickets", authenticate,
     .withMessage("Limit must be an integer from 1 to 10"),
   validate, controller.getRecentTickets);
 
+router.get("/recent-activity", authenticate,
+  authorizeRoles(USER_ROLES.EMPLOYEE, USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN),
+  query().custom(value => Object.keys(value).every(key => key === "limit")).withMessage("Only limit is supported"),
+  query("limit").optional().custom(value => typeof value === "string" && /^(?:[1-9]|1[0-9]|20)$/.test(value))
+    .withMessage("Limit must be an integer from 1 to 20"),
+  validate, controller.getRecentTicketActivity);
+
 module.exports = router;
