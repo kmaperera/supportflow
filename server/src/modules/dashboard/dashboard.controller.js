@@ -61,4 +61,9 @@ const getTicketTrend = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Ticket trend retrieved successfully", data });
 });
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, getAdminSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkload, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics, getTicketTrend };
+const getRecentTickets = asyncHandler(async (req, res) => {
+  const tickets = await service.getRecentTickets(req.user, req.query.limit);
+  res.status(200).json({ success: true, message: "Recent tickets retrieved successfully", data: { tickets } });
+});
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, getAdminSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkload, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics, getTicketTrend, getRecentTickets };

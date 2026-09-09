@@ -185,4 +185,22 @@ async function getTicketTrend({ period, startDate, endDate, createdBy, assignedT
   return rows;
 }
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics, getTicketTrend };
+async function getRecentTickets({ createdBy, assignedTo, limit = 5 } = {}, db = pool) {
+  if (!Number.isInteger(limit) || limit < 1 || limit > 10) throw new TypeError("Limit must be an integer from 1 to 10");
+  const conditions = [];
+  const values = [];
+  if (createdBy !== undefined) { conditions.push("t.created_by = ?"); values.push(createdBy); }
+  if (assignedTo !== undefined) { conditions.push("t.assigned_to = ?"); values.push(assignedTo); }
+  const where = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
+  const [rows] = await db.query(
+    `SELECT t.id, t.ticket_number, t.title, t.status, t.created_at,
+       t.priority_id, p.name AS priority_name, t.category_id, c.name AS category_name
+     FROM tickets AS t
+     INNER JOIN ticket_categories AS c ON c.id = t.category_id
+     INNER JOIN ticket_priorities AS p ON p.id = t.priority_id${where}
+     ORDER BY t.created_at DESC, t.id DESC LIMIT ?`, [...values, limit]
+  );
+  return rows;
+}
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics, getTicketTrend, getRecentTickets };

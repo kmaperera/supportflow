@@ -180,4 +180,18 @@ async function getTicketTrend(user, period = "monthly", db, now = new Date()) {
   return { period, trend };
 }
 
-module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics, getTicketTrend };
+async function getRecentTickets(user, limit = 5, db) {
+  const scope = distributionScope(user);
+  if (!["string", "number"].includes(typeof limit) || !/^(?:[1-9]|10)$/.test(String(limit))) {
+    throw new ApiError(422, "Limit must be an integer from 1 to 10");
+  }
+  const rows = await repository.getRecentTickets({ ...scope, limit: Number(limit) }, db);
+  return rows.map(row => ({
+    id: Number(row.id), ticketNumber: row.ticket_number, title: row.title,
+    status: row.status, createdAt: row.created_at,
+    priority: { id: Number(row.priority_id), name: row.priority_name },
+    category: { id: Number(row.category_id), name: row.category_name },
+  }));
+}
+
+module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime, getAverageResolutionTime, getSlaComplianceMetrics, getTicketTrend, getRecentTickets };

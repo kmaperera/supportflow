@@ -54,4 +54,11 @@ router.get("/ticket-trend", authenticate,
     .withMessage("Period must be daily or monthly"),
   validate, controller.getTicketTrend);
 
+router.get("/recent-tickets", authenticate,
+  authorizeRoles(USER_ROLES.EMPLOYEE, USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN),
+  query().custom(value => Object.keys(value).every(key => key === "limit")).withMessage("Only limit is supported"),
+  query("limit").optional().custom(value => typeof value === "string" && /^(?:[1-9]|10)$/.test(value))
+    .withMessage("Limit must be an integer from 1 to 10"),
+  validate, controller.getRecentTickets);
+
 module.exports = router;
