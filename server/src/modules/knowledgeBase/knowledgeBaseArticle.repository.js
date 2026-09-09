@@ -46,7 +46,7 @@ async function updateStatus(articleId, status, publishedAt, db = pool) {
   return result.affectedRows;
 }
 
-function listVisibility({ status, activeCategoryOnly, search } = {}) {
+function listVisibility({ status, activeCategoryOnly, search, categoryId } = {}) {
   const clauses = [];
   const values = [];
   if (status !== undefined) { clauses.push("a.status = ?"); values.push(status); }
@@ -55,6 +55,7 @@ function listVisibility({ status, activeCategoryOnly, search } = {}) {
     clauses.push("(a.title LIKE ? OR a.content LIKE ?)");
     values.push(`%${search}%`, `%${search}%`);
   }
+  if (categoryId !== undefined) { clauses.push("a.category_id = ?"); values.push(categoryId); }
   return { where: clauses.length ? ` WHERE ${clauses.join(" AND ")}` : "", values };
 }
 

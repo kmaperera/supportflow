@@ -6,14 +6,18 @@ const users = require("../src/modules/users/user.repository");
 const jwt = require("jsonwebtoken");
 
 function database() {
-  const rows = Array.from({ length: 30 }, (_, i) => ({ id: 30 - i, category_id: 1, category_name: "Network",
+  const rows = Array.from({ length: 30 }, (_, i) => ({ id: 30 - i, category_id: i < 10 ? 1 : 2, category_name: "Network",
     title: i % 2 === 0 ? "Password guide" : "Title", content: i % 3 === 0 ? "Password body" : "Body",
     slug: `article-${i}`, status: i < 12 ? "PUBLISHED" : i < 20 ? "DRAFT" : "ARCHIVED",
     active: i < 10, view_count: 17, created_by: 7, published_at: null, created_at: "created", updated_at: "updated" }));
   const calls = [];
   return { calls, async query(sql, values) {
     calls.push({ sql, values });
-    assert.match(sql, /^SELECT /);
+    assert.match(sql, /^\s*SELECT /);
+    if (sql.includes("FROM knowledge_base_categories")) {
+      assert.match(sql, /WHERE id = \? LIMIT 1/);
+      return [[1, 2, 3].includes(values[0]) ? [{ id: values[0], is_active: values[0] !== 2 }] : []];
+    }
     assert.doesNotMatch(sql.split("FROM")[0], /a.content/);
     assert.doesNotMatch(sql, /UPDATE|INSERT|DELETE/);
     const filtered = sql.includes("a.status = ?");
@@ -27,6 +31,10 @@ function database() {
       const term = values[filtered ? 1 : 0].slice(1, -1).toLowerCase();
       assert.equal(values[filtered ? 1 : 0], values[filtered ? 2 : 1]);
       visible = visible.filter(row => row.title.toLowerCase().includes(term) || row.content.toLowerCase().includes(term));
+    }
+    if (sql.includes("a.category_id = ?")) {
+      const index = (filtered ? 1 : 0) + (sql.includes("LIKE") ? 2 : 0);
+      visible = visible.filter(row => row.category_id === values[index]);
     }
     if (sql.includes("COUNT(*)")) return [[{ total: String(visible.length) }]];
     assert.match(sql, /ORDER BY a.created_at DESC, a.id DESC LIMIT \? OFFSET \?/);
@@ -83,7 +91,7 @@ test("collection endpoint authenticates and uses database roles for list and cou
     authorization: `Bearer ${jwt.sign({ role: "ADMIN" }, process.env.JWT_ACCESS_SECRET, { subject: String(actor), expiresIn: "5m" })}`,
   } : {} });
   assert.equal((await get(null)).status, 401);
-  for (const query of ["?page=0", "?limit=1000", "?page=abc", "?search=x&search=y", "?categoryId=1", "?page=1&page=2"]) {
+  for (const query of ["?page=0", "?limit=1000", "?page=abc", "?search=x&search=y", "?categoryId=0", "?page=1&page=2"]) {
     assert.equal((await get(1, query)).status, 422);
   }
   assert.equal(db.calls.length, 0);
@@ -112,6 +120,47 @@ test("collection endpoint authenticates and uses database roles for list and cou
   assert.equal(emptyBody.data.pagination.totalPages, 0);
   assert.equal((await get(1, `?search=${"x".repeat(201)}`)).status, 422);
   assert.equal((await get(1, "?search=%20%20")).status, 200);
+  for (const actor of [1, 2, 3]) {
+    const active = await get(actor, "?categoryId=1&search=password&page=2&limit=5");
+    assert.equal(active.status, 200);
+    const result = await active.json();
+    assert.equal(result.data.pagination.totalRecords, 7);
+    assert.equal(result.data.articles.length, 2);
+    assert.ok(result.data.articles.every(article => article.categoryId === 1));
+    const inactive = await get(actor, "?categoryId=2");
+    assert.equal(inactive.status, 200);
+    const hidden = await inactive.json();
+    assert.equal(hidden.data.pagination.totalRecords, actor === 1 ? 20 : 0);
+    if (actor !== 1) assert.deepEqual(hidden.data.articles, []);
+  }
+  const noArticles = await get(1, "?categoryId=3");
+  assert.equal(noArticles.status, 200);
+  assert.equal((await noArticles.json()).data.pagination.totalPages, 0);
+  const missingCategory = await get(1, "?categoryId=99");
+  assert.equal(missingCategory.status, 404);
+  assert.equal((await missingCategory.json()).message, "Knowledge Base category not found");
+  for (const value of ["", "0", "-1", "abc", "3.5", "9007199254740992", "1&categoryId=2"]) {
+    assert.equal((await get(1, `?categoryId=${value}`)).status, 422);
+  }
+});
+
+test("category filters validate before SQL and combine identical list/count predicates", async () => {
+  const noQuery = { async query() { assert.fail("Invalid category queried database"); } };
+  for (const categoryId of ["", 0, -1, "abc", 3.5, null, true, [], {}, Number.MAX_SAFE_INTEGER + 1]) {
+    await assert.rejects(service.listArticles({ categoryId }, { role: "ADMIN" }, noQuery), { statusCode: 422 });
+  }
+  for (const role of ["ADMIN", "EMPLOYEE", "TECHNICIAN"]) {
+    const db = database();
+    await service.listArticles({ categoryId: "1", search: "password", page: 2, limit: 5 }, { role }, db);
+    assert.equal(db.calls.length, 3);
+    assert.deepEqual(db.calls[0].values, [1]);
+    const [list, count] = db.calls.slice(1);
+    const expected = [...(role === "ADMIN" ? [] : ["PUBLISHED"]), "%password%", "%password%", 1];
+    assert.deepEqual(list.values, [...expected, 5, 5]);
+    assert.deepEqual(count.values, expected);
+    assert.match(list.sql, /\(a.title LIKE \? OR a.content LIKE \?\) AND a.category_id = \?/);
+    assert.equal(list.sql.split("WHERE")[1].split("ORDER BY")[0].trim(), count.sql.split("WHERE")[1].trim());
+  }
 });
 
 test("search validation and bound list/count predicates preserve visibility and pagination", async () => {

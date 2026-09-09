@@ -175,7 +175,7 @@ async function listArticles(options = {}, user, db) {
   if (!user) throw new ApiError(401, "Authentication required");
   if (!Object.values(USER_ROLES).includes(user.role)) throw new ApiError(403, "You do not have permission to access this resource");
   if (!options || typeof options !== "object" || Array.isArray(options) ||
-      Object.keys(options).some(key => !["page", "limit", "search"].includes(key))) throw new ApiError(422, "Only page, limit and search are supported");
+      Object.keys(options).some(key => !["page", "limit", "search", "categoryId"].includes(key))) throw new ApiError(422, "Only page, limit, search and categoryId are supported");
   let search;
   if (options.search !== undefined) {
     if (typeof options.search !== "string") throw new ApiError(422, "Search must be a string");
@@ -194,6 +194,13 @@ async function listArticles(options = {}, user, db) {
   if (limit > 100 || !Number.isSafeInteger(offset)) throw new ApiError(422, "Invalid pagination range");
   const filters = user.role === USER_ROLES.ADMIN ? {} : { status: "PUBLISHED", activeCategoryOnly: true };
   if (search) filters.search = search;
+  if (options.categoryId !== undefined) {
+    const value = options.categoryId;
+    if (!["string", "number"].includes(typeof value) || !/^[1-9]\d*$/.test(String(value)) ||
+        !Number.isSafeInteger(Number(value))) throw new ApiError(422, "Category ID must be a positive integer");
+    filters.categoryId = Number(value);
+    if (!await categories.findById(filters.categoryId, db)) throw new ApiError(404, "Knowledge Base category not found");
+  }
   const rows = await repository.findAll({ ...filters, limit, offset }, db);
   const totalRecords = await repository.countAll(filters, db);
   const totalPages = Math.ceil(totalRecords / limit);
