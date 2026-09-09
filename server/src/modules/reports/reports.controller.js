@@ -8,4 +8,8 @@ const getDateRangeReport = asyncHandler(async (req, res) => {
   const data = await service.getDateRangeReport({ startDate: req.query.startDate, endDate: req.query.endDate });
   res.status(200).json({ success: true, message: "Date-range report retrieved successfully", data });
 });
-module.exports = { getTicketReport, getDateRangeReport };
+const getTechnicianPerformanceReport = asyncHandler(async (req, res) => {
+  const data = await service.getTechnicianPerformanceReport({ startDate: req.query.startDate, endDate: req.query.endDate });
+  res.status(200).json({ success: true, message: "Technician performance report retrieved successfully", data });
+});
+module.exports = { getTicketReport, getDateRangeReport, getTechnicianPerformanceReport };

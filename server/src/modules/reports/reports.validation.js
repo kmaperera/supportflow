@@ -56,4 +56,10 @@ function normalizeDateRangeQuery(params = {}) {
 }
 const dateRangeValidation = [query().custom(value => { normalizeDateRangeQuery(value); return true; })];
 
-module.exports = { parseCalendarDate, dateBoundary, normalizeReportQuery, reportQueryValidation, normalizeDateRangeQuery, dateRangeValidation };
+function normalizePerformanceQuery(params = {}) {
+  if (!params || typeof params !== "object" || Array.isArray(params) || Object.keys(params).some(key => !["startDate", "endDate"].includes(key))) invalid("Only startDate and endDate are supported");
+  return normalizeReportQuery(params, ["startDate", "endDate"]).filters;
+}
+const technicianPerformanceValidation = [query().custom(value => { normalizePerformanceQuery(value); return true; })];
+
+module.exports = { parseCalendarDate, dateBoundary, normalizeReportQuery, reportQueryValidation, normalizeDateRangeQuery, dateRangeValidation, normalizePerformanceQuery, technicianPerformanceValidation };

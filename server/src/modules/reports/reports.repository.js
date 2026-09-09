@@ -49,4 +49,62 @@ async function getDailyTicketCountsInDateRange({ startDateTime, endExclusiveDate
   return rows;
 }
 
-module.exports = { buildTicketReportWhere, getTicketReportRows, countTicketReportRows, getDailyTicketCountsInDateRange };
+async function getPerformanceTechnicians(db = pool) {
+  const [rows] = await db.query("SELECT id, first_name, last_name, email, is_active FROM users WHERE role = 'TECHNICIAN'");
+  return rows;
+}
+async function getTechnicianHistoricalCounts(filters, kind, db = pool) {
+  if (!["assignment", "resolution"].includes(kind)) throw new TypeError("Unsupported historical count");
+  const { whereSql, params } = buildTicketReportWhere(filters);
+  const source = kind === "assignment" ? "ticket_assignments" : "ticket_status_history";
+  const actor = kind === "assignment" ? "technician_id" : "changed_by";
+  const extra = kind === "resolution" ? `${whereSql ? " AND" : " WHERE"} h.to_status = 'RESOLVED'` : "";
+  const [rows] = await db.query(
+    `SELECT h.${actor} AS technician_id, COUNT(DISTINCT t.id) AS ticket_count
+     FROM ${source} AS h INNER JOIN tickets AS t ON t.id = h.ticket_id${whereSql}${extra}
+     GROUP BY h.${actor}`, params);
+  return rows;
+}
+async function getTechnicianCompletionMetrics(filters, kind, db = pool) {
+  if (!["response", "resolution"].includes(kind)) throw new TypeError("Unsupported completion metric");
+  const { whereSql, params } = buildTicketReportWhere(filters);
+  const completion = kind === "response" ? "first_response_at" : "resolved_at";
+  const due = kind === "response" ? "response_due_at" : "resolution_due_at";
+  const events = kind === "response" ? `
+    SELECT h.ticket_id, h.changed_by AS actor_id, h.changed_at AS event_at
+    FROM ticket_status_history h INNER JOIN eligible t ON t.id = h.ticket_id
+    WHERE h.from_status = 'ASSIGNED' AND h.to_status = 'IN_PROGRESS'
+    UNION ALL
+    SELECT c.ticket_id, c.user_id AS actor_id, c.created_at AS event_at
+    FROM ticket_comments c INNER JOIN eligible t ON t.id = c.ticket_id
+    INNER JOIN users author ON author.id = c.user_id
+    WHERE c.comment_type = 'PUBLIC' AND author.role IN ('TECHNICIAN', 'ADMIN')` : `
+    SELECT h.ticket_id, h.changed_by AS actor_id, h.changed_at AS event_at
+    FROM ticket_status_history h INNER JOIN eligible t ON t.id = h.ticket_id
+    WHERE h.to_status = 'RESOLVED'`;
+  // Earliest eligible response / latest resolution must match the persisted timestamp.
+  // Different actors at that timestamp are ambiguous and are deliberately excluded.
+  const edge = kind === "response" ? "MIN" : "MAX";
+  const [rows] = await db.query(
+    `WITH eligible AS (
+       SELECT t.id, t.created_at, t.${completion} AS completed_at, t.${due} AS due_at
+       FROM tickets t${whereSql}
+     ), events AS (${events}), attributed AS (
+       SELECT t.id, MIN(CASE WHEN e.event_at = t.completed_at THEN e.actor_id END) AS technician_id
+       FROM eligible t INNER JOIN events e ON e.ticket_id = t.id
+       WHERE t.completed_at IS NOT NULL AND t.completed_at >= t.created_at
+       GROUP BY t.id, t.completed_at
+       HAVING ${edge}(e.event_at) = t.completed_at
+          AND COUNT(DISTINCT CASE WHEN e.event_at = t.completed_at THEN e.actor_id END) = 1
+     )
+     SELECT a.technician_id, COUNT(*) AS samples,
+       AVG(TIMESTAMPDIFF(SECOND, t.created_at, t.completed_at)) AS average_seconds,
+       COALESCE(SUM(t.due_at IS NOT NULL AND t.completed_at <= t.due_at), 0) AS sla_met,
+       COALESCE(SUM(t.due_at IS NOT NULL AND t.completed_at > t.due_at), 0) AS sla_missed
+     FROM attributed a INNER JOIN eligible t ON t.id = a.id
+     INNER JOIN users actor ON actor.id = a.technician_id AND actor.role = 'TECHNICIAN'
+     GROUP BY a.technician_id`, params);
+  return rows;
+}
+
+module.exports = { buildTicketReportWhere, getTicketReportRows, countTicketReportRows, getDailyTicketCountsInDateRange, getPerformanceTechnicians, getTechnicianHistoricalCounts, getTechnicianCompletionMetrics };

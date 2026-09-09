@@ -1,0 +1,16 @@
+# Technician performance attribution (Phase 12.4)
+
+Population: tickets created within optional inclusive UTC calendar dates. All current TECHNICIAN users are returned, including inactive accounts. No current ticket assignment is used to attribute work.
+
+- assignedTickets: distinct ticket IDs from ticket_assignments per technician; repeated assignment intervals count once per technician. A ticket can legitimately count for several technicians.
+- resolvedTickets: distinct ticket IDs with a RESOLVED status-history event authored by that technician. Repeated resolutions by one technician count once; different technicians can each have resolved the same ticket. Reopening does not erase this historical count.
+- First response candidates: ASSIGNED to IN_PROGRESS history events, plus PUBLIC comments authored by support users (TECHNICIAN/ADMIN). INTERNAL notes and employee replies are excluded. The earliest candidate event timestamp must exactly equal persisted first_response_at, and all candidates at that timestamp must identify one actor. That actor must be a technician to receive credit.
+- Resolution timing: latest RESOLVED event timestamp must equal persisted resolved_at, with exactly one distinct actor at that timestamp. That actor must be a technician. Reopening clears resolved_at in the existing workflow, so historical resolution counts can exceed timing samples.
+- Completion timestamps must be nonnull and at least created_at. Averages use SQL AVG(TIMESTAMPDIFF(SECOND,...)), converted to minutes and rounded to two decimals.
+- SLA percentages use current persisted ticket snapshot deadlines and attributable completed samples only. Missing deadlines are excluded. Equal-to-deadline is MET; late completion is MISSED. Percentages have no pending samples and return null with no completed tracked samples.
+
+Conservative limitations: timestamp writes and event inserts are separate SQL statements and may cross a second boundary. Missing matches are excluded, never approximated. Conflicting actors in one timestamp are excluded. User roles are not snapshotted on these events; candidates are classified using the existing users.role. No past role is invented. Previously updated SLA snapshots are evaluated as currently persisted, not reconstructed. Samples are explicitly returned so sparse attribution is visible.
+
+Five fixed read queries return all technician identities, distinct historical assignment counts, distinct historical resolution counts, response metrics and resolution metrics. Events are reduced to one attribution row per ticket before averaging. Pool reads run concurrently; injected connections run sequentially. No transaction, lifecycle changes, policy recalculation, feedback attribution or new indexes are added.
+
+Verification: reports.performance.test.js covers mapping, empty/inactive users, sorting, optional date validation and HTTP authorization. For read-only MySQL CTE fixture checks set RUN_REPORT_DB_TESTS=1 and run node tests/reports.performanceSql.test.js from server. Fixtures do not create tables or modify application records; they exercise repeated assignments/resolutions, reassignment, admin actions, ambiguous comments, timestamp mismatches, internal notes, reopening and date exclusion against actual MySQL SQL execution.
