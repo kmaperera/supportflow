@@ -27,4 +27,9 @@ const archiveArticle = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Knowledge Base article archived successfully", data: { article } });
 });
 
-module.exports = { createArticle, updateArticle, publishArticle, unpublishArticle, archiveArticle };
+const getArticleById = asyncHandler(async (req, res) => {
+  const article = await service.getArticleById(req.params.articleId, req.user);
+  res.status(200).json({ success: true, message: "Knowledge Base article retrieved successfully", data: { article } });
+});
+
+module.exports = { createArticle, updateArticle, publishArticle, unpublishArticle, archiveArticle, getArticleById };

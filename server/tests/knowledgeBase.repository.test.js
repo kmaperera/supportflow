@@ -76,7 +76,8 @@ test("lookups retain visibility and use actual category and author fields", asyn
     assert.match(sql, /c.name AS category_name/);
     assert.match(sql, /author.first_name AS author_first_name/);
     assert.match(sql, /author.last_name AS author_last_name/);
-    assert.doesNotMatch(sql, /is_active|PUBLISHED|full_name|display_name/);
+    assert.match(sql, /c.is_active AS category_is_active/);
+    assert.doesNotMatch(sql, /WHERE.*is_active|PUBLISHED|full_name|display_name/);
     return [[]];
   } };
   await articles.findById(25, db);

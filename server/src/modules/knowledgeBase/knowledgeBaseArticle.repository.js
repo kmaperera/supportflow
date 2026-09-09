@@ -1,7 +1,7 @@
 const pool = require("../../config/database");
 
 const ARTICLE_SELECT = `
-  SELECT a.id, a.category_id, c.name AS category_name,
+  SELECT a.id, a.category_id, c.name AS category_name, c.is_active AS category_is_active,
     a.title, a.slug, a.content, a.status, a.view_count, a.created_by,
     author.first_name AS author_first_name, author.last_name AS author_last_name,
     a.published_at, a.created_at, a.updated_at
