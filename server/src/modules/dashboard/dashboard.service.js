@@ -1,6 +1,7 @@
 const repository = require("./dashboard.repository");
 const ApiError = require("../../utils/ApiError");
 const { USER_ROLES } = require("../../constants/roles");
+const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
 
 function validateUserId(userId) {
   if (!["string", "number"].includes(typeof userId) ||
@@ -70,4 +71,17 @@ async function getTicketSummaryCards(user, db) {
   return cards.map(([key, label]) => ({ key, label, value: summary[key] }));
 }
 
-module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards };
+async function getTicketStatusDistribution(user, db) {
+  if (!user) throw new ApiError(401, "Authentication required");
+  if (!Object.values(USER_ROLES).includes(user.role)) throw new ApiError(403, "You do not have permission to access this resource");
+  validateUserId(user.id);
+  const filters = user.role === USER_ROLES.EMPLOYEE ? { createdBy: user.id }
+    : user.role === USER_ROLES.TECHNICIAN ? { assignedTo: user.id } : {};
+  const rows = await repository.getTicketStatusDistribution(filters, db);
+  const counts = new Map(rows.map(row => [row.status, Number(row.count ?? 0)]));
+  return [TICKET_STATUSES.OPEN, TICKET_STATUSES.ASSIGNED, TICKET_STATUSES.IN_PROGRESS,
+    TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.RESOLVED, TICKET_STATUSES.CLOSED,
+    TICKET_STATUSES.REOPENED].map(status => ({ status, count: counts.get(status) ?? 0 }));
+}
+
+module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution };

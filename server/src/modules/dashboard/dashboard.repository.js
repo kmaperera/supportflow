@@ -64,4 +64,14 @@ async function getAdminUserSummary(db = pool) {
   return rows[0];
 }
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary };
+async function getTicketStatusDistribution({ createdBy, assignedTo } = {}, db = pool) {
+  const conditions = [];
+  const values = [];
+  if (createdBy !== undefined) { conditions.push("created_by = ?"); values.push(createdBy); }
+  if (assignedTo !== undefined) { conditions.push("assigned_to = ?"); values.push(assignedTo); }
+  const where = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
+  const [rows] = await db.query(`SELECT status, COUNT(*) AS count FROM tickets${where} GROUP BY status`, values);
+  return rows;
+}
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary, getTicketStatusDistribution };

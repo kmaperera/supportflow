@@ -16,4 +16,8 @@ router.get("/ticket-summary", authenticate,
   query().custom(value => Object.keys(value).length === 0).withMessage("Query parameters are not supported"),
   validate, controller.getTicketSummaryCards);
 
+router.get("/status-distribution", authenticate,
+  query().custom(value => Object.keys(value).length === 0).withMessage("Query parameters are not supported"),
+  validate, controller.getTicketStatusDistribution);
+
 module.exports = router;
