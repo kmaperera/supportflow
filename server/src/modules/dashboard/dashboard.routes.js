@@ -24,4 +24,8 @@ router.get("/category-distribution", authenticate,
   query().custom(value => Object.keys(value).length === 0).withMessage("Query parameters are not supported"),
   validate, controller.getTicketCategoryDistribution);
 
+router.get("/priority-distribution", authenticate,
+  query().custom(value => Object.keys(value).length === 0).withMessage("Query parameters are not supported"),
+  validate, controller.getTicketPriorityDistribution);
+
 module.exports = router;

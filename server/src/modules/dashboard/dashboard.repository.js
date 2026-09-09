@@ -88,4 +88,17 @@ async function getTicketCategoryDistribution({ createdBy, assignedTo } = {}, db 
   return rows;
 }
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary, getTicketStatusDistribution, getTicketCategoryDistribution };
+async function getTicketPriorityDistribution({ createdBy, assignedTo } = {}, db = pool) {
+  const conditions = ["t.priority_id = p.id"];
+  const values = [];
+  if (createdBy !== undefined) { conditions.push("t.created_by = ?"); values.push(createdBy); }
+  if (assignedTo !== undefined) { conditions.push("t.assigned_to = ?"); values.push(assignedTo); }
+  const [rows] = await db.query(
+    `SELECT p.id AS priority_id, p.name AS priority_name, COUNT(t.id) AS count
+     FROM ticket_priorities AS p LEFT JOIN tickets AS t ON ${conditions.join(" AND ")}
+     GROUP BY p.id, p.name`, values
+  );
+  return rows;
+}
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution };

@@ -93,4 +93,17 @@ async function getTicketCategoryDistribution(user, db) {
   return rows.map(row => ({ categoryId: Number(row.category_id), categoryName: row.category_name, count: Number(row.count ?? 0) }));
 }
 
-module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution };
+async function getTicketPriorityDistribution(user, db) {
+  const rows = await repository.getTicketPriorityDistribution(distributionScope(user), db);
+  const order = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
+  const priorities = new Map();
+  for (const row of rows) {
+    const name = row.priority_name.trim().toUpperCase();
+    if (!order.includes(name) || priorities.has(name)) throw new ApiError(409, "Unexpected ticket priority configuration");
+    priorities.set(name, { priorityId: Number(row.priority_id), priorityName: name, count: Number(row.count ?? 0) });
+  }
+  if (order.some(name => !priorities.has(name))) throw new ApiError(409, "Ticket priority configuration is incomplete");
+  return order.map(name => priorities.get(name));
+}
+
+module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution };
