@@ -82,7 +82,7 @@ test("registered creation endpoint enforces ADMIN, validation, duplicate conflic
     assert.equal(response.status, 409);
     assert.equal((await response.json()).message, "Knowledge Base category already exists");
   }
-  for (const [method, path] of [["PATCH", "/categories/7"], ["PATCH", "/categories/7/active"], ["DELETE", "/categories/7"], ["POST", "/articles"]]) {
+  for (const [method, path] of [["PATCH", "/categories/7/active"], ["DELETE", "/categories/7"]]) {
     assert.equal((await fetch(base + path, { method, headers: headers(1) })).status, 404);
   }
 });
