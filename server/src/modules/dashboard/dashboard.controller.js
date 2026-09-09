@@ -41,4 +41,9 @@ const getTechnicianWorkload = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Technician workload retrieved successfully", data: { technicians } });
 });
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, getAdminSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkload };
+const getAverageFirstResponseTime = asyncHandler(async (req, res) => {
+  const summary = await service.getAverageFirstResponseTime(req.user);
+  res.status(200).json({ success: true, message: "Average first-response time retrieved successfully", data: { summary } });
+});
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, getAdminSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkload, getAverageFirstResponseTime };

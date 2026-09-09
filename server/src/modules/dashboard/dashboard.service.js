@@ -118,4 +118,14 @@ async function getTechnicianWorkloadAnalytics(db) {
   }));
 }
 
-module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics };
+async function getAverageFirstResponseTime(user, db) {
+  const row = await repository.getAverageFirstResponseTime(distributionScope(user), db);
+  const respondedTickets = Number(row.responded_tickets ?? 0);
+  return {
+    averageFirstResponseMinutes: respondedTickets === 0 || row.average_first_response_seconds == null
+      ? null : Number((Number(row.average_first_response_seconds) / 60).toFixed(2)),
+    respondedTickets,
+  };
+}
+
+module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary, getTicketSummaryCards, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime };

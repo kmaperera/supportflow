@@ -121,4 +121,17 @@ async function getTechnicianWorkloadAnalytics(db = pool) {
   return rows;
 }
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics };
+async function getAverageFirstResponseTime({ createdBy, assignedTo } = {}, db = pool) {
+  const conditions = ["first_response_at IS NOT NULL", "first_response_at >= created_at"];
+  const values = [];
+  if (createdBy !== undefined) { conditions.push("created_by = ?"); values.push(createdBy); }
+  if (assignedTo !== undefined) { conditions.push("assigned_to = ?"); values.push(assignedTo); }
+  const [rows] = await db.query(
+    `SELECT AVG(TIMESTAMPDIFF(SECOND, created_at, first_response_at)) AS average_first_response_seconds,
+       COUNT(*) AS responded_tickets
+     FROM tickets WHERE ${conditions.join(" AND ")}`, values
+  );
+  return rows[0];
+}
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary, getTicketStatusDistribution, getTicketCategoryDistribution, getTicketPriorityDistribution, getTechnicianWorkloadAnalytics, getAverageFirstResponseTime };
