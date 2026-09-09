@@ -66,6 +66,15 @@ test("partial edits preserve lifecycle fields in every status and allocate slugs
   db.races = 1;
   assert.equal((await service.updateArticle(10, { title: "New Title" }, db)).slug, "new-title-3");
   assert.equal((await service.updateArticle(10, { categoryId: 3 }, db)).categoryId, 3);
+  const full = await service.updateArticle(10, { categoryId: 1, title: " Complete guide ", content: " Complete body " }, db);
+  assert.equal(full.categoryId, 1);
+  assert.equal(full.title, "Complete guide");
+  assert.equal(full.slug, "complete-guide");
+  assert.equal(full.content, "Complete body");
+  assert.equal(full.status, "ARCHIVED");
+  assert.equal(full.viewCount, 17);
+  assert.equal(full.createdBy, 7);
+  assert.equal(full.publishedAt, "published");
   db.races = 5;
   await assert.rejects(service.updateArticle(10, { title: "Another title" }, db), { statusCode: 409 });
 });
