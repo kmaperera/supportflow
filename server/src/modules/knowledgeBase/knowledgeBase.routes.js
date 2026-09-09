@@ -5,6 +5,8 @@ const validate = require("../../middleware/validate");
 const { USER_ROLES } = require("../../constants/roles");
 const controller = require("./knowledgeBaseCategory.controller");
 const articleController = require("./knowledgeBaseArticle.controller");
+const feedbackController = require("./articleFeedback.controller");
+const { setArticleFeedbackValidation } = require("./articleFeedback.validation");
 const { createArticleValidation, updateArticleValidation, articleStatusValidation } = require("./knowledgeBaseArticle.validation");
 const { createCategoryValidation, updateCategoryValidation, setCategoryActiveStatusValidation } = require("./knowledgeBaseCategory.validation");
 
@@ -35,5 +37,10 @@ router.patch("/articles/:articleId/archive", authenticate, authorizeRoles(USER_R
 router.get("/articles", authenticate, articleController.listArticles);
 router.get("/articles/:articleId", authenticate,
   articleStatusValidation, validate, articleController.getArticleById);
+
+router.put("/articles/:articleId/feedback", authenticate,
+  articleStatusValidation, setArticleFeedbackValidation, validate, feedbackController.setArticleFeedback);
+router.get("/articles/:articleId/feedback", authenticate,
+  articleStatusValidation, validate, feedbackController.getArticleFeedback);
 
 module.exports = router;
