@@ -12,6 +12,7 @@ const healthRoutes = require("./modules/health/health.routes");
 const notificationRoutes = require("./modules/notifications/notification.routes");
 const slaPolicyRoutes = require("./modules/sla/slaPolicy.routes");
 const knowledgeBaseRoutes = require("./modules/knowledgeBase/knowledgeBase.routes");
+const reportsRoutes = require("./modules/reports/reports.routes");
 const dashboardRoutes = require("./modules/dashboard/dashboard.routes");
 
 const app = express();
@@ -39,6 +40,7 @@ app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/sla", slaPolicyRoutes);
 app.use("/api/v1/knowledge-base", knowledgeBaseRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
+app.use("/api/v1/reports", reportsRoutes);
 
 app.use((req, res, next) => {
   next(new ApiError(404, `Route ${req.path} not found`));

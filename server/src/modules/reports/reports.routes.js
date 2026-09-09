@@ -1,0 +1,10 @@
+const router = require("express").Router();
+const authenticate = require("../../middleware/authenticate");
+const authorizeRoles = require("../../middleware/authorize");
+const validate = require("../../middleware/validate");
+const { USER_ROLES } = require("../../constants/roles");
+const { reportQueryValidation } = require("./reports.validation");
+const { getTicketReport } = require("./reports.controller");
+router.use(authenticate, authorizeRoles(USER_ROLES.ADMIN));
+router.get("/tickets", reportQueryValidation(), validate, getTicketReport);
+module.exports = router;
