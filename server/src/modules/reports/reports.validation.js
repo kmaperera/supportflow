@@ -48,4 +48,12 @@ function normalizeReportQuery(params = {}, allowedFilters = REPORT_FILTERS) {
 function reportQueryValidation(allowedFilters = REPORT_FILTERS) {
   return [query().custom(value => { normalizeReportQuery(value, allowedFilters); return true; })];
 }
-module.exports = { parseCalendarDate, dateBoundary, normalizeReportQuery, reportQueryValidation };
+function normalizeDateRangeQuery(params = {}) {
+  if (!params || typeof params !== "object" || Array.isArray(params) ||
+      Object.keys(params).some(key => !["startDate", "endDate"].includes(key))) invalid("Only startDate and endDate are supported");
+  if (params.startDate === undefined || params.endDate === undefined) invalid("startDate and endDate are required");
+  return normalizeReportQuery(params, ["startDate", "endDate"]).filters;
+}
+const dateRangeValidation = [query().custom(value => { normalizeDateRangeQuery(value); return true; })];
+
+module.exports = { parseCalendarDate, dateBoundary, normalizeReportQuery, reportQueryValidation, normalizeDateRangeQuery, dateRangeValidation };

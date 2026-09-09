@@ -1,6 +1,6 @@
 const pool = require("../../config/database");
 const repository = require("./reports.repository");
-const { normalizeReportQuery, dateBoundary } = require("./reports.validation");
+const { normalizeReportQuery, dateBoundary, normalizeDateRangeQuery, parseCalendarDate } = require("./reports.validation");
 const name = (first, last) => [first, last].map(value => (value ?? "").trim()).filter(Boolean).join(" ");
 async function getTicketReportQuery(params, db) {
   const { filters, pagination } = normalizeReportQuery(params);
@@ -29,4 +29,25 @@ async function getTicketReportQuery(params, db) {
       responseDueAt: row.response_due_at, resolutionDueAt: row.resolution_due_at })),
   } };
 }
-module.exports = { getTicketReportQuery };
+async function getDateRangeReport(params, db) {
+  const range = normalizeDateRangeQuery(params);
+  const rows = await repository.getDailyTicketCountsInDateRange({
+    startDateTime: dateBoundary(range.startDate), endExclusiveDateTime: dateBoundary(range.endDate, true),
+  }, db);
+  const counts = new Map(rows.map(row => [row.report_date, Number(row.ticket_count ?? 0)]));
+  const dailyBreakdown = [];
+  const date = parseCalendarDate(range.startDate);
+  const end = parseCalendarDate(range.endDate);
+  let totalTickets = 0;
+  for (; date <= end; date.setUTCDate(date.getUTCDate() + 1)) {
+    const key = date.toISOString().slice(0, 10);
+    const ticketCount = counts.get(key) ?? 0;
+    dailyBreakdown.push({ date: key, ticketCount });
+    totalTickets += ticketCount;
+  }
+  // Sum SQL-aggregated daily counts from one read so concurrent ticket creation cannot
+  // make a separately read total disagree with the breakdown. No ticket rows are loaded.
+  return { report: { range, totalTickets, dailyBreakdown } };
+}
+
+module.exports = { getTicketReportQuery, getDateRangeReport };

@@ -38,4 +38,15 @@ async function countTicketReportRows({ filters }, db = pool) {
   const [rows] = await db.query(`SELECT COUNT(*) AS total FROM tickets AS t${whereSql}`, params);
   return rows[0].total;
 }
-module.exports = { buildTicketReportWhere, getTicketReportRows, countTicketReportRows };
+async function getDailyTicketCountsInDateRange({ startDateTime, endExclusiveDateTime }, db = pool) {
+  const { whereSql, params } = buildTicketReportWhere({ startAt: startDateTime, endExclusive: endExclusiveDateTime });
+  // String date keys avoid mysql2 converting DATE values through the server-local timezone.
+  const [rows] = await db.query(
+    `SELECT DATE_FORMAT(t.created_at, '%Y-%m-%d') AS report_date, COUNT(*) AS ticket_count
+     FROM tickets AS t${whereSql}
+     GROUP BY report_date ORDER BY report_date ASC`, params
+  );
+  return rows;
+}
+
+module.exports = { buildTicketReportWhere, getTicketReportRows, countTicketReportRows, getDailyTicketCountsInDateRange };
