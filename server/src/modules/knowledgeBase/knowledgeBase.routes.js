@@ -32,6 +32,7 @@ router.patch("/articles/:articleId/unpublish", authenticate, authorizeRoles(USER
 router.patch("/articles/:articleId/archive", authenticate, authorizeRoles(USER_ROLES.ADMIN),
   articleStatusValidation, validate, articleController.archiveArticle);
 
+router.get("/articles", authenticate, articleController.listArticles);
 router.get("/articles/:articleId", authenticate,
   articleStatusValidation, validate, articleController.getArticleById);
 

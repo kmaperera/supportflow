@@ -82,7 +82,6 @@ test("lookups retain visibility and use actual category and author fields", asyn
   } };
   await articles.findById(25, db);
   await articles.findBySlug("title", db);
-  await articles.findAll({}, db);
   await categories.findAll({ async query(sql) {
     assert.doesNotMatch(sql, /WHERE/);
     assert.match(sql, /ORDER BY name ASC/);

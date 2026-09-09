@@ -100,5 +100,5 @@ test("article POST requires ADMIN, rejects controlled fields and creates repeate
     assert.deepEqual(result.data.article, { id: rows.length, categoryId: 1, categoryName: "Network", title: "VPN Setup",
       slug, content: "Body", status: "DRAFT", viewCount: 0, createdBy: "1", publishedAt: null, createdAt: "created", updatedAt: "updated" });
   }
-  assert.equal((await fetch(url)).status, 404);
+  assert.equal((await fetch(url)).status, 401);
 });

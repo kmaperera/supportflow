@@ -88,5 +88,5 @@ test("GET endpoint uses authenticated database role and hides unavailable articl
       }
     }
   }
-  assert.equal((await fetch(base)).status, 404);
+  assert.equal((await fetch(base)).status, 401);
 });

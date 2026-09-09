@@ -46,12 +46,34 @@ async function updateStatus(articleId, status, publishedAt, db = pool) {
   return result.affectedRows;
 }
 
-async function findAll({ limit = 20, offset = 0 } = {}, db = pool) {
+function listVisibility({ status, activeCategoryOnly } = {}) {
+  const clauses = [];
+  const values = [];
+  if (status !== undefined) { clauses.push("a.status = ?"); values.push(status); }
+  if (activeCategoryOnly === true) clauses.push("c.is_active = TRUE");
+  return { where: clauses.length ? ` WHERE ${clauses.join(" AND ")}` : "", values };
+}
+
+const ARTICLE_LIST_FROM = `FROM knowledge_base_articles AS a
+  INNER JOIN knowledge_base_categories AS c ON c.id = a.category_id
+  INNER JOIN users AS author ON author.id = a.created_by`;
+
+async function findAll({ limit = 20, offset = 0, ...filters } = {}, db = pool) {
+  const { where, values } = listVisibility(filters);
   const [rows] = await db.query(
-    `${ARTICLE_SELECT} ORDER BY a.created_at DESC, a.id DESC LIMIT ? OFFSET ?`,
-    [limit, offset]
+    `SELECT a.id, a.category_id, c.name AS category_name,
+       a.title, a.slug, a.status, a.view_count, a.created_by,
+       a.published_at, a.created_at, a.updated_at
+     ${ARTICLE_LIST_FROM}${where} ORDER BY a.created_at DESC, a.id DESC LIMIT ? OFFSET ?`,
+    [...values, limit, offset]
   );
   return rows;
+}
+
+async function countAll(filters = {}, db = pool) {
+  const { where, values } = listVisibility(filters);
+  const [rows] = await db.query(`SELECT COUNT(*) AS total ${ARTICLE_LIST_FROM}${where}`, values);
+  return Number(rows[0].total);
 }
 
 async function findByStatus(status, db = pool) {
@@ -80,5 +102,5 @@ async function incrementViewCount(articleId, db = pool) {
 
 module.exports = {
   findById, findBySlug, create, updateById, updateStatus,
-  findAll, findByStatus, findByCategoryId, incrementViewCount,
+  findAll, countAll, findByStatus, findByCategoryId, incrementViewCount,
 };

@@ -171,4 +171,31 @@ async function getArticleById(articleId, user, db) {
   return mapArticle(row);
 }
 
-module.exports = { createArticle, updateArticle, publishArticle, unpublishArticle, archiveArticle, getArticleById };
+async function listArticles(options = {}, user, db) {
+  if (!user) throw new ApiError(401, "Authentication required");
+  if (!Object.values(USER_ROLES).includes(user.role)) throw new ApiError(403, "You do not have permission to access this resource");
+  if (!options || typeof options !== "object" || Array.isArray(options) ||
+      Object.keys(options).some(key => !["page", "limit"].includes(key))) throw new ApiError(422, "Only page and limit are supported");
+  const normalized = {};
+  for (const [key, fallback] of [["page", 1], ["limit", 10]]) {
+    const value = options[key] === undefined ? fallback : options[key];
+    if (!["string", "number"].includes(typeof value) || !/^[1-9]\d*$/.test(String(value)) ||
+        !Number.isSafeInteger(Number(value))) throw new ApiError(422, `${key} must be a positive integer`);
+    normalized[key] = Number(value);
+  }
+  const { page, limit } = normalized;
+  const offset = (page - 1) * limit;
+  if (limit > 100 || !Number.isSafeInteger(offset)) throw new ApiError(422, "Invalid pagination range");
+  const filters = user.role === USER_ROLES.ADMIN ? {} : { status: "PUBLISHED", activeCategoryOnly: true };
+  const rows = await repository.findAll({ ...filters, limit, offset }, db);
+  const totalRecords = await repository.countAll(filters, db);
+  const totalPages = Math.ceil(totalRecords / limit);
+  const articles = rows.map(row => {
+    const { content, ...summary } = mapArticle(row);
+    return summary;
+  });
+  return { articles, pagination: { currentPage: page, limit, totalRecords, totalPages,
+    hasNext: page < totalPages, hasPrevious: page > 1 } };
+}
+
+module.exports = { createArticle, updateArticle, publishArticle, unpublishArticle, archiveArticle, getArticleById, listArticles };
