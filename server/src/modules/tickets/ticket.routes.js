@@ -62,6 +62,11 @@ router.patch("/:id/reopen", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE, US
 router.get("/:id/status-history", authenticate, ticketIdValidation, validate, getTicketStatusHistory);
 router.get("/:id/assignment-history", authenticate, ticketIdValidation, validate, getTicketAssignmentHistory);
 
+const { saveTicketFeedbackValidation } = require("../ticketFeedback/ticketFeedback.validation");
+const { saveTicketFeedback } = require("../ticketFeedback/ticketFeedback.controller");
+router.put("/:ticketId/feedback", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE),
+  saveTicketFeedbackValidation, validate, saveTicketFeedback);
+
 module.exports = router;
 
 
