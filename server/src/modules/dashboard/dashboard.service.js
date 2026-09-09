@@ -11,6 +11,10 @@ function validateUserId(userId) {
 async function getEmployeeDashboardSummary(userId, db) {
   validateUserId(userId);
   const row = await repository.getEmployeeSummary(userId, db);
+  return mapTicketSummary(row);
+}
+
+function mapTicketSummary(row) {
   return {
     totalTickets: Number(row.total_tickets ?? 0), openTickets: Number(row.open_tickets ?? 0),
     assignedTickets: Number(row.assigned_tickets ?? 0), inProgressTickets: Number(row.in_progress_tickets ?? 0),
@@ -32,4 +36,15 @@ async function getTechnicianDashboardSummary(technicianId, db) {
   };
 }
 
-module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary };
+async function getAdminDashboardSummary(db) {
+  const tickets = await repository.getAdminTicketSummary(db);
+  const unassigned = await repository.countUnassignedQueue(db);
+  const users = await repository.getAdminUserSummary(db);
+  return {
+    ...mapTicketSummary(tickets), unassignedTickets: Number(unassigned ?? 0),
+    totalEmployees: Number(users.total_employees ?? 0), activeEmployees: Number(users.active_employees ?? 0),
+    totalTechnicians: Number(users.total_technicians ?? 0), activeTechnicians: Number(users.active_technicians ?? 0),
+  };
+}
+
+module.exports = { getEmployeeDashboardSummary, getTechnicianDashboardSummary, getAdminDashboardSummary };

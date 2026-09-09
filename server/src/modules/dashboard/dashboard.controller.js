@@ -11,4 +11,9 @@ const getTechnicianSummary = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Technician dashboard summary retrieved successfully", data: { summary } });
 });
 
-module.exports = { getEmployeeSummary, getTechnicianSummary };
+const getAdminSummary = asyncHandler(async (req, res) => {
+  const summary = await service.getAdminDashboardSummary();
+  res.status(200).json({ success: true, message: "Admin dashboard summary retrieved successfully", data: { summary } });
+});
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, getAdminSummary };

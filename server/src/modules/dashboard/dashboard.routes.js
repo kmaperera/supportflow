@@ -8,4 +8,6 @@ const router = express.Router();
 router.get("/employee/summary", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE), controller.getEmployeeSummary);
 router.get("/technician/summary", authenticate, authorizeRoles(USER_ROLES.TECHNICIAN), controller.getTechnicianSummary);
 
+router.get("/admin/summary", authenticate, authorizeRoles(USER_ROLES.ADMIN), controller.getAdminSummary);
+
 module.exports = router;

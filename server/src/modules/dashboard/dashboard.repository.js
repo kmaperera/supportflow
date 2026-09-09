@@ -37,4 +37,31 @@ async function countUnassignedQueue(db = pool) {
   return Number(rows[0].total);
 }
 
-module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue };
+async function getAdminTicketSummary(db = pool) {
+  const [rows] = await db.query(
+    `SELECT COUNT(*) AS total_tickets,
+       COALESCE(SUM(status = 'OPEN'), 0) AS open_tickets,
+       COALESCE(SUM(status = 'ASSIGNED'), 0) AS assigned_tickets,
+       COALESCE(SUM(status = 'IN_PROGRESS'), 0) AS in_progress_tickets,
+       COALESCE(SUM(status = 'WAITING_FOR_USER'), 0) AS waiting_for_user_tickets,
+       COALESCE(SUM(status = 'RESOLVED'), 0) AS resolved_tickets,
+       COALESCE(SUM(status = 'CLOSED'), 0) AS closed_tickets,
+       COALESCE(SUM(status = 'REOPENED'), 0) AS reopened_tickets,
+       COALESCE(SUM(status IN ('OPEN', 'ASSIGNED', 'IN_PROGRESS', 'WAITING_FOR_USER', 'REOPENED')), 0) AS active_tickets
+     FROM tickets`
+  );
+  return rows[0];
+}
+
+async function getAdminUserSummary(db = pool) {
+  const [rows] = await db.query(
+    `SELECT COALESCE(SUM(role = 'EMPLOYEE'), 0) AS total_employees,
+       COALESCE(SUM(role = 'TECHNICIAN'), 0) AS total_technicians,
+       COALESCE(SUM(role = 'EMPLOYEE' AND is_active = TRUE), 0) AS active_employees,
+       COALESCE(SUM(role = 'TECHNICIAN' AND is_active = TRUE), 0) AS active_technicians
+     FROM users`
+  );
+  return rows[0];
+}
+
+module.exports = { getEmployeeSummary, getTechnicianSummary, countUnassignedQueue, getAdminTicketSummary, getAdminUserSummary };
