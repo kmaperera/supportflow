@@ -1,3 +1,4 @@
+const csvService = require("./reports.csv");
 const { sendCsvDownload } = require("../../utils/csv");
 const service = require("./reports.service");
 const asyncHandler = require("../../utils/asyncHandler");
@@ -33,4 +34,28 @@ const exportTicketCsv = asyncHandler(async (req, res) => {
   const payload = await service.getTicketCsvExport(req.query);
   sendCsvDownload(res, payload);
 });
-module.exports = { exportTicketCsv, getTicketReport, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport, getPriorityReport, getStatusReport };
+const exportDateRangeCsv = asyncHandler(async (req, res) => {
+  const payload = await csvService.getDateRangeCsvExport(req.query);
+  sendCsvDownload(res, payload);
+});
+const exportTechnicianPerformanceCsv = asyncHandler(async (req, res) => {
+  const payload = await csvService.getTechnicianPerformanceCsvExport(req.query);
+  sendCsvDownload(res, payload);
+});
+const exportSlaCsv = asyncHandler(async (req, res) => {
+  const payload = await csvService.getSlaCsvExport(req.query);
+  sendCsvDownload(res, payload);
+});
+const exportCategoryCsv = asyncHandler(async (req, res) => {
+  const payload = await csvService.getCategoryCsvExport(req.query);
+  sendCsvDownload(res, payload);
+});
+const exportPriorityCsv = asyncHandler(async (req, res) => {
+  const payload = await csvService.getPriorityCsvExport(req.query);
+  sendCsvDownload(res, payload);
+});
+const exportStatusCsv = asyncHandler(async (req, res) => {
+  const payload = await csvService.getStatusCsvExport(req.query);
+  sendCsvDownload(res, payload);
+});
+module.exports = { exportDateRangeCsv, exportTechnicianPerformanceCsv, exportSlaCsv, exportCategoryCsv, exportPriorityCsv, exportStatusCsv, exportTicketCsv, getTicketReport, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport, getPriorityReport, getStatusReport };
