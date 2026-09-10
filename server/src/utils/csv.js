@@ -1,3 +1,4 @@
+const { buildExportFilename } = require("./exportFilename");
 // Generic in-memory CSV foundation. Columns and download names are server-owned.
 function encodeCell(value) {
   let text;
@@ -31,16 +32,8 @@ function generateCsv({ columns, rows } = {}) {
   return `\uFEFF${lines.join("\r\n")}\r\n`;
 }
 
-function buildCsvFilename(baseName, date = new Date()) {
-  // Callers supply a server constant, never req.query/body. Reject unsafe names
-  // instead of attempting to repair path or header-injection input.
-  if (typeof baseName !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(baseName) || baseName.length > 80) {
-    throw new TypeError("Invalid CSV filename base");
-  }
-  if (!(date instanceof Date) || !Number.isFinite(date.getTime()) || date.getUTCFullYear() < 1000 || date.getUTCFullYear() > 9999) {
-    throw new TypeError("Invalid CSV filename date");
-  }
-  return `${baseName.toLowerCase()}-${date.toISOString().slice(0, 10)}.csv`;
+function buildCsvFilename(baseName, date) {
+  return buildExportFilename(baseName, "csv", date);
 }
 
 function sendCsvDownload(res, { csv, filename } = {}) {
