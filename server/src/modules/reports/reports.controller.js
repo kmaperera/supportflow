@@ -1,3 +1,4 @@
+const { sendPdfDownload } = require("../../utils/pdf");
 const csvService = require("./reports.csv");
 const { sendCsvDownload } = require("../../utils/csv");
 const service = require("./reports.service");
@@ -58,4 +59,8 @@ const exportStatusCsv = asyncHandler(async (req, res) => {
   const payload = await csvService.getStatusCsvExport(req.query);
   sendCsvDownload(res, payload);
 });
-module.exports = { exportDateRangeCsv, exportTechnicianPerformanceCsv, exportSlaCsv, exportCategoryCsv, exportPriorityCsv, exportStatusCsv, exportTicketCsv, getTicketReport, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport, getPriorityReport, getStatusReport };
+const exportTicketPdf = asyncHandler(async (req, res) => {
+  const payload = await service.getTicketPdfExport(req.query);
+  sendPdfDownload(res, payload);
+});
+module.exports = { exportTicketPdf, exportDateRangeCsv, exportTechnicianPerformanceCsv, exportSlaCsv, exportCategoryCsv, exportPriorityCsv, exportStatusCsv, exportTicketCsv, getTicketReport, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport, getPriorityReport, getStatusReport };

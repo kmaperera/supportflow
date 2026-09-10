@@ -1,3 +1,4 @@
+const { generatePdfReport, buildPdfFilename } = require("../../utils/pdf");
 const { generateCsv, buildCsvFilename } = require("../../utils/csv");
 const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
 const pool = require("../../config/database");
@@ -172,14 +173,17 @@ async function getStatusReport(params = {}, db) {
   return { report: { filters, totalTickets, statuses } };
 }
 
-async function getTicketCsvExport(params = {}, db) {
+async function getTicketExportRows(params = {}, db) {
   const { filters, sorting } = normalizeTicketCsvQuery(params);
   const queryFilters = { ...filters };
   delete queryFilters.startDate;
   delete queryFilters.endDate;
   if (filters.startDate) queryFilters.startAt = dateBoundary(filters.startDate);
   if (filters.endDate) queryFilters.endExclusive = dateBoundary(filters.endDate, true);
-  const rows = await repository.getTicketReportExportRows({ filters: queryFilters, sorting }, db);
+  return repository.getTicketReportExportRows({ filters: queryFilters, sorting }, db);
+}
+async function getTicketCsvExport(params = {}, db) {
+  const rows = await getTicketExportRows(params, db);
   const columns = [
     { header: "Ticket Number", key: "ticket_number" },
     { header: "Title", key: "title" },
@@ -199,4 +203,28 @@ async function getTicketCsvExport(params = {}, db) {
   return { csv: generateCsv({ columns, rows }), filename: buildCsvFilename("supportflow-tickets") };
 }
 
-module.exports = { getTicketCsvExport, getTicketReportQuery, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport, getPriorityReport, getStatusReport };
+async function getTicketPdfExport(params = {}, db) {
+  const rows = await getTicketExportRows(params, db);
+  // Export queries decode persisted timestamps as UTC Date objects.
+  const timestamp = value => {
+    if (value == null) return "";
+    if (!(value instanceof Date) || !Number.isFinite(value.getTime())) throw new TypeError("Invalid ticket export timestamp");
+    return `${value.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+  };
+  const columns = [
+    { header: "Ticket Number", key: "ticket_number", width: 72 },
+    { header: "Title", key: "title", width: 122 },
+    { header: "Status", key: "status", width: 64 },
+    { header: "Category", key: "category_name", width: 65 },
+    { header: "Priority", key: "priority_name", width: 48 },
+    { header: "Requester", value: row => name(row.requester_first_name, row.requester_last_name), width: 90 },
+    { header: "Assigned Technician", value: row => row.assigned_to == null ? "" : name(row.technician_first_name, row.technician_last_name), width: 90 },
+    { header: "Created At", value: row => timestamp(row.created_at), width: 70 },
+    { header: "First Response At", value: row => timestamp(row.first_response_at), width: 70 },
+    { header: "Resolved At", value: row => timestamp(row.resolved_at), width: 70 },
+  ];
+  const pdfBuffer = await generatePdfReport({ title: "SupportFlow Ticket Report", orientation: "landscape", columns, rows });
+  return { pdfBuffer, filename: buildPdfFilename("supportflow-ticket-report") };
+}
+
+module.exports = { getTicketPdfExport, getTicketCsvExport, getTicketReportQuery, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport, getPriorityReport, getStatusReport };
