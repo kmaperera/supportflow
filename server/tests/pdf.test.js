@@ -29,3 +29,11 @@ test('PDF stream errors reject the generation promise',async t=>{
  t.mock.method(PDFDocument.prototype,'end',function(){this.destroy(new Error('stream failure'));});
  await assert.rejects(generatePdfReport({title:'Stream test',columns,rows:[]}),/stream failure/);
 });
+
+test('PDF sections repeat their own headers across pages and preserve section order',async t=>{
+ const PDFDocument=require('pdfkit');const original=PDFDocument.prototype.text;const texts=[];
+ t.mock.method(PDFDocument.prototype,'text',function(text,...args){texts.push(String(text));return original.call(this,text,...args);});
+ const pdf=await generatePdfReport({title:'Sections',sections:[{title:'First',columns:[{header:'First Header',key:'x'}],rows:Array.from({length:90},()=>({x:'row'}))},{title:'Second',columns:[{header:'Second Header',key:'x'}],rows:[]}]});
+ assert.ok(pdf.length>500);assert.ok(texts.filter(x=>x==='First Header').length>1);assert.equal(texts.filter(x=>x==='Second Header').length,1);assert.ok(texts.lastIndexOf('First Header')<texts.indexOf('Second'));
+ await assert.rejects(generatePdfReport({title:'Invalid',sections:[]}));
+});

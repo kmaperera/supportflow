@@ -9,12 +9,16 @@ function display(value) {
   throw new TypeError("PDF cells require scalar values or valid dates");
 }
 
-async function generatePdfReport({ title, subtitle = "", columns, rows, orientation = "portrait", generatedAt = new Date() } = {}) {
+async function generatePdfReport({ title, subtitle = "", columns, rows, sections, orientation = "portrait", generatedAt = new Date() } = {}) {
+  const tables = sections === undefined ? [{ columns, rows }] : sections;
   if (typeof title !== "string" || !title.trim() || typeof subtitle !== "string" ||
-      !["portrait", "landscape"].includes(orientation) || !Array.isArray(rows) ||
-      !Array.isArray(columns) || columns.length === 0 || columns.some(c => !c || typeof c.header !== "string" || !c.header.trim() ||
-        (c.value !== undefined ? typeof c.value !== "function" : typeof c.key !== "string" || !c.key) ||
-        (c.width !== undefined && (!Number.isFinite(c.width) || c.width < 24)))) throw new TypeError("Invalid PDF report definition");
+      !["portrait", "landscape"].includes(orientation) || !Array.isArray(tables) || !tables.length ||
+      (sections !== undefined && (columns !== undefined || rows !== undefined)) || tables.some(table =>
+        !table || (table.title !== undefined && (typeof table.title !== "string" || !table.title.trim())) ||
+        !Array.isArray(table.rows) || !Array.isArray(table.columns) || !table.columns.length || table.columns.some(c =>
+          !c || typeof c.header !== "string" || !c.header.trim() ||
+          (c.value !== undefined ? typeof c.value !== "function" : typeof c.key !== "string" || !c.key) ||
+          (c.width !== undefined && (!Number.isFinite(c.width) || c.width < 24))))) throw new TypeError("Invalid PDF report definition");
   if (!(generatedAt instanceof Date) || !Number.isFinite(generatedAt.getTime())) throw new TypeError("Invalid PDF generation date");
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: "A4", layout: orientation, margin: 40, autoFirstPage: false });
@@ -40,7 +44,7 @@ async function generatePdfReport({ title, subtitle = "", columns, rows, orientat
         });
         y += rowHeight;
       };
-      const headers = columns.map(c => c.header);
+      let headers, sectionTitle;
       const newPage = first => {
         doc.addPage(); page++;
         const available = doc.page.width - margin * 2;
@@ -62,18 +66,32 @@ async function generatePdfReport({ title, subtitle = "", columns, rows, orientat
             y += h + 10;
           }
         }
+        if (sectionTitle) {
+          doc.font("Helvetica-Bold").fontSize(13);
+          const h = doc.heightOfString(sectionTitle, { width: available });
+          if (y + h > bodyBottom - 50) throw new RangeError("PDF section heading exceeds page body");
+          doc.fillColor("#17212b").text(sectionTitle, margin, y, { width: available });
+          y += h + 12;
+        }
         headerHeight = height(headers, true);
         if (headerHeight > bodyBottom - y - 24) throw new RangeError("PDF header exceeds page body");
         draw(headers, headerHeight, true);
       };
-      newPage(true);
-      for (const row of rows) {
+      for (const table of tables) {
+        columns = table.columns;
+        headers = columns.map(c => c.header);
+        sectionTitle = table.title;
+        // A fresh page gives each section an unambiguous heading and table.
+        newPage(page === 0);
+        for (const row of table.rows) {
         if (!row || typeof row !== "object") throw new TypeError("Invalid PDF row");
         const cells = columns.map(c => display(c.value ? c.value(row) : Object.hasOwn(row, c.key) ? row[c.key] : undefined));
         const rowHeight = height(cells, false);
         if (rowHeight > bodyBottom - margin - headerHeight) throw new RangeError("PDF row exceeds page body");
         if (y + rowHeight > bodyBottom) newPage(false);
+        if (y + rowHeight > bodyBottom) throw new RangeError("PDF row exceeds page body");
         draw(cells, rowHeight, false);
+      }
       }
       doc.end();
     } catch (error) {
