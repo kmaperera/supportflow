@@ -5,7 +5,7 @@ import RoleHomeRedirect from './RoleHomeRedirect'
 
 function RoleRoute({ role }) {
   const { user, isInitializing, isAuthenticated } = useAuth()
-  if (isInitializing || !isAuthenticated || !getRoleHome(role) || user?.role !== role) return <RoleHomeRedirect />
+  if (isInitializing || !isAuthenticated || !getRoleHome(role) || user?.role !== role || user?.mustChangePassword === true) return <RoleHomeRedirect />
   return <Outlet />
 }
 export default RoleRoute

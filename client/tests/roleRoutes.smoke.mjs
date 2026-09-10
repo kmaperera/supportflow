@@ -13,7 +13,7 @@ try {
  const {default:SessionLoading}=await server.ssrLoadModule('/src/routes/SessionLoading.jsx')
  const render=(state,element,path='/')=>renderToString(React.createElement(MemoryRouter,{initialEntries:[path]},React.createElement(AuthContext.Provider,{value:state},element)))
  for(const role of ['EMPLOYEE','TECHNICIAN','ADMIN']){
-  const state={isInitializing:false,isAuthenticated:true,user:{role,mustChangePassword:true}}
+  const state={isInitializing:false,isAuthenticated:true,user:{role,mustChangePassword:false}}
   const home='/'+role.toLowerCase()
   assert.match(render(state,React.createElement(AppRoutes),home),/Dashboard/)
   assert.match(render(state,React.createElement(AppRoutes),home+'/dashboard'),/Dashboard/)
@@ -33,3 +33,4 @@ try {
  assert.match(render({isInitializing:false,isAuthenticated:false},React.createElement(AppRoutes),'/not-real'),/Not Found/)
  console.log('Role matrix, root/login destinations, initialization, unknown-role fallback and 404 checks passed.')
 }finally{await server.close()}
+
