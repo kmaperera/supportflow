@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthContext } from './AuthContext'
 import { ROLES } from './roles'
+import { setAccessToken, clearAccessToken } from './accessToken'
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
+  const [{ user, accessToken }, setSession] = useState({ user: null, accessToken: null })
   const [isInitializing, setInitializing] = useState(true)
   const [authError, setAuthError] = useState(null)
 
@@ -17,17 +18,19 @@ export function AuthProvider({ children }) {
     return () => { active = false }
   }, [])
 
-  const establishSession = useCallback((authenticatedUser) => {
+  const establishSession = useCallback((authenticatedUser, token) => {
     if (!authenticatedUser || typeof authenticatedUser !== 'object' || Array.isArray(authenticatedUser)) {
       throw new TypeError('establishSession requires an authenticated user object')
     }
-    setUser(authenticatedUser)
+    setAccessToken(token)
+    setSession({ user: authenticatedUser, accessToken: token })
     setAuthError(null)
     setInitializing(false)
   }, [])
 
   const clearSession = useCallback(() => {
-    setUser(null)
+    clearAccessToken()
+    setSession({ user: null, accessToken: null })
     setAuthError(null)
     setInitializing(false)
   }, [])
@@ -37,6 +40,7 @@ export function AuthProvider({ children }) {
 
   const value = useMemo(() => ({
     user,
+    accessToken,
     isAuthenticated: Boolean(user),
     isInitializing,
     authError,
@@ -46,7 +50,7 @@ export function AuthProvider({ children }) {
     clearAuthError,
     setInitializing,
     hasRole,
-  }), [user, isInitializing, authError, establishSession, clearSession, clearAuthError, hasRole])
+  }), [user, accessToken, isInitializing, authError, establishSession, clearSession, clearAuthError, hasRole])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

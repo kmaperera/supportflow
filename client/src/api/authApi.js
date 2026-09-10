@@ -3,11 +3,11 @@ import { API_ENDPOINTS } from './endpoints'
 
 export async function login({ email, password }) {
   const { data } = await api.post(`${API_ENDPOINTS.AUTH}/login`, { email, password })
-  if (data?.success !== true || !data.data?.user || typeof data.data.user !== 'object' || Array.isArray(data.data.user)) {
+  if (data?.success !== true || !data.data?.user || typeof data.data.user !== 'object' || Array.isArray(data.data.user) ||
+      typeof data.data.accessToken !== 'string' || !data.data.accessToken || /\s/.test(data.data.accessToken)) {
     throw new Error('Invalid login response')
   }
-  // Phase 13.4 handoff: accessToken is returned here but is not retained,
-  // persisted, or applied to Axios by this phase. The refresh cookie is HttpOnly.
+  // The caller establishes the in-memory session; the refresh cookie stays HttpOnly.
   return data.data
 }
 

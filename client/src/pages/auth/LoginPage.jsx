@@ -30,8 +30,8 @@ function LoginPage() {
     submissionPending.current = true
     setSubmitting(true)
     try {
-      const { user } = await login({ email: email.trim(), password })
-      establishSession(user)
+      const { user, accessToken } = await login({ email: email.trim(), password })
+      establishSession(user, accessToken)
       setPassword('')
       setShowPassword(false)
       setLoginSucceeded(true)
