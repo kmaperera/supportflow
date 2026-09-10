@@ -15,10 +15,15 @@ export async function login({ email, password }) {
   return sessionData(data)
 }
 
-export async function refreshSession() {
-  // The browser sends/rotates the HttpOnly cookie through withCredentials.
-  const { data } = await api.post(`${API_ENDPOINTS.AUTH}/refresh`)
-  return sessionData(data)
+let refreshRequest = null
+export function refreshSession() {
+  // Startup and automatic recovery share the same cookie rotation request.
+  if (!refreshRequest) {
+    refreshRequest = api.post(`${API_ENDPOINTS.AUTH}/refresh`)
+      .then(({ data }) => sessionData(data))
+      .finally(() => { refreshRequest = null })
+  }
+  return refreshRequest
 }
 
 export function getLoginErrorMessage(error) {

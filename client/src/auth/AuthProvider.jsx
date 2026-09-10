@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AuthContext } from './AuthContext'
 import { refreshSession } from '../api/authApi'
+import { registerSessionHandlers } from './sessionBridge'
 import { ROLES } from './roles'
 import { setAccessToken, clearAccessToken } from './accessToken'
 
@@ -30,6 +31,8 @@ export function AuthProvider({ children }) {
     setAuthError(null)
     setInitializing(false)
   }, [])
+
+  useEffect(() => registerSessionHandlers({ establishSession, clearSession }), [establishSession, clearSession])
 
   useEffect(() => {
     let active = true

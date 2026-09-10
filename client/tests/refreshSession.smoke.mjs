@@ -32,6 +32,6 @@ try {
     return { data: { success: true, data: { user, accessToken: 'login-test-token' } }, status: 200, statusText: 'OK', headers: {}, config }
   }
   assert.equal((await login({ email: 'test@example.test', password: 'test-only' })).user, user)
-  assert.equal(api.interceptors.response.handlers.filter(Boolean).length, 0)
+  assert.equal(api.interceptors.response.handlers.filter(Boolean).length, 1)
   console.log('Mocked refresh contract, errors, malformed responses and login compatibility passed.')
 } finally { await server.close() }

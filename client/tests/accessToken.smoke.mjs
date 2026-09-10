@@ -37,7 +37,7 @@ try {
   await api.get('/test', { headers: { Authorization: 'Bearer stale' } })
   assert.deepEqual(headers, [undefined, 'Bearer test-token-one', 'Bearer test-token-two', undefined])
   assert.equal(api.defaults.headers.common.Authorization, undefined)
-  assert.equal(api.interceptors.response.handlers.filter(Boolean).length, 0)
+  assert.equal(api.interceptors.response.handlers.filter(Boolean).length, 1)
   assert.equal(user.mustChangePassword, true)
   console.log('In-memory session bridge and Axios header smoke passed; no network requests made.')
 } finally { await server.close() }
