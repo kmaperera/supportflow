@@ -1,3 +1,5 @@
+import AuthFeedback from '../../auth/AuthFeedback'
+import { getAuthFieldErrors } from '../../api/apiError'
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { login, getLoginErrorMessage } from '../../api/authApi'
@@ -48,6 +50,7 @@ function LoginPage() {
       setLoginSucceeded(true)
     } catch (error) {
       setAuthError(getLoginErrorMessage(error))
+      setErrors(getAuthFieldErrors(error, ['email', 'password']))
     } finally {
       submissionPending.current = false
       setSubmitting(false)
@@ -91,7 +94,8 @@ function LoginPage() {
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-teal-700">Your support workspace</p>
           <h2 id="login-heading" className="text-3xl font-semibold tracking-tight">Welcome back</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">Sign in to your SupportFlow account.</p>
-          <form onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate className="mt-8 space-y-5">
+          <form onSubmit={handleSubmit} aria-busy={isSubmitting || isLoggingOut} noValidate className="mt-8 space-y-5">
+            <p role="status" aria-live="polite" className="sr-only">{isLoggingOut ? 'Logging out...' : isSubmitting ? 'Signing in...' : ''}</p>
             <div>
               <label htmlFor="login-email" className="text-sm font-medium">Email address</label>
               <input ref={emailInput} id="login-email" name="email" disabled={isSubmitting || isInitializing || isLoggingOut} type="email" autoComplete="email" required value={email} onChange={event => { clearAuthError(); setLoginSucceeded(false); setEmail(event.target.value); setErrors(current => ({ ...current, email: undefined })) }} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'login-email-error' : undefined} className={`${inputClass} ${errors.email ? 'border-red-600' : 'border-slate-300'}`} placeholder="you@company.com" />
@@ -105,9 +109,9 @@ function LoginPage() {
               </div>
               {errors.password && <p id="login-password-error" role="alert" className="mt-2 text-sm text-red-700">{errors.password}</p>}
             </div>
-            {passwordChanged && <p role="status" className="rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-teal-800">Password changed successfully. Please sign in with your new password.</p>}
-            {authError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{authError}</p>}
-            {loginSucceeded && <p role="status" className="rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-teal-800">You are signed in.</p>}
+            {passwordChanged && <AuthFeedback variant="success">Password changed successfully. Please sign in with your new password.</AuthFeedback>}
+            {authError && <AuthFeedback>{authError}</AuthFeedback>}
+            {loginSucceeded && <AuthFeedback variant="success">You are signed in.</AuthFeedback>}
             <button type="submit" disabled={isSubmitting || isInitializing || isLoggingOut} className="mt-2 w-full rounded-lg bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-60">{isLoggingOut ? 'Logging out...' : isSubmitting ? 'Signing in...' : 'Sign in'}</button>
           </form>
           <p className="mt-7 border-t border-slate-100 pt-6 text-center text-xs leading-5 text-slate-500">Accounts are managed by your SupportFlow administrator.</p>

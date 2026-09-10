@@ -1,3 +1,4 @@
+import AuthFeedback from './AuthFeedback'
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './useAuth'
@@ -24,9 +25,10 @@ export default function SessionActions() {
     }
   }
 
-  return <div>
+  return <div aria-busy={isLoggingOutAll || isLoggingOut}>
+    <p role="status" aria-live="polite" className="sr-only">{isLoggingOutAll ? 'Logging out all sessions...' : ''}</p>
     <LogoutButton disabled={isLoggingOutAll} />
     <button type="button" onClick={handleLogoutAll} disabled={isLoggingOut || isLoggingOutAll} className="mt-4 ml-3 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-60">{isLoggingOutAll ? 'Logging out all sessions...' : 'Log out all sessions'}</button>
-    {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
+    {error && <AuthFeedback>{error}</AuthFeedback>}
   </div>
 }

@@ -1,3 +1,4 @@
+import { getApiErrorMessage } from './apiError'
 import api from './axios'
 import { AUTH_ENDPOINTS } from './endpoints'
 
@@ -41,16 +42,7 @@ export function refreshSession() {
 }
 
 export function getLoginErrorMessage(error) {
-  if (error?.isAxiosError && !error.response) {
-    return 'Unable to connect to the server. Please try again.'
-  }
-  const status = error?.response?.status
-  const body = error?.response?.data
-  if (status >= 400 && status < 500 && body?.success === false &&
-      typeof body.message === 'string' && body.message.trim() && body.message.length <= 300) {
-    return body.message
-  }
-  return 'Unable to sign in. Please try again.'
+  return getApiErrorMessage(error, 'Unable to sign in. Please try again.')
 }
 
 export async function changePassword({ currentPassword, newPassword, confirmPassword }) {
@@ -60,9 +52,5 @@ export async function changePassword({ currentPassword, newPassword, confirmPass
 }
 
 export function getPasswordChangeErrorMessage(error) {
-  if (error?.isAxiosError && !error.response) return 'Unable to connect to the server. Please try again.'
-  const status = error?.response?.status
-  const body = error?.response?.data
-  if (status >= 400 && status < 500 && body?.success === false && typeof body.message === 'string' && body.message.trim() && body.message.length <= 300) return body.message
-  return 'Unable to change your password. Please try again.'
+  return getApiErrorMessage(error, 'Unable to change your password. Please try again.')
 }

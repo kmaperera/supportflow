@@ -1,3 +1,5 @@
+import AuthFeedback from '../../auth/AuthFeedback'
+import { getAuthFieldErrors } from '../../api/apiError'
 import LogoutButton from '../../auth/LogoutButton'
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -39,6 +41,7 @@ export default function ChangePasswordPage() {
       navigate('/login', { replace: true, state: { passwordChanged: true } })
     } catch (error) {
       setServerError(getPasswordChangeErrorMessage(error))
+      setErrors(getAuthFieldErrors(error, fields.map(field => field.key)))
     } finally {
       pending.current = false
       setSubmitting(false)
@@ -52,6 +55,7 @@ export default function ChangePasswordPage() {
         <p className="mt-3 text-sm leading-6 text-slate-600">Your account requires a new password before you can continue.</p>
         <p id="password-guidance" className="mt-3 text-sm leading-6 text-slate-600">Use at least 8 characters with an uppercase letter, a lowercase letter, and a number.</p>
         <form noValidate onSubmit={handleSubmit} aria-busy={isSubmitting} className="mt-6 space-y-5">
+          <p role="status" aria-live="polite" className="sr-only">{isSubmitting ? 'Changing password...' : ''}</p>
           {fields.map(({ key, label, autoComplete }) => (
             <div key={key}>
               <label htmlFor={key} className="text-sm font-medium text-slate-900">{label}</label>
@@ -62,7 +66,7 @@ export default function ChangePasswordPage() {
               {errors[key] && <p id={`${key}-error`} role="alert" className="mt-2 text-sm text-red-700">{errors[key]}</p>}
             </div>
           ))}
-          {serverError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{serverError}</p>}
+          {serverError && <AuthFeedback>{serverError}</AuthFeedback>}
           <button type="submit" disabled={isSubmitting} className="w-full rounded-lg bg-teal-700 px-4 py-3 text-sm font-semibold text-white hover:bg-teal-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? 'Changing password...' : 'Change password'}</button>
         </form><LogoutButton disabled={isSubmitting} />
       </section>

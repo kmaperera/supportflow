@@ -76,7 +76,7 @@ export function AuthProvider({ children }) {
       if (!isCurrent()) return
       clearSession()
       if (![401, 403].includes(error?.response?.status)) {
-        setAuthError('Unable to restore your session. Please sign in again.')
+        setAuthError('Unable to check your session. Please try signing in again.')
       }
     }).finally(() => {
       if (isCurrent()) setInitializing(false)
