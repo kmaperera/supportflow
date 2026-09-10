@@ -1,6 +1,12 @@
 import { useRef, useState } from 'react'
+import { login, getLoginErrorMessage } from '../../api/authApi'
+import { useAuth } from '../../auth/useAuth'
 
 function LoginPage() {
+  const { establishSession, authError, setAuthError, clearAuthError } = useAuth()
+  const [isSubmitting, setSubmitting] = useState(false)
+  const [loginSucceeded, setLoginSucceeded] = useState(false)
+  const submissionPending = useRef(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -8,8 +14,11 @@ function LoginPage() {
   const emailInput = useRef(null)
   const passwordInput = useRef(null)
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
+    if (submissionPending.current) return
+    clearAuthError()
+    setLoginSucceeded(false)
     const nextErrors = {}
     if (!email.trim()) nextErrors.email = 'Enter your email address.'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) nextErrors.email = 'Enter a valid email address.'
@@ -17,7 +26,21 @@ function LoginPage() {
     setErrors(nextErrors)
     if (nextErrors.email) emailInput.current?.focus()
     else if (nextErrors.password) passwordInput.current?.focus()
-    // Phase 13.3 will connect valid submissions to the login API.
+    if (Object.keys(nextErrors).length) return
+    submissionPending.current = true
+    setSubmitting(true)
+    try {
+      const { user } = await login({ email: email.trim(), password })
+      establishSession(user)
+      setPassword('')
+      setShowPassword(false)
+      setLoginSucceeded(true)
+    } catch (error) {
+      setAuthError(getLoginErrorMessage(error))
+    } finally {
+      submissionPending.current = false
+      setSubmitting(false)
+    }
   }
 
   const inputClass = 'mt-2 block w-full rounded-lg border bg-white px-3.5 py-3 text-base text-slate-900 outline-none transition focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20'
@@ -57,21 +80,23 @@ function LoginPage() {
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-teal-700">Your support workspace</p>
           <h2 id="login-heading" className="text-3xl font-semibold tracking-tight">Welcome back</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">Sign in to your SupportFlow account.</p>
-          <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
+          <form onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate className="mt-8 space-y-5">
             <div>
               <label htmlFor="login-email" className="text-sm font-medium">Email address</label>
-              <input ref={emailInput} id="login-email" name="email" type="email" autoComplete="email" required value={email} onChange={event => { setEmail(event.target.value); setErrors(current => ({ ...current, email: undefined })) }} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'login-email-error' : undefined} className={`${inputClass} ${errors.email ? 'border-red-600' : 'border-slate-300'}`} placeholder="you@company.com" />
+              <input ref={emailInput} id="login-email" name="email" disabled={isSubmitting} type="email" autoComplete="email" required value={email} onChange={event => { clearAuthError(); setLoginSucceeded(false); setEmail(event.target.value); setErrors(current => ({ ...current, email: undefined })) }} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'login-email-error' : undefined} className={`${inputClass} ${errors.email ? 'border-red-600' : 'border-slate-300'}`} placeholder="you@company.com" />
               {errors.email && <p id="login-email-error" role="alert" className="mt-2 text-sm text-red-700">{errors.email}</p>}
             </div>
             <div>
               <label htmlFor="login-password" className="text-sm font-medium">Password</label>
               <div className="relative">
-                <input ref={passwordInput} id="login-password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={event => { setPassword(event.target.value); setErrors(current => ({ ...current, password: undefined })) }} aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? 'login-password-error' : undefined} className={`${inputClass} pr-20 ${errors.password ? 'border-red-600' : 'border-slate-300'}`} />
+                <input ref={passwordInput} id="login-password" name="password" disabled={isSubmitting} type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={event => { clearAuthError(); setLoginSucceeded(false); setPassword(event.target.value); setErrors(current => ({ ...current, password: undefined })) }} aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? 'login-password-error' : undefined} className={`${inputClass} pr-20 ${errors.password ? 'border-red-600' : 'border-slate-300'}`} />
                 <button type="button" onClick={() => setShowPassword(current => !current)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} aria-controls="login-password" className="absolute inset-y-1 right-1 rounded-md px-3 text-sm font-medium text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700">{showPassword ? 'Hide' : 'Show'}</button>
               </div>
               {errors.password && <p id="login-password-error" role="alert" className="mt-2 text-sm text-red-700">{errors.password}</p>}
             </div>
-            <button type="submit" className="mt-2 w-full rounded-lg bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-60">Sign in</button>
+            {authError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{authError}</p>}
+            {loginSucceeded && <p role="status" className="rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-teal-800">You are signed in.</p>}
+            <button type="submit" disabled={isSubmitting} className="mt-2 w-full rounded-lg bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? 'Signing in...' : 'Sign in'}</button>
           </form>
           <p className="mt-7 border-t border-slate-100 pt-6 text-center text-xs leading-5 text-slate-500">Accounts are managed by your SupportFlow administrator.</p>
         </div>
