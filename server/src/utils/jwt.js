@@ -36,9 +36,13 @@ function generateAccessToken(user) {
 function verifyAccessToken(token) {
   validateAccessTokenConfig(false);
 
-  return jwt.verify(token, process.env.JWT_ACCESS_SECRET, {
+  const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET, {
     algorithms: ["HS256"],
   });
+  // Refresh credentials must never authorize API requests, even if deployment
+  // secrets were accidentally configured identically.
+  if (decoded.type === "refresh") throw new jwt.JsonWebTokenError("Invalid access token type");
+  return decoded;
 }
 
 function validateRefreshTokenConfig(requireExpiry = true) {
