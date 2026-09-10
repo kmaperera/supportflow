@@ -26,7 +26,7 @@ try {
    return null
   }
   render(state,React.createElement(Probe))
-  if(required){const html=render(state,React.createElement(AppRoutes));assert.match(html,/Password change required/);assert.ok(!/<input|<form|<a |<button/.test(html))}
+  if(required){const html=render(state,React.createElement(AppRoutes));assert.match(html,/Change your password/);assert.ok(html.includes('current-password'));assert.ok(!html.includes('Continue to dashboard'))}
   assert.equal(user.mustChangePassword,required)
  }
  function Pending(){assert.equal(ProtectedRoute().type,SessionLoading);assert.equal(RoleHomeRedirect().type,SessionLoading);return null}

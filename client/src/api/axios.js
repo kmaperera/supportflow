@@ -1,6 +1,6 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 import { refreshSession } from './authApi';
-import { API_ENDPOINTS } from './endpoints';
+import { AUTH_ENDPOINTS } from './endpoints';
 import { getSessionHandlers } from '../auth/sessionBridge';
 import { getAccessToken } from '../auth/accessToken';
 
@@ -21,7 +21,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-const excludedPaths = new Set(['login', 'refresh', 'logout', 'logout-all'].map(name => `${API_ENDPOINTS.AUTH}/${name}`));
+const excludedPaths = new Set([AUTH_ENDPOINTS.LOGIN, AUTH_ENDPOINTS.REFRESH, AUTH_ENDPOINTS.LOGOUT, AUTH_ENDPOINTS.LOGOUT_ALL]);
 function isExcluded(config) {
   const base = new URL(config.baseURL || '/', 'http://supportflow.local');
   const url = new URL(config.url, `${base.href.replace(/\/$/, '')}/`);

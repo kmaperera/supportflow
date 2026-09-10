@@ -1,8 +1,18 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { login, getLoginErrorMessage } from '../../api/authApi'
 import { useAuth } from '../../auth/useAuth'
 
 function LoginPage() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [passwordChanged, setPasswordChanged] = useState(() => location.state?.passwordChanged === true)
+  useEffect(() => {
+    if (location.state?.passwordChanged === true) {
+      const { passwordChanged: _consumed, ...rest } = location.state
+      navigate(location.pathname, { replace: true, state: rest })
+    }
+  }, [location, navigate])
   const { isInitializing, establishSession, authError, setAuthError, clearAuthError } = useAuth()
   const [isSubmitting, setSubmitting] = useState(false)
   const [loginSucceeded, setLoginSucceeded] = useState(false)
@@ -17,6 +27,7 @@ function LoginPage() {
   async function handleSubmit(event) {
     event.preventDefault()
     if (submissionPending.current || isInitializing) return
+    setPasswordChanged(false)
     clearAuthError()
     setLoginSucceeded(false)
     const nextErrors = {}
@@ -94,6 +105,7 @@ function LoginPage() {
               </div>
               {errors.password && <p id="login-password-error" role="alert" className="mt-2 text-sm text-red-700">{errors.password}</p>}
             </div>
+            {passwordChanged && <p role="status" className="rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-teal-800">Password changed successfully. Please sign in with your new password.</p>}
             {authError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{authError}</p>}
             {loginSucceeded && <p role="status" className="rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-teal-800">You are signed in.</p>}
             <button type="submit" disabled={isSubmitting || isInitializing} className="mt-2 w-full rounded-lg bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? 'Signing in...' : 'Sign in'}</button>
