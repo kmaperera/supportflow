@@ -1,3 +1,4 @@
+import LogoutButton from '../../auth/LogoutButton'
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -63,7 +64,7 @@ export default function ChangePasswordPage() {
           ))}
           {serverError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{serverError}</p>}
           <button type="submit" disabled={isSubmitting} className="w-full rounded-lg bg-teal-700 px-4 py-3 text-sm font-semibold text-white hover:bg-teal-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? 'Changing password...' : 'Change password'}</button>
-        </form>
+        </form><LogoutButton disabled={isSubmitting} />
       </section>
     </main>
   )

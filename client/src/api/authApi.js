@@ -16,6 +16,13 @@ export async function login({ email, password }) {
 }
 
 let refreshRequest = null
+export async function logout() {
+  // Let an existing rotation settle before revoking its resulting cookie.
+  if (refreshRequest) await refreshRequest.catch(() => {})
+  const { data } = await api.post(AUTH_ENDPOINTS.LOGOUT)
+  if (data?.success !== true) throw new Error('Invalid logout response')
+}
+
 export function refreshSession() {
   // Startup and automatic recovery share the same cookie rotation request.
   if (!refreshRequest) {
