@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import SessionLoading from './SessionLoading'
 import { useAuth } from '../auth/useAuth'
 
 function ProtectedRoute() {
@@ -6,11 +7,7 @@ function ProtectedRoute() {
   const location = useLocation()
 
   if (isInitializing) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-6 text-slate-600">
-        <p role="status" aria-live="polite">Checking session...</p>
-      </main>
-    )
+    return <SessionLoading />
   }
 
   if (!isAuthenticated) {

@@ -17,7 +17,7 @@ try {
     const waiting = render(path, { isInitializing: true, isAuthenticated: false })
     assert.match(waiting, /Checking session/)
     assert.ok(!waiting.includes('Dashboard'))
-    const allowed = render(path, { isInitializing: false, isAuthenticated: true, user: { role: 'EMPLOYEE', mustChangePassword: true } })
+    const allowed = render(path, { isInitializing: false, isAuthenticated: true, user: { role: path.split('/')[1].toUpperCase(), mustChangePassword: true } })
     assert.match(allowed, /Dashboard/)
   }
   // Inspect the returned navigation element inside React's render context,
