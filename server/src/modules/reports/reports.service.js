@@ -1,16 +1,16 @@
 const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
 const pool = require("../../config/database");
 const repository = require("./reports.repository");
-const { normalizeReportQuery, dateBoundary, normalizeDateRangeQuery, parseCalendarDate, normalizePerformanceQuery, normalizeSlaReportQuery, normalizeCategoryReportQuery, normalizePriorityReportQuery, normalizeStatusReportQuery } = require("./reports.validation");
+const { normalizeTicketReportQuery, normalizeReportQuery, dateBoundary, normalizeDateRangeQuery, parseCalendarDate, normalizePerformanceQuery, normalizeSlaReportQuery, normalizeCategoryReportQuery, normalizePriorityReportQuery, normalizeStatusReportQuery } = require("./reports.validation");
 const name = (first, last) => [first, last].map(value => (value ?? "").trim()).filter(Boolean).join(" ");
 async function getTicketReportQuery(params, db) {
-  const { filters, pagination } = normalizeReportQuery(params);
+  const { filters, pagination, sorting } = normalizeTicketReportQuery(params);
   const queryFilters = { ...filters };
   delete queryFilters.startDate;
   delete queryFilters.endDate;
   if (filters.startDate !== undefined) queryFilters.startAt = dateBoundary(filters.startDate);
   if (filters.endDate !== undefined) queryFilters.endExclusive = dateBoundary(filters.endDate, true);
-  const options = { filters: queryFilters, pagination };
+  const options = { filters: queryFilters, pagination, sorting };
   let rows, count;
   if (db === undefined || db === pool) {
     [rows, count] = await Promise.all([repository.getTicketReportRows(options, db), repository.countTicketReportRows(options, db)]);
@@ -19,7 +19,7 @@ async function getTicketReportQuery(params, db) {
     count = await repository.countTicketReportRows(options, db);
   }
   const totalItems = Number(count);
-  return { report: { filters, pagination: { page: pagination.page, limit: pagination.limit,
+  return { report: { filters, sorting, pagination: { page: pagination.page, limit: pagination.limit,
     totalItems, totalPages: Math.ceil(totalItems / pagination.limit) },
     rows: rows.map(row => ({ id: Number(row.id), ticketNumber: row.ticket_number, title: row.title, status: row.status,
       category: { id: Number(row.category_id), name: row.category_name },

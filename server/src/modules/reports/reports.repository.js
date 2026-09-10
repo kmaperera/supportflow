@@ -10,10 +10,20 @@ function buildTicketReportWhere(filters = {}) {
   for (const [key, column] of Object.entries(FILTER_COLUMNS)) {
     if (filters[key] !== undefined) { conditions.push(`${column} = ?`); params.push(filters[key]); }
   }
+  if (filters.search !== undefined) {
+    // ! is the explicit LIKE escape: user %, _ and ! are literal characters.
+    const pattern = `%${filters.search.replace(/[!%_]/g, character => `!${character}`)}%`;
+    const columns = ["t.ticket_number", "t.title", "requester.first_name", "requester.last_name", "requester.email", "technician.first_name", "technician.last_name", "technician.email"];
+    conditions.push(`(${columns.map(column => `${column} LIKE ? ESCAPE '!'`).join(" OR ")})`);
+    params.push(...columns.map(() => pattern));
+  }
   return { whereSql: conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "", params };
 }
 // Explicit projection keeps the foundation independent of full ticket-detail data.
-async function getTicketReportRows({ filters, pagination }, db = pool) {
+async function getTicketReportRows({ filters, pagination, sorting = { sortBy: "createdAt", sortOrder: "DESC" } }, db = pool) {
+  const columns = new Map([["createdAt", "t.created_at"], ["ticketNumber", "t.ticket_number"], ["title", "t.title"], ["status", "t.status"], ["category", "c.name"], ["priority", "p.name"], ["requester", "requester.first_name"], ["technician", "technician.first_name"]]);
+  if (!columns.has(sorting.sortBy) || !["ASC", "DESC"].includes(sorting.sortOrder)) throw new TypeError("Invalid report sorting");
+  const orderSql = `${columns.get(sorting.sortBy)} ${sorting.sortOrder}, t.id ${sorting.sortOrder}`;
   const { limit, offset } = pagination;
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100 || !Number.isSafeInteger(offset) || offset < 0) throw new TypeError("Invalid report pagination");
   const { whereSql, params } = buildTicketReportWhere(filters);
@@ -28,14 +38,15 @@ async function getTicketReportRows({ filters, pagination }, db = pool) {
      INNER JOIN ticket_priorities AS p ON p.id = t.priority_id
      INNER JOIN users AS requester ON requester.id = t.created_by
      LEFT JOIN users AS technician ON technician.id = t.assigned_to${whereSql}
-     ORDER BY t.created_at DESC, t.id DESC LIMIT ? OFFSET ?`, [...params, limit, offset]
+     ORDER BY ${orderSql} LIMIT ? OFFSET ?`, [...params, limit, offset]
   );
   return rows;
 }
 async function countTicketReportRows({ filters }, db = pool) {
   const { whereSql, params } = buildTicketReportWhere(filters);
   // Required identity joins in the row query are guaranteed by ticket foreign keys.
-  const [rows] = await db.query(`SELECT COUNT(*) AS total FROM tickets AS t${whereSql}`, params);
+  const joins = filters.search === undefined ? "" : " INNER JOIN users AS requester ON requester.id = t.created_by LEFT JOIN users AS technician ON technician.id = t.assigned_to";
+  const [rows] = await db.query(`SELECT COUNT(*) AS total FROM tickets AS t${joins}${whereSql}`, params);
   return rows[0].total;
 }
 async function getDailyTicketCountsInDateRange({ startDateTime, endExclusiveDateTime }, db = pool) {

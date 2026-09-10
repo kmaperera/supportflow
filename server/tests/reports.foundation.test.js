@@ -46,7 +46,7 @@ test("report rows/count share bound predicates and return lightweight numeric me
   assert.equal(result.report.filters.technicianId, 4);
   assert.ok(!JSON.stringify(result).includes("whereSql"));
   assert.deepEqual(await service.getTicketReportQuery({}, { async query(sql) { return sql.includes("COUNT(*)") ? [[{ total: "0" }]] : [[]]; } }),
-    { report: { filters: {}, pagination: { page: 1, limit: 25, totalItems: 0, totalPages: 0 }, rows: [] } });
+    { report: { filters: {}, sorting: { sortBy: "createdAt", sortOrder: "DESC" }, pagination: { page: 1, limit: 25, totalItems: 0, totalPages: 0 }, rows: [] } });
   const injection = "OPEN' OR 1=1 --";
   const built = repository.buildTicketReportWhere({ status: injection });
   assert.equal(built.whereSql, " WHERE t.status = ?");
@@ -75,8 +75,15 @@ test("report endpoint is ADMIN-only and rejects invalid query before repository 
   const response = await get(3);
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { success: true, message: "Ticket report retrieved successfully", data: {
-    report: { filters: {}, pagination: { page: 1, limit: 25, totalItems: 0, totalPages: 0 }, rows: [] } } });
+    report: { filters: {}, sorting: { sortBy: "createdAt", sortOrder: "DESC" }, pagination: { page: 1, limit: 25, totalItems: 0, totalPages: 0 }, rows: [] } } });
   assert.equal(query.mock.callCount(), 2);
+  const searched = await get(3, "?search=%25wifi&sortBy=technician&sortOrder=asc&page=5");
+  assert.equal(searched.status, 200);
+  const searchedReport = (await searched.json()).data.report;
+  assert.equal(searchedReport.filters.search, "%wifi");
+  assert.deepEqual(searchedReport.sorting, { sortBy: "technician", sortOrder: "ASC" });
+  assert.equal(searchedReport.pagination.page, 5);
+  assert.deepEqual(searchedReport.rows, []);
   t.mock.method(pool, "query", async () => { throw new Error("sensitive SQL detail"); });
   const failure = await get(3);
   assert.equal(failure.status, 500);

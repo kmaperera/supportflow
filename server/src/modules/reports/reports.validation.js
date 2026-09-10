@@ -90,4 +90,19 @@ function normalizeStatusReportQuery(params = {}) {
 }
 const statusReportValidation = [query().custom(value => { normalizeStatusReportQuery(value); return true; })];
 
-module.exports = { parseCalendarDate, dateBoundary, normalizeReportQuery, reportQueryValidation, normalizeDateRangeQuery, dateRangeValidation, normalizePerformanceQuery, technicianPerformanceValidation, normalizeSlaReportQuery, slaReportValidation, normalizeCategoryReportQuery, categoryReportValidation, normalizePriorityReportQuery, priorityReportValidation, normalizeStatusReportQuery, statusReportValidation };
+const TICKET_REPORT_SORTS = Object.freeze(["createdAt", "ticketNumber", "title", "status", "category", "priority", "requester", "technician"]);
+function normalizeTicketReportQuery(params = {}) {
+  if (!params || typeof params !== "object" || Array.isArray(params)) invalid("Invalid ticket report query");
+  const { search, sortBy = "createdAt", sortOrder = "desc", ...base } = params;
+  const normalized = normalizeReportQuery(base);
+  if (search !== undefined) {
+    if (typeof search !== "string" || search.trim().length > 100) invalid("search must be text of at most 100 characters");
+    if (search.trim()) normalized.filters.search = search.trim();
+  }
+  if (!TICKET_REPORT_SORTS.includes(sortBy)) invalid("Invalid report sortBy");
+  if (typeof sortOrder !== "string" || !["ASC", "DESC"].includes(sortOrder.toUpperCase())) invalid("Invalid report sortOrder");
+  return { ...normalized, sorting: { sortBy, sortOrder: sortOrder.toUpperCase() } };
+}
+const ticketReportValidation = [query().custom(value => { normalizeTicketReportQuery(value); return true; })];
+
+module.exports = { normalizeTicketReportQuery, ticketReportValidation, parseCalendarDate, dateBoundary, normalizeReportQuery, reportQueryValidation, normalizeDateRangeQuery, dateRangeValidation, normalizePerformanceQuery, technicianPerformanceValidation, normalizeSlaReportQuery, slaReportValidation, normalizeCategoryReportQuery, categoryReportValidation, normalizePriorityReportQuery, priorityReportValidation, normalizeStatusReportQuery, statusReportValidation };
