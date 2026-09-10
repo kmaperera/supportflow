@@ -11,6 +11,8 @@ import RoleHomeRedirect from './RoleHomeRedirect'
 import ChangePasswordRoute from './ChangePasswordRoute'
 import ChangePasswordPage from '../pages/auth/ChangePasswordPage'
 import { ROLES } from '../auth/roles'
+import ProfileRoute from './ProfileRoute'
+import ProfilePage from '../pages/auth/ProfilePage'
 
 function AppRoutes() {
   return (
@@ -20,6 +22,9 @@ function AppRoutes() {
         <Route path="/login" element={<LoginPage />} />
       </Route>
       <Route element={<ProtectedRoute />}>
+        <Route element={<ProfileRoute />}>
+          <Route path="/profile" element={<ProfilePage />} />
+        </Route>
         <Route element={<ChangePasswordRoute />}>
           <Route path="/change-password" element={<ChangePasswordPage />} />
         </Route>
