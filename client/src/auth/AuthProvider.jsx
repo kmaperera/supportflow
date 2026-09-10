@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AuthContext } from './AuthContext'
-import { logout, refreshSession } from '../api/authApi'
+import { logout, logoutAllSessions, refreshSession } from '../api/authApi'
 import { registerSessionHandlers } from './sessionBridge'
 import { ROLES } from './roles'
 import { setAccessToken, clearAccessToken } from './accessToken'
@@ -14,6 +14,7 @@ export function AuthProvider({ children }) {
   const sessionRevision = useRef(0)
   const logoutRequest = useRef(null)
   const [isLoggingOut, setLoggingOut] = useState(false)
+  const [isLoggingOutAll, setLoggingOutAll] = useState(false)
 
   const establishSession = useCallback((authenticatedUser, token) => {
     if (!authenticatedUser || typeof authenticatedUser !== 'object' || Array.isArray(authenticatedUser)) {
@@ -44,6 +45,18 @@ export function AuthProvider({ children }) {
     }).finally(() => {
       logoutRequest.current = null
       setLoggingOut(false)
+    })
+    return logoutRequest.current
+  }, [clearSession])
+
+  const logoutAllUserSessions = useCallback(() => {
+    if (logoutRequest.current) return logoutRequest.current
+    setLoggingOutAll(true)
+    logoutRequest.current = logoutAllSessions().then(() => {
+      clearSession()
+    }).finally(() => {
+      logoutRequest.current = null
+      setLoggingOutAll(false)
     })
     return logoutRequest.current
   }, [clearSession])
@@ -80,6 +93,8 @@ export function AuthProvider({ children }) {
     isAuthenticated: Boolean(user),
     isInitializing,
     isLoggingOut,
+    isLoggingOutAll,
+    logoutAllUserSessions,
     logoutUser,
     authError,
     establishSession,
@@ -88,7 +103,7 @@ export function AuthProvider({ children }) {
     clearAuthError,
     setInitializing,
     hasRole,
-  }), [user, accessToken, isInitializing, isLoggingOut, logoutUser, authError, establishSession, clearSession, clearAuthError, hasRole])
+  }), [user, accessToken, isInitializing, isLoggingOut, isLoggingOutAll, logoutAllUserSessions, logoutUser, authError, establishSession, clearSession, clearAuthError, hasRole])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

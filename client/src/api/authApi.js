@@ -23,6 +23,13 @@ export async function logout() {
   if (data?.success !== true) throw new Error('Invalid logout response')
 }
 
+export async function logoutAllSessions() {
+  // Use the latest cookie if a rotation was already underway.
+  if (refreshRequest) await refreshRequest.catch(() => {})
+  const { data } = await api.post(AUTH_ENDPOINTS.LOGOUT_ALL)
+  if (data?.success !== true) throw new Error('Invalid logout-all response')
+}
+
 export function refreshSession() {
   // Startup and automatic recovery share the same cookie rotation request.
   if (!refreshRequest) {
