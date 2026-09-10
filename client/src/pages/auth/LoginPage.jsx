@@ -3,7 +3,7 @@ import { login, getLoginErrorMessage } from '../../api/authApi'
 import { useAuth } from '../../auth/useAuth'
 
 function LoginPage() {
-  const { establishSession, authError, setAuthError, clearAuthError } = useAuth()
+  const { isInitializing, establishSession, authError, setAuthError, clearAuthError } = useAuth()
   const [isSubmitting, setSubmitting] = useState(false)
   const [loginSucceeded, setLoginSucceeded] = useState(false)
   const submissionPending = useRef(false)
@@ -16,7 +16,7 @@ function LoginPage() {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    if (submissionPending.current) return
+    if (submissionPending.current || isInitializing) return
     clearAuthError()
     setLoginSucceeded(false)
     const nextErrors = {}
@@ -83,20 +83,20 @@ function LoginPage() {
           <form onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate className="mt-8 space-y-5">
             <div>
               <label htmlFor="login-email" className="text-sm font-medium">Email address</label>
-              <input ref={emailInput} id="login-email" name="email" disabled={isSubmitting} type="email" autoComplete="email" required value={email} onChange={event => { clearAuthError(); setLoginSucceeded(false); setEmail(event.target.value); setErrors(current => ({ ...current, email: undefined })) }} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'login-email-error' : undefined} className={`${inputClass} ${errors.email ? 'border-red-600' : 'border-slate-300'}`} placeholder="you@company.com" />
+              <input ref={emailInput} id="login-email" name="email" disabled={isSubmitting || isInitializing} type="email" autoComplete="email" required value={email} onChange={event => { clearAuthError(); setLoginSucceeded(false); setEmail(event.target.value); setErrors(current => ({ ...current, email: undefined })) }} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'login-email-error' : undefined} className={`${inputClass} ${errors.email ? 'border-red-600' : 'border-slate-300'}`} placeholder="you@company.com" />
               {errors.email && <p id="login-email-error" role="alert" className="mt-2 text-sm text-red-700">{errors.email}</p>}
             </div>
             <div>
               <label htmlFor="login-password" className="text-sm font-medium">Password</label>
               <div className="relative">
-                <input ref={passwordInput} id="login-password" name="password" disabled={isSubmitting} type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={event => { clearAuthError(); setLoginSucceeded(false); setPassword(event.target.value); setErrors(current => ({ ...current, password: undefined })) }} aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? 'login-password-error' : undefined} className={`${inputClass} pr-20 ${errors.password ? 'border-red-600' : 'border-slate-300'}`} />
+                <input ref={passwordInput} id="login-password" name="password" disabled={isSubmitting || isInitializing} type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={event => { clearAuthError(); setLoginSucceeded(false); setPassword(event.target.value); setErrors(current => ({ ...current, password: undefined })) }} aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? 'login-password-error' : undefined} className={`${inputClass} pr-20 ${errors.password ? 'border-red-600' : 'border-slate-300'}`} />
                 <button type="button" onClick={() => setShowPassword(current => !current)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} aria-controls="login-password" className="absolute inset-y-1 right-1 rounded-md px-3 text-sm font-medium text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700">{showPassword ? 'Hide' : 'Show'}</button>
               </div>
               {errors.password && <p id="login-password-error" role="alert" className="mt-2 text-sm text-red-700">{errors.password}</p>}
             </div>
             {authError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{authError}</p>}
             {loginSucceeded && <p role="status" className="rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-teal-800">You are signed in.</p>}
-            <button type="submit" disabled={isSubmitting} className="mt-2 w-full rounded-lg bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? 'Signing in...' : 'Sign in'}</button>
+            <button type="submit" disabled={isSubmitting || isInitializing} className="mt-2 w-full rounded-lg bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? 'Signing in...' : 'Sign in'}</button>
           </form>
           <p className="mt-7 border-t border-slate-100 pt-6 text-center text-xs leading-5 text-slate-500">Accounts are managed by your SupportFlow administrator.</p>
         </div>

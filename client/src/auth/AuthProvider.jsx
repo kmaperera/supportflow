@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AuthContext } from './AuthContext'
+import { refreshSession } from '../api/authApi'
 import { ROLES } from './roles'
 import { setAccessToken, clearAccessToken } from './accessToken'
 
@@ -8,32 +9,48 @@ export function AuthProvider({ children }) {
   const [isInitializing, setInitializing] = useState(true)
   const [authError, setAuthError] = useState(null)
 
-  useEffect(() => {
-    // Phase 13.1 only: complete the initial state without restoring a session.
-    // Phase 13.5 replaces this isolated step with backend session restoration.
-    let active = true
-    queueMicrotask(() => {
-      if (active) setInitializing(false)
-    })
-    return () => { active = false }
-  }, [])
+  const startupRequest = useRef(null)
+  const sessionRevision = useRef(0)
 
   const establishSession = useCallback((authenticatedUser, token) => {
     if (!authenticatedUser || typeof authenticatedUser !== 'object' || Array.isArray(authenticatedUser)) {
       throw new TypeError('establishSession requires an authenticated user object')
     }
     setAccessToken(token)
+    sessionRevision.current += 1
     setSession({ user: authenticatedUser, accessToken: token })
     setAuthError(null)
     setInitializing(false)
   }, [])
 
   const clearSession = useCallback(() => {
+    sessionRevision.current += 1
     clearAccessToken()
     setSession({ user: null, accessToken: null })
     setAuthError(null)
     setInitializing(false)
   }, [])
+
+  useEffect(() => {
+    let active = true
+    const revision = sessionRevision.current
+    // StrictMode replays effects on the same provider: subscribe to the same
+    // promise instead of rotating its refresh cookie twice.
+    if (!startupRequest.current) startupRequest.current = refreshSession()
+    const isCurrent = () => active && sessionRevision.current === revision
+    startupRequest.current.then(({ user: restoredUser, accessToken: token }) => {
+      if (isCurrent()) establishSession(restoredUser, token)
+    }).catch(error => {
+      if (!isCurrent()) return
+      clearSession()
+      if (![401, 403].includes(error?.response?.status)) {
+        setAuthError('Unable to restore your session. Please sign in again.')
+      }
+    }).finally(() => {
+      if (isCurrent()) setInitializing(false)
+    })
+    return () => { active = false }
+  }, [establishSession, clearSession])
 
   const clearAuthError = useCallback(() => setAuthError(null), [])
   const hasRole = useCallback((role) => Object.values(ROLES).includes(role) && user?.role === role, [user])

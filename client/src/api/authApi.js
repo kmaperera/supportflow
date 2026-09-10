@@ -1,14 +1,24 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
-export async function login({ email, password }) {
-  const { data } = await api.post(`${API_ENDPOINTS.AUTH}/login`, { email, password })
+function sessionData(data) {
   if (data?.success !== true || !data.data?.user || typeof data.data.user !== 'object' || Array.isArray(data.data.user) ||
       typeof data.data.accessToken !== 'string' || !data.data.accessToken || /\s/.test(data.data.accessToken)) {
-    throw new Error('Invalid login response')
+    throw new Error('Invalid authentication response')
   }
   // The caller establishes the in-memory session; the refresh cookie stays HttpOnly.
   return data.data
+}
+
+export async function login({ email, password }) {
+  const { data } = await api.post(`${API_ENDPOINTS.AUTH}/login`, { email, password })
+  return sessionData(data)
+}
+
+export async function refreshSession() {
+  // The browser sends/rotates the HttpOnly cookie through withCredentials.
+  const { data } = await api.post(`${API_ENDPOINTS.AUTH}/refresh`)
+  return sessionData(data)
 }
 
 export function getLoginErrorMessage(error) {
