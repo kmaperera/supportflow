@@ -1,6 +1,7 @@
+const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
 const pool = require("../../config/database");
 const repository = require("./reports.repository");
-const { normalizeReportQuery, dateBoundary, normalizeDateRangeQuery, parseCalendarDate, normalizePerformanceQuery, normalizeSlaReportQuery, normalizeCategoryReportQuery, normalizePriorityReportQuery } = require("./reports.validation");
+const { normalizeReportQuery, dateBoundary, normalizeDateRangeQuery, parseCalendarDate, normalizePerformanceQuery, normalizeSlaReportQuery, normalizeCategoryReportQuery, normalizePriorityReportQuery, normalizeStatusReportQuery } = require("./reports.validation");
 const name = (first, last) => [first, last].map(value => (value ?? "").trim()).filter(Boolean).join(" ");
 async function getTicketReportQuery(params, db) {
   const { filters, pagination } = normalizeReportQuery(params);
@@ -148,4 +149,26 @@ async function getPriorityReport(params = {}, db) {
   return { report: { filters, totalTickets, priorities } };
 }
 
-module.exports = { getTicketReportQuery, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport, getPriorityReport };
+async function getStatusReport(params = {}, db) {
+  const filters = normalizeStatusReportQuery(params);
+  const queryFilters = { ...filters };
+  delete queryFilters.startDate;
+  delete queryFilters.endDate;
+  if (filters.startDate) queryFilters.startAt = dateBoundary(filters.startDate);
+  if (filters.endDate) queryFilters.endExclusive = dateBoundary(filters.endDate, true);
+  const rows = await repository.getStatusReport({ filters: queryFilters }, db);
+  const canonical = Object.values(TICKET_STATUSES);
+  // Fail on corrupt data rather than silently attributing it to a valid status.
+  if (rows.some(row => !canonical.includes(row.status))) throw new Error("Invalid persisted ticket status");
+  const counts = new Map(rows.map(row => [row.status, Number(row.total_tickets ?? 0)]));
+  // Summing grouped counts keeps the denominator consistent in a single read.
+  const totalTickets = [...counts.values()].reduce((sum, count) => sum + count, 0);
+  const statuses = canonical.map(status => {
+    const total = counts.get(status) ?? 0;
+    return { status, totalTickets: total,
+      percentageOfTickets: totalTickets === 0 ? 0 : Number((total / totalTickets * 100).toFixed(2)) };
+  });
+  return { report: { filters, totalTickets, statuses } };
+}
+
+module.exports = { getTicketReportQuery, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport, getPriorityReport, getStatusReport };

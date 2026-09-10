@@ -152,4 +152,11 @@ async function getPriorityReport({ filters }, db = pool) {
   return rows;
 }
 
-module.exports = { buildTicketReportWhere, getTicketReportRows, countTicketReportRows, getDailyTicketCountsInDateRange, getPerformanceTechnicians, getTechnicianHistoricalCounts, getTechnicianCompletionMetrics, getSlaReportMetrics, getCategoryReport, getPriorityReport };
+async function getStatusReport({ filters }, db = pool) {
+  const { whereSql, params } = buildTicketReportWhere(filters);
+  const [rows] = await db.query(
+    `SELECT t.status, COUNT(*) AS total_tickets FROM tickets t${whereSql} GROUP BY t.status`, params);
+  return rows;
+}
+
+module.exports = { buildTicketReportWhere, getTicketReportRows, countTicketReportRows, getDailyTicketCountsInDateRange, getPerformanceTechnicians, getTechnicianHistoricalCounts, getTechnicianCompletionMetrics, getSlaReportMetrics, getCategoryReport, getPriorityReport, getStatusReport };

@@ -3,8 +3,8 @@ const authenticate = require("../../middleware/authenticate");
 const authorizeRoles = require("../../middleware/authorize");
 const validate = require("../../middleware/validate");
 const { USER_ROLES } = require("../../constants/roles");
-const { reportQueryValidation, dateRangeValidation, technicianPerformanceValidation, slaReportValidation, categoryReportValidation, priorityReportValidation } = require("./reports.validation");
-const { getTicketReport, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport, getPriorityReport } = require("./reports.controller");
+const { reportQueryValidation, dateRangeValidation, technicianPerformanceValidation, slaReportValidation, categoryReportValidation, priorityReportValidation, statusReportValidation } = require("./reports.validation");
+const { getTicketReport, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport, getPriorityReport, getStatusReport } = require("./reports.controller");
 router.use(authenticate, authorizeRoles(USER_ROLES.ADMIN));
 router.get("/tickets", reportQueryValidation(), validate, getTicketReport);
 router.get("/date-range", dateRangeValidation, validate, getDateRangeReport);
@@ -12,4 +12,5 @@ router.get("/technician-performance", technicianPerformanceValidation, validate,
 router.get("/sla", slaReportValidation, validate, getSlaReport);
 router.get("/categories", categoryReportValidation, validate, getCategoryReport);
 router.get("/priorities", priorityReportValidation, validate, getPriorityReport);
+router.get("/statuses", statusReportValidation, validate, getStatusReport);
 module.exports = router;
