@@ -136,4 +136,20 @@ async function getCategoryReport({ filters }, db = pool) {
   return rows;
 }
 
-module.exports = { buildTicketReportWhere, getTicketReportRows, countTicketReportRows, getDailyTicketCountsInDateRange, getPerformanceTechnicians, getTechnicianHistoricalCounts, getTechnicianCompletionMetrics, getSlaReportMetrics, getCategoryReport };
+async function getPriorityReport({ filters }, db = pool) {
+  const { whereSql, params } = buildTicketReportWhere(filters);
+  const [rows] = await db.query(
+    `SELECT p.id AS priority_id, p.name AS priority_name,
+       COUNT(t.id) AS total_tickets,
+       COALESCE(SUM(t.status IN ('OPEN', 'ASSIGNED', 'IN_PROGRESS', 'WAITING_FOR_USER', 'REOPENED')), 0) AS active_tickets,
+       COALESCE(SUM(t.status = 'RESOLVED'), 0) AS resolved_tickets,
+       COALESCE(SUM(t.status = 'CLOSED'), 0) AS closed_tickets
+     FROM ticket_priorities p LEFT JOIN (
+       SELECT t.id, t.priority_id, t.status FROM tickets t${whereSql}
+     ) t ON t.priority_id = p.id
+     GROUP BY p.id, p.name
+     ORDER BY priority_name ASC, priority_id ASC`, params);
+  return rows;
+}
+
+module.exports = { buildTicketReportWhere, getTicketReportRows, countTicketReportRows, getDailyTicketCountsInDateRange, getPerformanceTechnicians, getTechnicianHistoricalCounts, getTechnicianCompletionMetrics, getSlaReportMetrics, getCategoryReport, getPriorityReport };

@@ -76,4 +76,11 @@ function normalizeCategoryReportQuery(params = {}) {
 }
 const categoryReportValidation = [query().custom(value => { normalizeCategoryReportQuery(value); return true; })];
 
-module.exports = { parseCalendarDate, dateBoundary, normalizeReportQuery, reportQueryValidation, normalizeDateRangeQuery, dateRangeValidation, normalizePerformanceQuery, technicianPerformanceValidation, normalizeSlaReportQuery, slaReportValidation, normalizeCategoryReportQuery, categoryReportValidation };
+function normalizePriorityReportQuery(params = {}) {
+  const allowed = ["startDate", "endDate", "categoryId", "technicianId"];
+  if (!params || typeof params !== "object" || Array.isArray(params) || Object.keys(params).some(key => !allowed.includes(key))) invalid("Unsupported priority report query parameter");
+  return normalizeReportQuery(params, allowed).filters;
+}
+const priorityReportValidation = [query().custom(value => { normalizePriorityReportQuery(value); return true; })];
+
+module.exports = { parseCalendarDate, dateBoundary, normalizeReportQuery, reportQueryValidation, normalizeDateRangeQuery, dateRangeValidation, normalizePerformanceQuery, technicianPerformanceValidation, normalizeSlaReportQuery, slaReportValidation, normalizeCategoryReportQuery, categoryReportValidation, normalizePriorityReportQuery, priorityReportValidation };

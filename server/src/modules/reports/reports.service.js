@@ -1,6 +1,6 @@
 const pool = require("../../config/database");
 const repository = require("./reports.repository");
-const { normalizeReportQuery, dateBoundary, normalizeDateRangeQuery, parseCalendarDate, normalizePerformanceQuery, normalizeSlaReportQuery, normalizeCategoryReportQuery } = require("./reports.validation");
+const { normalizeReportQuery, dateBoundary, normalizeDateRangeQuery, parseCalendarDate, normalizePerformanceQuery, normalizeSlaReportQuery, normalizeCategoryReportQuery, normalizePriorityReportQuery } = require("./reports.validation");
 const name = (first, last) => [first, last].map(value => (value ?? "").trim()).filter(Boolean).join(" ");
 async function getTicketReportQuery(params, db) {
   const { filters, pagination } = normalizeReportQuery(params);
@@ -123,4 +123,29 @@ async function getCategoryReport(params = {}, db) {
   return { report: { filters, totalTickets, categories } };
 }
 
-module.exports = { getTicketReportQuery, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport };
+async function getPriorityReport(params = {}, db) {
+  const filters = normalizePriorityReportQuery(params);
+  const queryFilters = { ...filters };
+  delete queryFilters.startDate;
+  delete queryFilters.endDate;
+  if (filters.startDate) queryFilters.startAt = dateBoundary(filters.startDate);
+  if (filters.endDate) queryFilters.endExclusive = dateBoundary(filters.endDate, true);
+  const rows = await repository.getPriorityReport({ filters: queryFilters }, db);
+  // Sum grouped counts, not ticket rows: the priority FK makes this the complete
+  // population, and one read keeps the denominator consistent during ticket writes.
+  const totalTickets = rows.reduce((sum, row) => sum + Number(row.total_tickets ?? 0), 0);
+  const priorities = rows.map(row => {
+    const total = Number(row.total_tickets ?? 0);
+    return { priorityId: Number(row.priority_id), priorityName: row.priority_name,
+      totalTickets: total,
+      activeTickets: Number(row.active_tickets ?? 0), resolvedTickets: Number(row.resolved_tickets ?? 0),
+      closedTickets: Number(row.closed_tickets ?? 0), percentageOfTickets: totalTickets === 0 ? 0 : Number((total / totalTickets * 100).toFixed(2)) };
+  });
+  // Canonical seeded names determine severity, never numeric database IDs.
+  const severity = new Map([["CRITICAL", 1], ["HIGH", 2], ["MEDIUM", 3], ["LOW", 4]]);
+  const rank = row => severity.get(row.priorityName.trim().toUpperCase()) ?? 5;
+  priorities.sort((a, b) => rank(a) - rank(b) || a.priorityName.localeCompare(b.priorityName) || a.priorityId - b.priorityId);
+  return { report: { filters, totalTickets, priorities } };
+}
+
+module.exports = { getTicketReportQuery, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport, getPriorityReport };

@@ -20,4 +20,8 @@ const getCategoryReport = asyncHandler(async (req, res) => {
   const data = await service.getCategoryReport(req.query);
   res.status(200).json({ success: true, message: "Category report retrieved successfully", data });
 });
-module.exports = { getTicketReport, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport };
+const getPriorityReport = asyncHandler(async (req, res) => {
+  const data = await service.getPriorityReport(req.query);
+  res.status(200).json({ success: true, message: "Priority report retrieved successfully", data });
+});
+module.exports = { getTicketReport, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport, getPriorityReport };
