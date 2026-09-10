@@ -20,15 +20,13 @@ function buildTicketReportWhere(filters = {}) {
   return { whereSql: conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "", params };
 }
 // Explicit projection keeps the foundation independent of full ticket-detail data.
-async function getTicketReportRows({ filters, pagination, sorting = { sortBy: "createdAt", sortOrder: "DESC" } }, db = pool) {
+function buildTicketReportRowQuery({ filters, pagination, sorting = { sortBy: "createdAt", sortOrder: "DESC" } }) {
   const columns = new Map([["createdAt", "t.created_at"], ["ticketNumber", "t.ticket_number"], ["title", "t.title"], ["status", "t.status"], ["category", "c.name"], ["priority", "p.name"], ["requester", "requester.first_name"], ["technician", "technician.first_name"]]);
   if (!columns.has(sorting.sortBy) || !["ASC", "DESC"].includes(sorting.sortOrder)) throw new TypeError("Invalid report sorting");
   const orderSql = `${columns.get(sorting.sortBy)} ${sorting.sortOrder}, t.id ${sorting.sortOrder}`;
-  const { limit, offset } = pagination;
-  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100 || !Number.isSafeInteger(offset) || offset < 0) throw new TypeError("Invalid report pagination");
+  if (pagination !== undefined && (!Number.isSafeInteger(pagination.limit) || pagination.limit < 1 || pagination.limit > 100 || !Number.isSafeInteger(pagination.offset) || pagination.offset < 0)) throw new TypeError("Invalid report pagination");
   const { whereSql, params } = buildTicketReportWhere(filters);
-  const [rows] = await db.query(
-    `SELECT t.id, t.ticket_number, t.title, t.status, t.category_id, c.name AS category_name,
+  const sql = `SELECT t.id, t.ticket_number, t.title, t.status, t.category_id, c.name AS category_name,
        t.priority_id, p.name AS priority_name, t.created_by, requester.first_name AS requester_first_name,
        requester.last_name AS requester_last_name, requester.email AS requester_email, t.assigned_to,
        technician.first_name AS technician_first_name, technician.last_name AS technician_last_name, technician.email AS technician_email,
@@ -38,8 +36,19 @@ async function getTicketReportRows({ filters, pagination, sorting = { sortBy: "c
      INNER JOIN ticket_priorities AS p ON p.id = t.priority_id
      INNER JOIN users AS requester ON requester.id = t.created_by
      LEFT JOIN users AS technician ON technician.id = t.assigned_to${whereSql}
-     ORDER BY ${orderSql} LIMIT ? OFFSET ?`, [...params, limit, offset]
-  );
+     ORDER BY ${orderSql}${pagination === undefined ? "" : " LIMIT ? OFFSET ?"}`;
+  return { sql, params: pagination === undefined ? params : [...params, pagination.limit, pagination.offset] };
+}
+async function getTicketReportRows(options, db = pool) {
+  if (!options.pagination) throw new TypeError("Invalid report pagination");
+  const { sql, params } = buildTicketReportRowQuery(options);
+  const [rows] = await db.query(sql, params);
+  return rows;
+}
+async function getTicketReportExportRows({ filters, sorting }, db = pool) {
+  const { sql, params } = buildTicketReportRowQuery({ filters, sorting });
+  // Ticket timestamps follow UTC; decode them as UTC for ISO CSV output only.
+  const [rows] = await db.query({ sql, timezone: "Z" }, params);
   return rows;
 }
 async function countTicketReportRows({ filters }, db = pool) {
@@ -170,4 +179,4 @@ async function getStatusReport({ filters }, db = pool) {
   return rows;
 }
 
-module.exports = { buildTicketReportWhere, getTicketReportRows, countTicketReportRows, getDailyTicketCountsInDateRange, getPerformanceTechnicians, getTechnicianHistoricalCounts, getTechnicianCompletionMetrics, getSlaReportMetrics, getCategoryReport, getPriorityReport, getStatusReport };
+module.exports = { getTicketReportExportRows, buildTicketReportWhere, getTicketReportRows, countTicketReportRows, getDailyTicketCountsInDateRange, getPerformanceTechnicians, getTechnicianHistoricalCounts, getTechnicianCompletionMetrics, getSlaReportMetrics, getCategoryReport, getPriorityReport, getStatusReport };

@@ -105,4 +105,11 @@ function normalizeTicketReportQuery(params = {}) {
 }
 const ticketReportValidation = [query().custom(value => { normalizeTicketReportQuery(value); return true; })];
 
-module.exports = { normalizeTicketReportQuery, ticketReportValidation, parseCalendarDate, dateBoundary, normalizeReportQuery, reportQueryValidation, normalizeDateRangeQuery, dateRangeValidation, normalizePerformanceQuery, technicianPerformanceValidation, normalizeSlaReportQuery, slaReportValidation, normalizeCategoryReportQuery, categoryReportValidation, normalizePriorityReportQuery, priorityReportValidation, normalizeStatusReportQuery, statusReportValidation };
+function normalizeTicketCsvQuery(params = {}) {
+  if (params && (Object.hasOwn(params, "page") || Object.hasOwn(params, "limit"))) invalid("CSV export does not support page or limit");
+  const { filters, sorting } = normalizeTicketReportQuery(params);
+  return { filters, sorting };
+}
+const ticketCsvValidation = [query().custom(value => { normalizeTicketCsvQuery(value); return true; })];
+
+module.exports = { normalizeTicketCsvQuery, ticketCsvValidation, normalizeTicketReportQuery, ticketReportValidation, parseCalendarDate, dateBoundary, normalizeReportQuery, reportQueryValidation, normalizeDateRangeQuery, dateRangeValidation, normalizePerformanceQuery, technicianPerformanceValidation, normalizeSlaReportQuery, slaReportValidation, normalizeCategoryReportQuery, categoryReportValidation, normalizePriorityReportQuery, priorityReportValidation, normalizeStatusReportQuery, statusReportValidation };

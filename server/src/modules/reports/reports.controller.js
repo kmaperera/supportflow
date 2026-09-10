@@ -1,3 +1,4 @@
+const { sendCsvDownload } = require("../../utils/csv");
 const service = require("./reports.service");
 const asyncHandler = require("../../utils/asyncHandler");
 const getTicketReport = asyncHandler(async (req, res) => {
@@ -28,4 +29,8 @@ const getStatusReport = asyncHandler(async (req, res) => {
   const data = await service.getStatusReport(req.query);
   res.status(200).json({ success: true, message: "Status report retrieved successfully", data });
 });
-module.exports = { getTicketReport, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport, getPriorityReport, getStatusReport };
+const exportTicketCsv = asyncHandler(async (req, res) => {
+  const payload = await service.getTicketCsvExport(req.query);
+  sendCsvDownload(res, payload);
+});
+module.exports = { exportTicketCsv, getTicketReport, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport, getPriorityReport, getStatusReport };

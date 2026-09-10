@@ -1,7 +1,8 @@
+const { generateCsv, buildCsvFilename } = require("../../utils/csv");
 const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
 const pool = require("../../config/database");
 const repository = require("./reports.repository");
-const { normalizeTicketReportQuery, normalizeReportQuery, dateBoundary, normalizeDateRangeQuery, parseCalendarDate, normalizePerformanceQuery, normalizeSlaReportQuery, normalizeCategoryReportQuery, normalizePriorityReportQuery, normalizeStatusReportQuery } = require("./reports.validation");
+const { normalizeTicketCsvQuery, normalizeTicketReportQuery, normalizeReportQuery, dateBoundary, normalizeDateRangeQuery, parseCalendarDate, normalizePerformanceQuery, normalizeSlaReportQuery, normalizeCategoryReportQuery, normalizePriorityReportQuery, normalizeStatusReportQuery } = require("./reports.validation");
 const name = (first, last) => [first, last].map(value => (value ?? "").trim()).filter(Boolean).join(" ");
 async function getTicketReportQuery(params, db) {
   const { filters, pagination, sorting } = normalizeTicketReportQuery(params);
@@ -171,4 +172,31 @@ async function getStatusReport(params = {}, db) {
   return { report: { filters, totalTickets, statuses } };
 }
 
-module.exports = { getTicketReportQuery, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport, getPriorityReport, getStatusReport };
+async function getTicketCsvExport(params = {}, db) {
+  const { filters, sorting } = normalizeTicketCsvQuery(params);
+  const queryFilters = { ...filters };
+  delete queryFilters.startDate;
+  delete queryFilters.endDate;
+  if (filters.startDate) queryFilters.startAt = dateBoundary(filters.startDate);
+  if (filters.endDate) queryFilters.endExclusive = dateBoundary(filters.endDate, true);
+  const rows = await repository.getTicketReportExportRows({ filters: queryFilters, sorting }, db);
+  const columns = [
+    { header: "Ticket Number", key: "ticket_number" },
+    { header: "Title", key: "title" },
+    { header: "Status", key: "status" },
+    { header: "Category", key: "category_name" },
+    { header: "Priority", key: "priority_name" },
+    { header: "Requester Name", value: row => name(row.requester_first_name, row.requester_last_name) },
+    { header: "Requester Email", key: "requester_email" },
+    { header: "Assigned Technician", value: row => row.assigned_to == null ? null : name(row.technician_first_name, row.technician_last_name) },
+    { header: "Technician Email", value: row => row.assigned_to == null ? null : row.technician_email },
+    { header: "Created At", key: "created_at" },
+    { header: "First Response At", key: "first_response_at" },
+    { header: "Resolved At", key: "resolved_at" },
+    { header: "Response Due At", key: "response_due_at" },
+    { header: "Resolution Due At", key: "resolution_due_at" },
+  ];
+  return { csv: generateCsv({ columns, rows }), filename: buildCsvFilename("supportflow-tickets") };
+}
+
+module.exports = { getTicketCsvExport, getTicketReportQuery, getDateRangeReport, getTechnicianPerformanceReport, getSlaReport, getCategoryReport, getPriorityReport, getStatusReport };
