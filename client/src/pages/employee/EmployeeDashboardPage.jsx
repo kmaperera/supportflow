@@ -1,7 +1,5 @@
-import { Link } from 'react-router-dom'
-import SessionActions from '../../auth/SessionActions'
-function EmployeeDashboardPage() {
-  return <main><h1 className="text-2xl font-bold">Employee Dashboard</h1><Link to="/profile" className="mt-4 inline-block rounded text-teal-800 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4">Profile</Link><SessionActions /></main>
-}
+import EmployeePlaceholderPage from './EmployeePlaceholderPage'
 
-export default EmployeeDashboardPage
+export default function EmployeeDashboardPage() {
+  return <EmployeePlaceholderPage title="Employee Dashboard" phase="14.2" />
+}

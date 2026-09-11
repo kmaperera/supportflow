@@ -1,5 +1,9 @@
 ﻿import { Route, Routes } from 'react-router-dom'
 import LoginPage from '../pages/auth/LoginPage'
+import { Navigate } from 'react-router-dom'
+import EmployeeLayout from '../layouts/EmployeeLayout'
+import { employeeNavigation } from '../layouts/employeeNavigation'
+import EmployeePlaceholderPage from '../pages/employee/EmployeePlaceholderPage'
 import EmployeeDashboardPage from '../pages/employee/EmployeeDashboardPage'
 import TechnicianDashboardPage from '../pages/technician/TechnicianDashboardPage'
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage'
@@ -29,8 +33,14 @@ function AppRoutes() {
           <Route path="/change-password" element={<ChangePasswordPage />} />
         </Route>
         <Route element={<RoleRoute role={ROLES.EMPLOYEE} />}>
-          <Route path="/employee" element={<EmployeeDashboardPage />} />
-          <Route path="/employee/dashboard" element={<EmployeeDashboardPage />} />
+          <Route path="/employee" element={<EmployeeLayout />}>
+            <Route index element={<EmployeeDashboardPage />} />
+            <Route path="dashboard" element={<Navigate to="/employee" replace />} />
+            {employeeNavigation.filter(item => item.phase).map(item => (
+              <Route key={item.path} path={item.path.slice('/employee/'.length)} element={<EmployeePlaceholderPage title={item.title} phase={item.phase} />} />
+            ))}
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
         </Route>
         <Route element={<RoleRoute role={ROLES.TECHNICIAN} />}>
           <Route path="/technician" element={<TechnicianDashboardPage />} />
