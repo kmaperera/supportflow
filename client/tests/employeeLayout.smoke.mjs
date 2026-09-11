@@ -15,7 +15,9 @@ try {
     const html = render(path)
     assert.match(html, /SupportFlow/)
     assert.match(html, /Alex Lee/)
-    assert.ok(html.replaceAll('<!-- -->', '').includes(`Coming in Phase ${phase}.`))
+    if (path === '/employee') assert.match(html, /Loading dashboard/)
+    else if (path === '/employee/tickets/new') assert.match(html, /Ticket Title/)
+    else assert.ok(html.replaceAll('<!-- -->', '').includes(`Coming in Phase ${phase}.`))
     const activeLinks = html.match(/<a\b[^>]*aria-current="page"[^>]*>/g) || []
     assert.equal(activeLinks.length, 1)
     assert.ok(activeLinks[0].includes(`href="${path}"`))
