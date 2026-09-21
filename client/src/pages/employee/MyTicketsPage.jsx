@@ -77,15 +77,17 @@ export function MyTicketsList({ tickets, totalRecords }) {
     <Link to="/employee/tickets/new" className={`${actionClass} mt-4`}>Create Ticket</Link>
   </section>
   return <ul className="space-y-4">
-    {tickets.map(ticket => <li key={ticket.id} className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
-      <Link to={`/employee/tickets/${encodeURIComponent(ticket.id)}`} className="rounded break-all text-sm font-semibold text-teal-800 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2">{ticket.ticketNumber}</Link>
-      <h2 className="mt-1 break-words text-lg font-semibold">{ticket.title}</h2>
+    {tickets.map(ticket => <li key={ticket.id} className="min-w-0">
+      <Link to={`/employee/tickets/${encodeURIComponent(ticket.id)}`} aria-labelledby={`ticket-number-${ticket.id} ticket-title-${ticket.id}`} className="block rounded-2xl border border-slate-200 bg-white p-4 transition-colors hover:border-teal-700 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 sm:p-6">
+      <span id={`ticket-number-${ticket.id}`} className="break-all text-sm font-semibold text-teal-800 underline underline-offset-4">{ticket.ticketNumber}</span>
+      <h2 id={`ticket-title-${ticket.id}`} className="mt-1 break-words text-lg font-semibold">{ticket.title}</h2>
       <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2 xl:grid-cols-4">
         <div><dt className="text-slate-500">Category</dt><dd className="mt-1 break-words">{ticket.category?.name || 'Not specified'}</dd></div>
         <div><dt className="text-slate-500">Priority</dt><dd className="mt-1">{formatTicketPriority(ticket.priority?.name)}</dd></div>
         <div><dt className="text-slate-500">Status</dt><dd className="mt-1 font-medium text-teal-900">{formatTicketStatus(ticket.status)}</dd></div>
         <div><dt className="text-slate-500">Created</dt><dd className="mt-1">{formatTicketDate(ticket.createdAt)}</dd></div>
       </dl>
+      </Link>
     </li>)}
   </ul>
 }

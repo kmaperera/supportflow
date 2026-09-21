@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { ROLES } from '../../auth/roles'
 import { getRoleHome } from '../../auth/roleHome'
@@ -10,17 +10,19 @@ const roleLabels = {
   [ROLES.EMPLOYEE]: 'Employee',
 }
 
-export default function ProfilePage() {
+export default function ProfilePage({ embedded = false }) {
   const { user } = useAuth()
+  if (!embedded && user.role === ROLES.EMPLOYEE) return <Navigate to="/employee/profile" replace />
+  const Container = embedded ? 'div' : 'main'
   const names = [user.firstName, user.lastName].filter(name => typeof name === 'string' && name.trim()).map(name => name.trim())
   const fullName = names.join(' ') || 'Not provided'
   const initials = names.map(name => Array.from(name)[0]).join('').toUpperCase() || '?'
   const role = roleLabels[user.role]
   return (
-    <main className={`${user.role === ROLES.EMPLOYEE ? 'employee-ui ' : ''}min-h-screen bg-slate-50 px-4 py-6 sm:px-6 sm:py-16`}>
+    <Container className={embedded ? 'min-w-0' : 'min-h-screen bg-slate-50 px-4 py-6 sm:px-6 sm:py-16'}>
       <div className="mx-auto max-w-2xl">
-        <Link to={getRoleHome(user.role)} className="rounded text-sm font-semibold text-teal-800 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700">Return to dashboard</Link>
-        <h1 className="mt-6 text-2xl sm:text-3xl font-semibold text-slate-900">My Profile</h1>
+        {!embedded && <Link to={getRoleHome(user.role)} className="rounded text-sm font-semibold text-teal-800 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700">Return to dashboard</Link>}
+        <h1 className={`${embedded ? '' : 'mt-6 '}text-2xl sm:text-3xl font-semibold text-slate-900`}>My Profile</h1>
         <section aria-labelledby="account-heading" className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-9">
           <div className="flex flex-wrap items-center gap-4 border-b border-slate-200 pb-6">
             <div aria-hidden="true" className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xl font-semibold text-teal-900">{initials}</div>
@@ -42,6 +44,6 @@ export default function ProfilePage() {
           <SessionActions />
         </section>
       </div>
-    </main>
+    </Container>
   )
 }

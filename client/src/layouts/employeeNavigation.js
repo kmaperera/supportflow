@@ -4,5 +4,5 @@ export const employeeNavigation = [
   { label: 'My Tickets', path: '/employee/tickets', title: 'My Tickets' },
   { label: 'Knowledge Base', path: '/employee/knowledge-base', title: 'Knowledge Base', end: false },
   { label: 'Notifications', path: '/employee/notifications', title: 'Notifications' },
-  { label: 'Profile', path: '/profile', title: 'Profile' },
+  { label: 'Profile', path: '/employee/profile', title: 'Profile' },
 ]

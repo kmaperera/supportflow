@@ -24,7 +24,7 @@ try {
     const activeLinks = html.match(/<a\b[^>]*aria-current="page"[^>]*>/g) || []
     assert.equal(activeLinks.length, 1)
     assert.ok(activeLinks[0].includes(`href="${path}"`))
-    assert.match(html, /href="\/profile"/)
+    assert.match(html, /href="\/employee\/profile"/)
     assert.ok(!html.includes('Log out all sessions'))
     assert.match(render(path, { ...state, isLoggingOut: true }), /disabled=""[^>]*>Logging out/)
     for (const role of ['ADMIN', 'TECHNICIAN', 'UNKNOWN']) {

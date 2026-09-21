@@ -41,6 +41,7 @@ function AppRoutes() {
         <Route element={<RoleRoute role={ROLES.EMPLOYEE} />}>
           <Route path="/employee" element={<EmployeeLayout />}>
             <Route index element={<EmployeeDashboardPage />} />
+            <Route path="profile" element={<ProfilePage embedded />} />
             <Route path="tickets/new" element={<CreateTicketPage />} />
             <Route path="tickets" element={<MyTicketsPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
