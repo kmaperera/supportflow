@@ -2,6 +2,7 @@
 import LoginPage from '../pages/auth/LoginPage'
 import CreateTicketPage from '../pages/employee/CreateTicketPage'
 import MyTicketsPage from '../pages/employee/MyTicketsPage'
+import NotificationsPage from '../pages/employee/NotificationsPage'
 import TicketDetailsPage from '../pages/employee/TicketDetailsPage'
 import { Navigate } from 'react-router-dom'
 import EmployeeLayout from '../layouts/EmployeeLayout'
@@ -40,6 +41,7 @@ function AppRoutes() {
             <Route index element={<EmployeeDashboardPage />} />
             <Route path="tickets/new" element={<CreateTicketPage />} />
             <Route path="tickets" element={<MyTicketsPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
             <Route path="tickets/:ticketId" element={<TicketDetailsPage />} />
             <Route path="dashboard" element={<Navigate to="/employee" replace />} />
             {employeeNavigation.filter(item => item.phase).map(item => (
