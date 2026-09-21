@@ -1,6 +1,12 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function closeTicket(ticketId) {
+  const { data } = await api.patch(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/close`)
+  if (data?.success !== true || !data.data?.ticket?.id) throw new Error('Invalid ticket close response')
+  return data.data.ticket
+}
+
 export async function updateTicket(ticketId, { title, description, categoryId, priorityId }) {
   const { data } = await api.patch(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}`, {
     title: title.trim(), description: description.trim(), categoryId, priorityId,
