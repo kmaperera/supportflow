@@ -6,6 +6,7 @@ import { getApiErrorMessage } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
 import TicketStatusTimeline from './TicketStatusTimeline'
 import TicketConversation from './TicketConversation'
+import TicketAttachments from './TicketAttachments'
 import { formatTicketDate, formatTicketPriority, formatTicketStatus } from './ticketFormatting'
 
 export default function TicketDetailsPage() {
@@ -39,7 +40,7 @@ function TicketDetails({ ticketId }) {
       <AuthFeedback>{state.error}</AuthFeedback>
       {!state.unavailable && <button type="button" onClick={() => { setState({ loading: true, ticket: null, error: null }); setAttempt(value => value + 1) }} className="rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2">Retry</button>}
     </section>}
-    {state.ticket && <><TicketDetailsContent ticket={state.ticket} /><TicketStatusTimeline ticketId={ticketId} /><TicketConversation key={ticketId} ticketId={ticketId} status={state.ticket.status} /></>}
+    {state.ticket && <><TicketDetailsContent ticket={state.ticket} /><TicketStatusTimeline ticketId={ticketId} /><TicketConversation key={ticketId} ticketId={ticketId} status={state.ticket.status} /><TicketAttachments key={`attachments:${ticketId}`} ticketId={ticketId} status={state.ticket.status} /></>}
   </div>
 }
 
