@@ -12,6 +12,8 @@ import { employeeNavigation } from '../layouts/employeeNavigation'
 import EmployeePlaceholderPage from '../pages/employee/EmployeePlaceholderPage'
 import EmployeeDashboardPage from '../pages/employee/EmployeeDashboardPage'
 import TechnicianDashboardPage from '../pages/technician/TechnicianDashboardPage'
+import TechnicianLayout from '../layouts/TechnicianLayout'
+import TechnicianPlaceholderPage from '../pages/technician/TechnicianPlaceholderPage'
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage'
 import NotFoundPage from '../pages/shared/NotFoundPage'
 import ProtectedRoute from './ProtectedRoute'
@@ -56,8 +58,15 @@ function AppRoutes() {
           </Route>
         </Route>
         <Route element={<RoleRoute role={ROLES.TECHNICIAN} />}>
-          <Route path="/technician" element={<TechnicianDashboardPage />} />
-          <Route path="/technician/dashboard" element={<TechnicianDashboardPage />} />
+          <Route path="/technician" element={<TechnicianLayout />}>
+            <Route index element={<TechnicianDashboardPage />} />
+            <Route path="tickets/assigned" element={<TechnicianPlaceholderPage title="My Assigned Tickets" phase="15.3" />} />
+            <Route path="tickets/unassigned" element={<TechnicianPlaceholderPage title="Unassigned Queue" phase="15.4" />} />
+            <Route path="notifications" element={<TechnicianPlaceholderPage title="Notifications" phase="15.16" />} />
+            <Route path="profile" element={<ProfilePage embedded />} />
+            <Route path="dashboard" element={<Navigate to="/technician" replace />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
         </Route>
         <Route element={<RoleRoute role={ROLES.ADMIN} />}>
           <Route path="/admin" element={<AdminDashboardPage />} />

@@ -1,25 +1,17 @@
-import { useRef, useState } from 'react'
-import { NavLink, Outlet, useLocation, matchPath } from 'react-router-dom'
+import { NavLink, Outlet, matchPath } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import LogoutButton from '../auth/LogoutButton'
 import { employeeNavigation } from './employeeNavigation'
+import { useWorkspaceMenu } from './useWorkspaceMenu'
 
 export default function EmployeeLayout() {
   const { user } = useAuth()
-  const location = useLocation()
-  const [openLocation, setOpenLocation] = useState(null)
-  const menuButton = useRef(null)
-  const menuOpen = openLocation === location
+  const { location, menuButton, menuOpen, closeMenu, toggleMenu } = useWorkspaceMenu()
   const currentPage = employeeNavigation.find(item => matchPath({ path: item.path, end: item.end !== false }, location.pathname))
   const name = [user?.firstName, user?.lastName]
     .filter(value => typeof value === 'string' && value.trim())
     .map(value => value.trim()).join(' ')
   const displayName = name || (typeof user?.email === 'string' && user.email.trim()) || 'Employee'
-
-  function closeMenu() {
-    setOpenLocation(null)
-    menuButton.current?.focus()
-  }
 
   return (
     <div className="employee-ui min-h-screen bg-slate-50 text-slate-900 lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
@@ -30,7 +22,7 @@ export default function EmployeeLayout() {
             <p className="text-xl font-bold tracking-tight text-teal-800">SupportFlow</p>
             <p className="mt-1 text-sm text-slate-500">Employee workspace</p>
           </div>
-          <button ref={menuButton} type="button" aria-label={menuOpen ? 'Close employee menu' : 'Open employee menu'} aria-expanded={menuOpen} aria-controls="employee-navigation" onClick={() => setOpenLocation(menuOpen ? null : location)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 lg:hidden">
+          <button ref={menuButton} type="button" aria-label={menuOpen ? 'Close employee menu' : 'Open employee menu'} aria-expanded={menuOpen} aria-controls="employee-navigation" onClick={toggleMenu} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 lg:hidden">
             {menuOpen ? 'Close' : 'Menu'}
           </button>
         </div>
