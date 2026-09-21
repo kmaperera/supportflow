@@ -78,7 +78,7 @@ export function MyTicketsList({ tickets, totalRecords }) {
   </section>
   return <ul className="space-y-4">
     {tickets.map(ticket => <li key={ticket.id} className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-      <p className="break-all text-sm font-semibold text-teal-800">{ticket.ticketNumber}</p>
+      <Link to={`/employee/tickets/${encodeURIComponent(ticket.id)}`} className="rounded break-all text-sm font-semibold text-teal-800 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2">{ticket.ticketNumber}</Link>
       <h2 className="mt-1 break-words text-lg font-semibold">{ticket.title}</h2>
       <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2 xl:grid-cols-4">
         <div><dt className="text-slate-500">Category</dt><dd className="mt-1 break-words">{ticket.category?.name || 'Not specified'}</dd></div>

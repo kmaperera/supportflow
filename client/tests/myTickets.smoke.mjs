@@ -30,7 +30,7 @@ try {
   const render = (tickets, totalRecords) => renderToString(React.createElement(MemoryRouter, null, React.createElement(MyTicketsList, { tickets, totalRecords })))
   const html = render(tickets, 11)
   for (const text of ['SUP-2026-000081', 'Network unavailable', 'High', 'Waiting for User']) assert.ok(html.includes(text))
-  assert.ok(!html.includes('/employee/tickets/81'))
+  assert.ok(html.includes('/employee/tickets/81'))
   assert.match(render([], 0), /support tickets yet/)
   assert.match(render([], 0), /href="\/employee\/tickets\/new"/)
   assert.match(render([], 11), /No tickets on this page/)

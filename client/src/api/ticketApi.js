@@ -1,6 +1,14 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function getTicketById(ticketId, { signal } = {}) {
+  const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}`, { signal })
+  if (data?.success !== true || !data.data?.ticket || typeof data.data.ticket !== 'object' || !data.data.ticket.id) {
+    throw new Error('Invalid ticket detail response')
+  }
+  return data.data.ticket
+}
+
 export async function createTicket({ title, description, categoryId, priorityId }) {
   const { data } = await api.post(API_ENDPOINTS.TICKETS, {
     title: title.trim(), description: description.trim(), categoryId, priorityId,
