@@ -13,6 +13,7 @@ import EmployeePlaceholderPage from '../pages/employee/EmployeePlaceholderPage'
 import EmployeeDashboardPage from '../pages/employee/EmployeeDashboardPage'
 import TechnicianDashboardPage from '../pages/technician/TechnicianDashboardPage'
 import MyAssignedTicketsPage from '../pages/technician/MyAssignedTicketsPage'
+import TechnicianTicketDetailsPage from '../pages/technician/TechnicianTicketDetailsPage'
 import UnassignedTicketsPage from '../pages/technician/UnassignedTicketsPage'
 import TechnicianLayout from '../layouts/TechnicianLayout'
 import TechnicianPlaceholderPage from '../pages/technician/TechnicianPlaceholderPage'
@@ -63,7 +64,7 @@ function AppRoutes() {
           <Route path="/technician" element={<TechnicianLayout />}>
             <Route index element={<TechnicianDashboardPage />} />
             <Route path="tickets/assigned" element={<MyAssignedTicketsPage />} />
-            <Route path="tickets/:ticketId" element={<TechnicianPlaceholderPage title="Ticket Workspace" phase="15.7" />} />
+            <Route path="tickets/:ticketId" element={<TechnicianTicketDetailsPage />} />
             <Route path="tickets/unassigned" element={<UnassignedTicketsPage />} />
             <Route path="notifications" element={<TechnicianPlaceholderPage title="Notifications" phase="15.16" />} />
             <Route path="profile" element={<ProfilePage embedded />} />

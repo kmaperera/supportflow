@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { getTicketStatusHistory } from '../../api/ticketApi'
 import { formatTicketDate, formatTicketStatus } from './ticketFormatting'
 
-export default function TicketStatusTimeline({ ticketId }) {
+export default function TicketStatusTimeline({ ticketId, title = 'Status timeline' }) {
   const [attempt, setAttempt] = useState(0)
   const [result, setResult] = useState(null)
   useEffect(() => {
@@ -16,7 +16,7 @@ export default function TicketStatusTimeline({ ticketId }) {
   }, [ticketId, attempt])
   const current = result?.ticketId === ticketId && result?.attempt === attempt ? result : null
   return <section aria-labelledby="status-history-heading" className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 lg:p-8">
-    <h2 id="status-history-heading" className="text-lg font-semibold">Status timeline</h2>
+    <h2 id="status-history-heading" className="text-lg font-semibold">{title}</h2>
     {!current && <p role="status" className="mt-4 text-sm text-slate-600">Loading status history...</p>}
     {current?.failed && <div className="mt-4">
       <p role="alert" className="text-sm text-slate-600">Unable to load status history.</p>

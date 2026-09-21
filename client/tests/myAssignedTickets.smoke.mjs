@@ -35,7 +35,7 @@ try {
   const { AuthContext } = await server.ssrLoadModule('/src/auth/AuthContext.js')
   const { default: AppRoutes } = await server.ssrLoadModule('/src/routes/AppRoutes.jsx')
   const route = role => renderToString(React.createElement(MemoryRouter, { initialEntries: ['/technician/tickets/81'] }, React.createElement(AuthContext.Provider, { value: { isAuthenticated: true, user: { role } } }, React.createElement(AppRoutes))))
-  assert.match(route('TECHNICIAN'), /Ticket Workspace/)
+  assert.match(route('TECHNICIAN'), /Loading ticket/)
   assert.ok(!route('TECHNICIAN').includes('aria-current="page"'))
   for (const role of ['EMPLOYEE', 'ADMIN']) assert.ok(!route(role).includes('Ticket Workspace'))
   console.log('Assigned ticket endpoint, ownership-param exclusion, pagination contract, accessible cards, privacy, empty states, cancellation and guarded placeholder passed.')
