@@ -4,7 +4,7 @@ import { ticketStatuses, formatTicketPriority } from './ticketFormatting'
 
 const controlClass = 'mt-1 w-full min-w-0 rounded-lg border border-slate-300 bg-white p-2 text-sm focus-visible:outline-2 focus-visible:outline-teal-700'
 
-function MetadataFilter({ label, value, onChange, fetchOptions }) {
+export function MetadataFilter({ label, value, onChange, fetchOptions }) {
   const [state, setState] = useState({ loading: true, options: [], error: false })
   const [attempt, setAttempt] = useState(0)
   useEffect(() => {

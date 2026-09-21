@@ -6,8 +6,12 @@ export async function getMyAssignedTickets({ page = 1, limit = 10, signal } = {}
   return readTechnicianTicketList(data)
 }
 
-export async function getUnassignedTickets({ page = 1, limit = 10, signal } = {}) {
-  const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/queue`, { params: { assignment: 'unassigned', page, limit }, signal })
+export async function getUnassignedTickets({ page = 1, limit = 10, search, status, categoryId, priorityId, sortBy, order, signal } = {}) {
+  const params = { assignment: 'unassigned', page, limit }
+  for (const [key, value] of Object.entries({ search: search?.trim(), status, categoryId, priorityId, sortBy, order })) {
+    if (value !== undefined && value !== '') params[key] = value
+  }
+  const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/queue`, { params, signal })
   return readTechnicianTicketList(data)
 }
 
