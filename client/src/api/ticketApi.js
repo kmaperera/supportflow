@@ -1,6 +1,13 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function saveTicketFeedback(ticketId, { rating, comment }) {
+  const { data } = await api.put(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/feedback`, { rating, comment: comment.trim() })
+  const feedback = data?.data?.feedback
+  if (data?.success !== true || !feedback || !Number.isInteger(feedback.rating) || feedback.rating < 1 || feedback.rating > 5) throw new Error('Invalid feedback response')
+  return feedback
+}
+
 export async function closeTicket(ticketId) {
   const { data } = await api.patch(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/close`)
   if (data?.success !== true || !data.data?.ticket?.id) throw new Error('Invalid ticket close response')
