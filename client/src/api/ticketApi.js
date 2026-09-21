@@ -22,8 +22,12 @@ async function getOptions(kind, signal) {
 export const getTicketCategories = ({ signal } = {}) => getOptions('categories', signal)
 export const getTicketPriorities = ({ signal } = {}) => getOptions('priorities', signal)
 
-export async function getMyTickets({ page = 1, signal } = {}) {
-  const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/my`, { params: { page, limit: 10 }, signal })
+export async function getMyTickets({ page = 1, limit = 10, search, status, categoryId, priorityId, sortBy, order, signal } = {}) {
+  const params = { page, limit }
+  for (const [key, value] of Object.entries({ search: search?.trim(), status, categoryId, priorityId, sortBy, order })) {
+    if (value !== undefined && value !== '') params[key] = value
+  }
+  const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/my`, { params, signal })
   const pagination = data?.pagination
   if (data?.success !== true || !Array.isArray(data.data?.tickets) || !pagination ||
       !Number.isInteger(pagination.currentPage) || pagination.currentPage < 1 ||

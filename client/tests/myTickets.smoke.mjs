@@ -17,6 +17,16 @@ try {
     return { config, status: 200, headers: {}, data: { success: true, data: { tickets }, pagination } }
   }
   assert.deepEqual(await getMyTickets({ page: 2, userId: 999 }), { tickets, pagination })
+  api.defaults.adapter = async config => {
+    assert.deepEqual(config.params, { page: 1, limit: 10, search: 'network', status: 'REOPENED', categoryId: '73', priorityId: '91', sortBy: 'updated_at', order: 'desc' })
+    return { config, status: 200, headers: {}, data: { success: true, data: { tickets }, pagination } }
+  }
+  await getMyTickets({ search: ' network ', status: 'REOPENED', categoryId: '73', priorityId: '91', sortBy: 'updated_at', order: 'desc', employeeId: 999 })
+  api.defaults.adapter = async config => {
+    assert.deepEqual(config.params, { page: 1, limit: 10 })
+    return { config, status: 200, headers: {}, data: { success: true, data: { tickets }, pagination } }
+  }
+  await getMyTickets({ search: '  ', status: '', categoryId: '', priorityId: '' })
   const render = (tickets, totalRecords) => renderToString(React.createElement(MemoryRouter, null, React.createElement(MyTicketsList, { tickets, totalRecords })))
   const html = render(tickets, 11)
   for (const text of ['SUP-2026-000081', 'Network unavailable', 'High', 'Waiting for User']) assert.ok(html.includes(text))
