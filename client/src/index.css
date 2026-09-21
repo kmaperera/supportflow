@@ -1,1 +1,40 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
+
+/* Employee content must wrap rather than hiding overflow, including on Profile. */
+.employee-ui {
+  overflow-wrap: anywhere;
+}
+
+.employee-ui :where(.break-words) {
+  overflow-wrap: anywhere;
+}
+
+.employee-ui :where(.flex, .grid) > *,
+.employee-ui :where(fieldset, input, select, textarea) {
+  min-width: 0;
+}
+
+.employee-ui :where(button, input, select, textarea, a.inline-block, a.inline-flex) {
+  max-width: 100%;
+  min-height: 2.75rem;
+}
+
+.employee-ui :where(a.inline-block, a.inline-flex) {
+  align-content: center;
+  align-items: center;
+}
+
+.employee-ui :where(input[type='radio'], input[type='checkbox']) {
+  min-height: auto;
+}
+
+.employee-ui input::file-selector-button {
+  min-height: 2.75rem;
+}
+
+/* Readable text controls without focus zoom on narrow touch screens. */
+@media (width < 40rem) {
+  .employee-ui :where(input, select, textarea) {
+    font-size: 1rem;
+  }
+}

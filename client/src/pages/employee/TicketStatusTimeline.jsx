@@ -15,7 +15,7 @@ export default function TicketStatusTimeline({ ticketId }) {
     return () => controller.abort()
   }, [ticketId, attempt])
   const current = result?.ticketId === ticketId && result?.attempt === attempt ? result : null
-  return <section aria-labelledby="status-history-heading" className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 sm:p-8">
+  return <section aria-labelledby="status-history-heading" className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 lg:p-8">
     <h2 id="status-history-heading" className="text-lg font-semibold">Status timeline</h2>
     {!current && <p role="status" className="mt-4 text-sm text-slate-600">Loading status history...</p>}
     {current?.failed && <div className="mt-4">

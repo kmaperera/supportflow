@@ -22,11 +22,11 @@ export default function EmployeeLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
+    <div className="employee-ui min-h-screen bg-slate-50 text-slate-900 lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
       <a href="#employee-content" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-white focus:p-3 focus:text-teal-800">Skip to main content</a>
       <aside className="border-b border-slate-200 bg-white lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-r lg:border-b-0">
-        <div className="flex items-center justify-between gap-4 px-5 py-6">
-          <div>
+        <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-6">
+          <div className="min-w-0">
             <p className="text-xl font-bold tracking-tight text-teal-800">SupportFlow</p>
             <p className="mt-1 text-sm text-slate-500">Employee workspace</p>
           </div>
@@ -52,14 +52,14 @@ export default function EmployeeLayout() {
         </div>
       </aside>
       <div className="min-w-0">
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 bg-white px-5 py-5 sm:px-8">
+        <header className="flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p className="font-semibold">{currentPage?.title || 'Employee workspace'}</p>
-          <div className="min-w-0">
+          <div className="min-w-0 sm:max-w-[60%] sm:text-right">
             <p className="break-words text-sm font-medium">{displayName}</p>
             <p className="mt-1 text-xs text-slate-500">Employee</p>
           </div>
         </header>
-        <main id="employee-content" tabIndex={-1} className="min-w-0 p-5 sm:p-8"><Outlet /></main>
+        <main id="employee-content" tabIndex={-1} className="mx-auto w-full min-w-0 max-w-screen-2xl p-4 sm:p-6 lg:p-8"><Outlet /></main>
       </div>
     </div>
   )

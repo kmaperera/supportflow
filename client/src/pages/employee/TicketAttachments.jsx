@@ -52,7 +52,7 @@ export default function TicketAttachments({ ticketId, status }) {
         getApiErrorMessage(cause, 'Unable to upload attachment. Please check the file and try again.'))
     } finally { pending.current = false; if (active.current) setUploading(false) }
   }
-  return <section aria-labelledby="attachments-heading" className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 sm:p-8">
+  return <section aria-labelledby="attachments-heading" className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 lg:p-8">
     <h2 id="attachments-heading" className="text-lg font-semibold">Attachments</h2>
     {list.loading ? <p role="status" className="mt-4 text-sm">Loading attachments...</p> : list.error ? <div className="mt-4"><AuthFeedback>Unable to load attachments.</AuthFeedback><button type="button" onClick={reload} className="mt-2 rounded text-teal-800 underline focus-visible:outline-2">Retry attachments</button></div> : !list.attachments.length ? <p className="mt-4 text-sm text-slate-600">No attachments yet.</p> : <ul className="mt-4 space-y-3">{list.attachments.map(attachment => <AttachmentRow key={attachment.id} attachment={attachment} ticketId={ticketId} />)}</ul>}
     {allowed ? <form onSubmit={submit} noValidate className="mt-6 space-y-3">

@@ -7,7 +7,7 @@ import { getApiErrorMessage } from '../../api/apiError'
 import { ticketStatuses, formatTicketStatus, formatTicketPriority, formatTicketDate } from './ticketFormatting'
 
 const actionClass = 'inline-flex rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700'
-const panelClass = 'rounded-2xl border border-slate-200 bg-white p-5 sm:p-6'
+const panelClass = 'rounded-2xl border border-slate-200 bg-white p-4 sm:p-6'
 
 export function EmployeeDashboardContent({ data }) {
   const { summary, tickets } = data

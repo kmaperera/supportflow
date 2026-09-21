@@ -17,11 +17,11 @@ export default function ProfilePage() {
   const initials = names.map(name => Array.from(name)[0]).join('').toUpperCase() || '?'
   const role = roleLabels[user.role]
   return (
-    <main className="min-h-screen bg-slate-50 px-5 py-10 sm:py-16">
+    <main className={`${user.role === ROLES.EMPLOYEE ? 'employee-ui ' : ''}min-h-screen bg-slate-50 px-4 py-6 sm:px-6 sm:py-16`}>
       <div className="mx-auto max-w-2xl">
         <Link to={getRoleHome(user.role)} className="rounded text-sm font-semibold text-teal-800 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700">Return to dashboard</Link>
-        <h1 className="mt-6 text-3xl font-semibold text-slate-900">My Profile</h1>
-        <section aria-labelledby="account-heading" className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-9">
+        <h1 className="mt-6 text-2xl sm:text-3xl font-semibold text-slate-900">My Profile</h1>
+        <section aria-labelledby="account-heading" className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-9">
           <div className="flex flex-wrap items-center gap-4 border-b border-slate-200 pb-6">
             <div aria-hidden="true" className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xl font-semibold text-teal-900">{initials}</div>
             <div className="min-w-0">
@@ -37,7 +37,7 @@ export default function ProfilePage() {
             <div><dt className="text-sm text-slate-600">Account Status</dt><dd className="mt-2"><span className={`rounded-full px-3 py-1 text-sm font-medium ${user.isActive ? 'bg-teal-50 text-teal-900' : 'bg-slate-100 text-slate-700'}`}>{user.isActive ? 'Active' : 'Inactive'}</span></dd></div>
           </dl>
         </section>
-        <section aria-labelledby="session-heading" className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 sm:p-9">
+        <section aria-labelledby="session-heading" className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 sm:p-9">
           <h2 id="session-heading" className="text-lg font-semibold text-slate-900">Session actions</h2>
           <SessionActions />
         </section>

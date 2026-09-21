@@ -48,7 +48,7 @@ export default function EditTicketForm({ ticket, onCancel, onSaved, onIneligible
     setErrors(previous => ({ ...previous, [name]: undefined }))
   }
   const inputClass = 'mt-2 block w-full min-w-0 rounded-lg border border-slate-300 bg-white p-3 text-sm focus-visible:outline-2 focus-visible:outline-teal-700'
-  return <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-8" aria-labelledby="edit-ticket-heading">
+  return <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 lg:p-8" aria-labelledby="edit-ticket-heading">
     <h2 id="edit-ticket-heading" className="text-lg font-semibold">Edit Ticket</h2>
     {!options && !lookupError && <p role="status" className="mt-3 text-sm">Loading categories and priorities...</p>}
     {lookupError && <div className="mt-3"><AuthFeedback>Unable to load categories and priorities.</AuthFeedback><button type="button" className="mt-2 rounded text-teal-800 underline focus-visible:outline-2" onClick={() => { setLookupError(false); setAttempt(value => value + 1) }}>Retry options</button></div>}

@@ -28,7 +28,7 @@ function Article({ articleId }) {
     <Link to="/employee/knowledge-base" className="inline-block rounded text-sm font-semibold text-teal-800 underline focus-visible:outline-2">Back to Knowledge Base</Link>
     {!result && <p role="status">Loading article...</p>}
     {result?.error && <div className="space-y-3"><AuthFeedback>{result.error}</AuthFeedback><button type="button" onClick={() => { pending.current = null; setResult(null); setAttempt(value => value + 1) }} className="rounded-lg border border-teal-700 px-4 py-2 text-sm text-teal-800 focus-visible:outline-2">Retry</button></div>}
-    {result?.article && <article className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 sm:p-8">
+    {result?.article && <article className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 lg:p-8">
       <h1 className="break-words text-2xl font-semibold">{result.article.title}</h1>
       <p className="mt-3 break-words text-sm text-slate-600">{result.article.categoryName}</p>
       <p className="mt-2 text-xs text-slate-500">Updated {formatTicketDate(result.article.updatedAt)}</p>

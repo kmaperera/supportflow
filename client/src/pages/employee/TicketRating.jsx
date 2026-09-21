@@ -31,7 +31,7 @@ export default function TicketRating({ ticketId, onConflict }) {
       setError([403, 404].includes(cause?.response?.status) ? 'Feedback is not available for this ticket.' : cause?.response?.status === 422 ? 'Choose a rating from 1 to 5 and keep feedback within 1,000 characters.' : getApiErrorMessage(cause, 'Unable to save your rating. Please try again.'))
     } finally { pending.current = false; setSubmitting(false) }
   }
-  return <section aria-labelledby="rating-heading" className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 sm:p-8">
+  return <section aria-labelledby="rating-heading" className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 lg:p-8">
     <h2 id="rating-heading" className="text-lg font-semibold">Rate Support</h2>
     {!editing && saved ? <div className="mt-4 space-y-3">
       <AuthFeedback variant="success">Your support rating was saved.</AuthFeedback>

@@ -6,7 +6,7 @@ import { getApiErrorMessage } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
 import { formatTicketDate } from './ticketFormatting'
 
-const buttonClass = 'rounded-lg border border-teal-700 px-3 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50'
+const buttonClass = 'inline-flex items-center rounded-lg border border-teal-700 px-3 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50'
 const labels = { TICKET_CREATED: 'Ticket created', TICKET_ASSIGNED: 'Ticket assigned', TICKET_REASSIGNED: 'Ticket reassigned', TICKET_UNASSIGNED: 'Ticket unassigned', STATUS_CHANGED: 'Status changed', PRIORITY_CHANGED: 'Priority changed', PUBLIC_COMMENT: 'New reply', TICKET_RESOLVED: 'Ticket resolved', TICKET_REOPENED: 'Ticket reopened', TICKET_CLOSED: 'Ticket closed', SLA_WARNING: 'Support deadline approaching', SLA_BREACHED: 'Support deadline exceeded' }
 
 export default function NotificationsPage() {

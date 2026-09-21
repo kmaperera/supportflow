@@ -72,7 +72,7 @@ export function CreateTicketForm({ categories = [], priorities = [], categorySta
     }
   }
 
-  return <section className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-5 sm:p-8">
+  return <section className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 lg:p-8">
     <h1 className="text-2xl font-semibold">Create Ticket</h1>
     <p className="mt-2 text-sm text-slate-600">Tell us what went wrong and how it affects your work. All fields are required.</p>
     <form ref={form} onSubmit={submit} noValidate className="mt-6 space-y-6" aria-busy={creating}>
