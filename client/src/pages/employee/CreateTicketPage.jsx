@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import AuthFeedback from '../../auth/AuthFeedback'
 import { createTicket, getTicketCategories, getTicketPriorities } from '../../api/ticketApi'
 import { validateCreateTicket, getCreateTicketErrors } from './createTicketValidation'
+import SuggestedArticles from './SuggestedArticles'
 
 function useTicketOptions(fetchOptions) {
   const [state, setState] = useState({ options: [], loading: true, failed: false })
@@ -103,6 +104,7 @@ export function CreateTicketForm({ categories = [], priorities = [], categorySta
           </div>)}
         </div>
       </fieldset>
+      <SuggestedArticles title={values.title} description={values.description} />
       {!optionsAvailable && <p id="selection-notice" role="status" className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">{categoryState.loading || priorityState.loading ? 'Loading ticket options...' : 'Categories and priorities must be available before you can submit a ticket.'}</p>}
       <div className="flex flex-wrap items-center gap-4">
         <button type="submit" disabled={creating || !optionsAvailable} className="rounded-lg bg-teal-800 px-5 py-3 text-sm font-semibold text-white hover:bg-teal-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-50">{creating ? 'Creating ticket...' : 'Create Ticket'}</button>

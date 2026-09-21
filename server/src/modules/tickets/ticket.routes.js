@@ -1,4 +1,4 @@
-﻿const express = require("express");
+const express = require("express");
 const authenticate = require("../../middleware/authenticate");
 const authorizeRoles = require("../../middleware/authorize");
 const validate = require("../../middleware/validate");
@@ -7,6 +7,10 @@ const { reopenTicketValidation, closeTicketValidation, resolveTicketValidation, 
 const { getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket } = require("./ticket.controller");
 
 const router = express.Router();
+const lookupController = require('./ticket.controller');
+const metadataRoles = authorizeRoles(USER_ROLES.EMPLOYEE, USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN);
+router.get('/categories', authenticate, metadataRoles, lookupController.getTicketCategories);
+router.get('/priorities', authenticate, metadataRoles, lookupController.getTicketPriorities);
 const { deleteTicketAttachmentValidation } = require("./ticketAttachment.validation");
 const { deleteTicketAttachment } = require("./ticketAttachment.controller");
 router.delete("/:id/attachments/:attachmentId", authenticate, deleteTicketAttachmentValidation, validate, deleteTicketAttachment);

@@ -360,3 +360,14 @@ module.exports = { reopenTicket, closeTicket, resolveTicket, updatePriority, upd
 
 
 
+
+async function findActiveCategories(db = pool) {
+  const [rows] = await db.query("SELECT id, name FROM ticket_categories WHERE is_active = TRUE ORDER BY name ASC");
+  return rows;
+}
+async function findActivePriorities(db = pool) {
+  const [rows] = await db.query("SELECT id, name FROM ticket_priorities WHERE is_active = TRUE ORDER BY sort_order ASC, name ASC");
+  return rows;
+}
+module.exports.findActiveCategories = findActiveCategories;
+module.exports.findActivePriorities = findActivePriorities;

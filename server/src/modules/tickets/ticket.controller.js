@@ -129,3 +129,12 @@ module.exports = { getAssignmentWorkflowSummary, getAssignedTicketsForTechnician
 
 
 
+
+module.exports.getTicketCategories = asyncHandler(async (req, res) => {
+  const categories = await service.getTicketCategories();
+  res.status(200).json({ success: true, message: "Ticket categories retrieved successfully", data: { categories } });
+});
+module.exports.getTicketPriorities = asyncHandler(async (req, res) => {
+  const priorities = await service.getTicketPriorities();
+  res.status(200).json({ success: true, message: "Ticket priorities retrieved successfully", data: { priorities } });
+});

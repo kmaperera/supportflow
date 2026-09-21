@@ -897,3 +897,12 @@ module.exports = { getAssignmentWorkflowSummary, getAssignedTicketsForTechnician
 
 
 
+
+async function getTicketCategories(db) {
+  return (await ticketRepository.findActiveCategories(db)).map(({ id, name }) => ({ id, name }));
+}
+async function getTicketPriorities(db) {
+  return (await ticketRepository.findActivePriorities(db)).map(({ id, name }) => ({ id, name }));
+}
+module.exports.getTicketCategories = getTicketCategories;
+module.exports.getTicketPriorities = getTicketPriorities;
