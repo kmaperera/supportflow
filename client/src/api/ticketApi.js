@@ -1,6 +1,19 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function getTicketComments(ticketId, { signal } = {}) {
+  const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/comments`, { signal })
+  if (data?.success !== true || !Array.isArray(data.data?.comments)) throw new Error('Invalid conversation response')
+  return data.data.comments.filter(comment => comment?.commentType === 'PUBLIC')
+}
+
+export async function addTicketComment(ticketId, { content }) {
+  const { data } = await api.post(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/comments`, { content: content.trim() })
+  const comment = data?.data?.comment
+  if (data?.success !== true || !comment?.id || comment.commentType !== 'PUBLIC') throw new Error('Invalid public reply response')
+  return comment
+}
+
 export async function getTicketStatusHistory(ticketId, { signal } = {}) {
   const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/status-history`, { signal })
   if (data?.success !== true || !Array.isArray(data.data?.history)) throw new Error('Invalid status history response')
