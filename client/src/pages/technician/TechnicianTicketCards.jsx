@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { formatTicketDate, formatTicketPriority, formatTicketStatus } from '../employee/ticketFormatting'
 
-export default function TechnicianTicketCards({ tickets }) {
+export default function TechnicianTicketCards({ tickets, renderAction }) {
   return <ul className="space-y-4">
     {tickets.map(ticket => {
       const requester = [ticket.creator?.firstName, ticket.creator?.lastName]
@@ -15,6 +15,7 @@ export default function TechnicianTicketCards({ tickets }) {
             {[['Category', ticket.category?.name || 'Not specified'], ['Priority', formatTicketPriority(ticket.priority?.name)], ['Status', formatTicketStatus(ticket.status)], ['Created', formatTicketDate(ticket.createdAt)]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-slate-500">{label}</dt><dd className="mt-1 font-medium">{value}</dd></div>)}
           </dl>
         </Link>
+        {renderAction && <div className="mt-2 flex flex-wrap items-center justify-end gap-3">{renderAction(ticket)}</div>}
       </li>
     })}
   </ul>
