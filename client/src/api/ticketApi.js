@@ -1,6 +1,22 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function getMyAssignedTickets({ page = 1, limit = 10, signal } = {}) {
+  const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/assigned-to-me`, { params: { page, limit }, signal })
+  const pagination = data?.pagination
+  const tickets = data?.data?.tickets
+  if (data?.success !== true || !Array.isArray(tickets) ||
+      tickets.some(ticket => !ticket?.id || typeof ticket.ticketNumber !== 'string' || typeof ticket.title !== 'string') ||
+      !pagination || !Number.isSafeInteger(pagination.currentPage) || pagination.currentPage < 1 ||
+      !Number.isSafeInteger(pagination.limit) || pagination.limit < 1 ||
+      !Number.isSafeInteger(pagination.totalPages) || pagination.totalPages < 0 ||
+      !Number.isSafeInteger(pagination.totalRecords) || pagination.totalRecords < 0 ||
+      typeof pagination.hasNext !== 'boolean' || typeof pagination.hasPrevious !== 'boolean') {
+    throw new Error('Invalid assigned ticket list response')
+  }
+  return { tickets, pagination }
+}
+
 export async function saveTicketFeedback(ticketId, { rating, comment }) {
   const { data } = await api.put(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/feedback`, { rating, comment: comment.trim() })
   const feedback = data?.data?.feedback

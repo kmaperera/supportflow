@@ -12,6 +12,7 @@ import { employeeNavigation } from '../layouts/employeeNavigation'
 import EmployeePlaceholderPage from '../pages/employee/EmployeePlaceholderPage'
 import EmployeeDashboardPage from '../pages/employee/EmployeeDashboardPage'
 import TechnicianDashboardPage from '../pages/technician/TechnicianDashboardPage'
+import MyAssignedTicketsPage from '../pages/technician/MyAssignedTicketsPage'
 import TechnicianLayout from '../layouts/TechnicianLayout'
 import TechnicianPlaceholderPage from '../pages/technician/TechnicianPlaceholderPage'
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage'
@@ -60,7 +61,8 @@ function AppRoutes() {
         <Route element={<RoleRoute role={ROLES.TECHNICIAN} />}>
           <Route path="/technician" element={<TechnicianLayout />}>
             <Route index element={<TechnicianDashboardPage />} />
-            <Route path="tickets/assigned" element={<TechnicianPlaceholderPage title="My Assigned Tickets" phase="15.3" />} />
+            <Route path="tickets/assigned" element={<MyAssignedTicketsPage />} />
+            <Route path="tickets/:ticketId" element={<TechnicianPlaceholderPage title="Ticket Workspace" phase="15.7" />} />
             <Route path="tickets/unassigned" element={<TechnicianPlaceholderPage title="Unassigned Queue" phase="15.4" />} />
             <Route path="notifications" element={<TechnicianPlaceholderPage title="Notifications" phase="15.16" />} />
             <Route path="profile" element={<ProfilePage embedded />} />

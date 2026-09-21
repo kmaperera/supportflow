@@ -22,6 +22,7 @@ try {
     assert.ok(active[0].includes(`href="${path}"`))
     if (phase) {
       if (path === '/technician') assert.match(html, /Loading dashboard/)
+      else if (path === '/technician/tickets/assigned') assert.match(html, /Loading assigned tickets/)
       else assert.ok(html.includes(`Coming in Phase ${phase}.`))
       assert.ok(!html.includes('Log out all sessions'))
     } else {
