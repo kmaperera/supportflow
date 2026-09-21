@@ -1,6 +1,12 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function getTicketStatusHistory(ticketId, { signal } = {}) {
+  const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/status-history`, { signal })
+  if (data?.success !== true || !Array.isArray(data.data?.history)) throw new Error('Invalid status history response')
+  return data.data.history
+}
+
 export async function getTicketById(ticketId, { signal } = {}) {
   const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}`, { signal })
   if (data?.success !== true || !data.data?.ticket || typeof data.data.ticket !== 'object' || !data.data.ticket.id) {
