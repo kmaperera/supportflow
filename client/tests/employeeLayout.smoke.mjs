@@ -16,6 +16,7 @@ try {
     assert.match(html, /SupportFlow/)
     assert.match(html, /Alex Lee/)
     if (path === '/employee') assert.match(html, /Loading dashboard/)
+    else if (path === '/employee/knowledge-base') assert.match(html, /Loading articles/)
     else if (path === '/employee/notifications') assert.match(html, /Loading notifications/)
     else if (path === '/employee/tickets') assert.match(html, /Loading tickets/)
     else if (path === '/employee/tickets/new') assert.match(html, /Ticket Title/)

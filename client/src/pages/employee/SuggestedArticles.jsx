@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { getSuggestedArticles, hasSuggestionInput } from '../../api/knowledgeBaseApi'
 
 export default function SuggestedArticles({ title, description }) {
@@ -32,7 +33,7 @@ export default function SuggestedArticles({ title, description }) {
     </div>
     {current && !current.failed && current.articles.length > 0 && <ul className="mt-3 space-y-3">
       {current.articles.map(article => <li key={article.id} className="min-w-0 rounded-lg border border-slate-200 bg-white p-3">
-        <h3 className="break-words text-sm font-semibold text-slate-900">{article.title}</h3>
+        <h3 className="break-words text-sm font-semibold text-slate-900"><Link to={`/employee/knowledge-base/${encodeURIComponent(article.id)}`} target="_blank" rel="noopener noreferrer" className="rounded text-teal-800 underline focus-visible:outline-2">{article.title}<span className="sr-only"> (opens in a new tab)</span></Link></h3>
         <p className="mt-1 break-words text-xs text-slate-600">{article.categoryName}</p>
       </li>)}
     </ul>}

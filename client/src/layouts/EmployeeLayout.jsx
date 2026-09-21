@@ -10,7 +10,7 @@ export default function EmployeeLayout() {
   const [openLocation, setOpenLocation] = useState(null)
   const menuButton = useRef(null)
   const menuOpen = openLocation === location
-  const currentPage = employeeNavigation.find(item => matchPath({ path: item.path, end: true }, location.pathname))
+  const currentPage = employeeNavigation.find(item => matchPath({ path: item.path, end: item.end !== false }, location.pathname))
   const name = [user?.firstName, user?.lastName]
     .filter(value => typeof value === 'string' && value.trim())
     .map(value => value.trim()).join(' ')
@@ -41,7 +41,7 @@ export default function EmployeeLayout() {
             <ul className="space-y-1">
               {employeeNavigation.map(item => (
                 <li key={item.path}>
-                  <NavLink to={item.path} end onClick={() => { if (menuOpen) closeMenu() }} className={({ isActive }) => `block rounded-lg px-3 py-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 ${isActive ? 'bg-teal-50 text-teal-900 ring-1 ring-inset ring-teal-200' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
+                  <NavLink to={item.path} end={item.end !== false} onClick={() => { if (menuOpen) closeMenu() }} className={({ isActive }) => `block rounded-lg px-3 py-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 ${isActive ? 'bg-teal-50 text-teal-900 ring-1 ring-inset ring-teal-200' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
                     {item.label}
                   </NavLink>
                 </li>
