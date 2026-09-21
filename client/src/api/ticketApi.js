@@ -21,3 +21,16 @@ async function getOptions(kind, signal) {
 }
 export const getTicketCategories = ({ signal } = {}) => getOptions('categories', signal)
 export const getTicketPriorities = ({ signal } = {}) => getOptions('priorities', signal)
+
+export async function getMyTickets({ page = 1, signal } = {}) {
+  const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/my`, { params: { page, limit: 10 }, signal })
+  const pagination = data?.pagination
+  if (data?.success !== true || !Array.isArray(data.data?.tickets) || !pagination ||
+      !Number.isInteger(pagination.currentPage) || pagination.currentPage < 1 ||
+      !Number.isInteger(pagination.totalPages) || pagination.totalPages < 0 ||
+      !Number.isInteger(pagination.totalRecords) || pagination.totalRecords < 0 ||
+      typeof pagination.hasNext !== 'boolean' || typeof pagination.hasPrevious !== 'boolean') {
+    throw new Error('Invalid ticket list response')
+  }
+  return { tickets: data.data.tickets, pagination }
+}
