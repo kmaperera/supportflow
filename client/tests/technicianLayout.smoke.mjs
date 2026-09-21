@@ -23,6 +23,7 @@ try {
     if (phase) {
       if (path === '/technician') assert.match(html, /Loading dashboard/)
       else if (path === '/technician/tickets/assigned') assert.match(html, /Loading assigned tickets/)
+      else if (path === '/technician/tickets/unassigned') assert.match(html, /Loading unassigned tickets/)
       else assert.ok(html.includes(`Coming in Phase ${phase}.`))
       assert.ok(!html.includes('Log out all sessions'))
     } else {

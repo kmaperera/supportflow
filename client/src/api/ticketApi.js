@@ -3,6 +3,15 @@ import { API_ENDPOINTS } from './endpoints'
 
 export async function getMyAssignedTickets({ page = 1, limit = 10, signal } = {}) {
   const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/assigned-to-me`, { params: { page, limit }, signal })
+  return readTechnicianTicketList(data)
+}
+
+export async function getUnassignedTickets({ page = 1, limit = 10, signal } = {}) {
+  const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/queue`, { params: { assignment: 'unassigned', page, limit }, signal })
+  return readTechnicianTicketList(data)
+}
+
+function readTechnicianTicketList(data) {
   const pagination = data?.pagination
   const tickets = data?.data?.tickets
   if (data?.success !== true || !Array.isArray(tickets) ||
