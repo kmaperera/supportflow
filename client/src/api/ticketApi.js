@@ -79,3 +79,9 @@ export async function getMyTickets({ page = 1, limit = 10, search, status, categ
   }
   return { tickets: data.data.tickets, pagination }
 }
+
+export async function reopenTicket(ticketId) {
+  const { data } = await api.patch(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/reopen`)
+  if (data?.success !== true || !data.data?.ticket?.id) throw new Error('Invalid ticket reopen response')
+  return data.data.ticket
+}

@@ -9,6 +9,7 @@ import TicketConversation from './TicketConversation'
 import TicketAttachments from './TicketAttachments'
 import EditTicketForm from './EditTicketForm'
 import CloseTicketButton from './CloseTicketButton'
+import ReopenTicketButton from './ReopenTicketButton'
 import { formatTicketDate, formatTicketPriority, formatTicketStatus } from './ticketFormatting'
 
 export default function TicketDetailsPage() {
@@ -22,6 +23,7 @@ function TicketDetails({ ticketId }) {
   const [editing, setEditing] = useState(false)
   const [notice, setNotice] = useState(null)
   const [historyRevision, setHistoryRevision] = useState(0)
+  const [actionPending, setActionPending] = useState(false)
   const [state, setState] = useState({ loading: true, ticket: null, error: null })
   const [attempt, setAttempt] = useState(0)
   useEffect(() => {
@@ -41,7 +43,7 @@ function TicketDetails({ ticketId }) {
   return <div className="space-y-6">
     <Link to="/employee/tickets" className="inline-block rounded text-sm font-semibold text-teal-800 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2">Back to My Tickets</Link>
     {notice && <AuthFeedback variant={notice.error ? 'error' : 'success'}>{notice.text}</AuthFeedback>}
-    {state.ticket?.status === 'RESOLVED' && user?.id != null && String(state.ticket.createdBy) === String(user.id) && <CloseTicketButton ticketId={ticketId} onClosed={ticket => {
+    {state.ticket?.status === 'RESOLVED' && user?.id != null && String(state.ticket.createdBy) === String(user.id) && <div className="flex flex-wrap items-start gap-3"><CloseTicketButton disabled={actionPending} onPendingChange={setActionPending} ticketId={ticketId} onClosed={ticket => {
       setState({ loading: false, ticket, error: null })
       setHistoryRevision(value => value + 1)
       setNotice({ text: 'Ticket closed successfully.' })
@@ -49,7 +51,15 @@ function TicketDetails({ ticketId }) {
       setNotice({ error: true, text: 'This ticket can no longer be closed from its current status. Refreshing ticket details.' })
       setState({ loading: true, ticket: null, error: null })
       setAttempt(value => value + 1)
-    }} />}
+    }} /><ReopenTicketButton disabled={actionPending} onPendingChange={setActionPending} ticketId={ticketId} onReopened={ticket => {
+      setState({ loading: false, ticket, error: null })
+      setHistoryRevision(value => value + 1)
+      setNotice({ text: 'Ticket reopened successfully.' })
+    }} onConflict={() => {
+      setNotice({ error: true, text: 'This ticket can no longer be reopened in its current state. Refreshing ticket details.' })
+      setState({ loading: true, ticket: null, error: null })
+      setAttempt(value => value + 1)
+    }} /></div>}
     {state.ticket && ['OPEN', 'ASSIGNED'].includes(state.ticket.status) && user?.id != null && String(state.ticket.createdBy) === String(user.id) && !editing && <div><button type="button" onClick={() => { setEditing(true); setNotice(null) }} className="rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2">Edit Ticket</button></div>}
     {editing && state.ticket && <EditTicketForm ticket={state.ticket} onCancel={() => setEditing(false)} onSaved={ticket => { setState({ loading: false, ticket, error: null }); setEditing(false); setNotice({ text: 'Ticket updated successfully.' }) }} onIneligible={() => { setEditing(false); setNotice({ error: true, text: 'This ticket can no longer be edited. Refreshing ticket details.' }); setState({ loading: true, ticket: null, error: null }); setAttempt(value => value + 1) }} />}
     {state.loading && <p role="status">Loading ticket...</p>}
