@@ -1,6 +1,14 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function updateTicket(ticketId, { title, description, categoryId, priorityId }) {
+  const { data } = await api.patch(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}`, {
+    title: title.trim(), description: description.trim(), categoryId, priorityId,
+  })
+  if (data?.success !== true || !data.data?.ticket?.id) throw new Error('Invalid ticket update response')
+  return data.data.ticket
+}
+
 export async function getTicketComments(ticketId, { signal } = {}) {
   const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/comments`, { signal })
   if (data?.success !== true || !Array.isArray(data.data?.comments)) throw new Error('Invalid conversation response')

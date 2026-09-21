@@ -7,6 +7,7 @@ import AuthFeedback from '../../auth/AuthFeedback'
 import TicketStatusTimeline from './TicketStatusTimeline'
 import TicketConversation from './TicketConversation'
 import TicketAttachments from './TicketAttachments'
+import EditTicketForm from './EditTicketForm'
 import { formatTicketDate, formatTicketPriority, formatTicketStatus } from './ticketFormatting'
 
 export default function TicketDetailsPage() {
@@ -16,6 +17,9 @@ export default function TicketDetailsPage() {
 }
 
 function TicketDetails({ ticketId }) {
+  const { user } = useAuth()
+  const [editing, setEditing] = useState(false)
+  const [notice, setNotice] = useState(null)
   const [state, setState] = useState({ loading: true, ticket: null, error: null })
   const [attempt, setAttempt] = useState(0)
   useEffect(() => {
@@ -34,6 +38,9 @@ function TicketDetails({ ticketId }) {
   }, [ticketId, attempt])
   return <div className="space-y-6">
     <Link to="/employee/tickets" className="inline-block rounded text-sm font-semibold text-teal-800 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2">Back to My Tickets</Link>
+    {notice && <AuthFeedback variant={notice.error ? 'error' : 'success'}>{notice.text}</AuthFeedback>}
+    {state.ticket && ['OPEN', 'ASSIGNED'].includes(state.ticket.status) && user?.id != null && String(state.ticket.createdBy) === String(user.id) && !editing && <div><button type="button" onClick={() => { setEditing(true); setNotice(null) }} className="rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2">Edit Ticket</button></div>}
+    {editing && state.ticket && <EditTicketForm ticket={state.ticket} onCancel={() => setEditing(false)} onSaved={ticket => { setState({ loading: false, ticket, error: null }); setEditing(false); setNotice({ text: 'Ticket updated successfully.' }) }} onIneligible={() => { setEditing(false); setNotice({ error: true, text: 'This ticket can no longer be edited. Refreshing ticket details.' }); setState({ loading: true, ticket: null, error: null }); setAttempt(value => value + 1) }} />}
     {state.loading && <p role="status">Loading ticket...</p>}
     {state.error && <section className="space-y-3">
       <h1 className="text-2xl font-semibold">{state.unavailable ? 'Ticket unavailable' : 'Unable to load ticket'}</h1>
