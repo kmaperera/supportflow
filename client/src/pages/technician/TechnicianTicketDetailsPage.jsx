@@ -9,6 +9,7 @@ import { getApiErrorMessage } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
 import TicketStatusTimeline from '../employee/TicketStatusTimeline'
 import TicketConversation from '../employee/TicketConversation'
+import TicketInternalNotes from './TicketInternalNotes'
 import { formatTicketDate, formatTicketPriority, formatTicketStatus } from '../employee/ticketFormatting'
 
 const actionClass = 'inline-flex min-h-11 items-center rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-50'
@@ -30,6 +31,7 @@ function TicketWorkspace({ ticketId, userId }) {
   const [notice, setNotice] = useState(null)
   const [historyRevision, setHistoryRevision] = useState(0)
   const [replyDraft, setReplyDraft] = useState('')
+  const [noteDraft, setNoteDraft] = useState('')
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   useEffect(() => {
     const controller = new AbortController()
@@ -124,6 +126,10 @@ function TicketWorkspace({ ticketId, userId }) {
       <TicketPriorityControl ticket={current.ticket} userId={userId} pending={updating} onUpdate={changePriority} />
       <TicketStatusTimeline key={`${ticketId}:${attempt}:${historyRevision}`} ticketId={ticketId} title="Status History" />
       <TicketConversation ticketId={ticketId} status={current.ticket.status} assignedTo={current.ticket.assignedTo} disabled={updating} draft={replyDraft} onDraftChange={setReplyDraft} onSendingChange={value => { pending.current = value; setUpdating(value) }} onPosted={() => refreshAfterReply()} onAccessChanged={() => refreshAfterReply(true)} />
+      <TicketInternalNotes ticket={current.ticket} userId={userId} disabled={updating} draft={noteDraft} onDraftChange={setNoteDraft} onPendingChange={value => { if (mounted.current) { pending.current = value; setUpdating(value) } }} onAccessChanged={() => {
+        setNotice({ error: true, text: 'This ticket no longer accepts your internal note. Your draft has been kept.' })
+        return refreshAfterReply()
+      }} />
     </>}
   </div>
 }

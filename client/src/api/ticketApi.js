@@ -1,6 +1,19 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function getTicketInternalNotes(ticketId, { signal } = {}) {
+  const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/comments`, { signal })
+  if (data?.success !== true || !Array.isArray(data.data?.comments)) throw new Error('Invalid internal notes response')
+  return data.data.comments.filter(comment => comment?.commentType === 'INTERNAL')
+}
+
+export async function addTicketInternalNote(ticketId, { content }) {
+  const { data } = await api.post(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/internal-notes`, { content: content.trim() })
+  const note = data?.data?.comment
+  if (data?.success !== true || !note?.id || note.commentType !== 'INTERNAL') throw new Error('Invalid internal note response')
+  return note
+}
+
 export async function updateTicketPriority(ticketId, priorityId) {
   const { data } = await api.patch(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/priority`, { priorityId })
   if (data?.success !== true || !data.data?.ticket?.id || !data.data.ticket.priority?.id) throw new Error('Invalid priority update response')
