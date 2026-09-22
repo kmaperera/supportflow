@@ -4,6 +4,7 @@ import { getApiErrorMessage } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
 import { formatTicketDate } from './ticketFormatting'
 import { attachmentTypes, validateAttachment, formatAttachmentSize } from './attachmentFormatting'
+import { saveAttachment, openAttachment } from './attachmentDownload'
 
 export default function TicketAttachments({ ticketId, status, canUpload = true, disabled = false, onUploadingChange, onAccessChanged }) {
   const [list, setList] = useState({ loading: true, attachments: [], error: false })
@@ -69,33 +70,41 @@ export default function TicketAttachments({ ticketId, status, canUpload = true, 
 }
 
 function AttachmentRow({ attachment, ticketId }) {
-  const [downloading, setDownloading] = useState(false)
+  const [downloading, setDownloading] = useState(null)
   const [error, setError] = useState(null)
   const pending = useRef(false)
-  async function download() {
+  async function download(mode = 'download') {
     if (pending.current) return
     pending.current = true
-    setDownloading(true)
+    setDownloading(mode)
     setError(null)
+    let preview
     try {
+      if (mode === 'open') {
+        // Open synchronously during the click so popup blockers can allow it.
+        preview = window.open('about:blank', '_blank')
+        if (!preview) throw new Error('Preview blocked')
+        preview.opener = null
+        preview.document.title = 'Loading attachment...'
+      }
       const blob = await downloadTicketAttachment(ticketId, attachment)
-      const url = URL.createObjectURL(blob)
-      const anchor = document.createElement('a')
-      anchor.href = url
-      anchor.download = attachment.originalName || 'attachment'
-      document.body.appendChild(anchor)
-      anchor.click()
-      anchor.remove()
-      setTimeout(() => URL.revokeObjectURL(url), 1000)
-    } catch (cause) { setError(getApiErrorMessage(cause, 'Unable to download attachment. Please try again.')) }
-    finally { pending.current = false; setDownloading(false) }
+      if (mode === 'open') {
+        if (!preview.closed) openAttachment(blob, preview)
+      } else saveAttachment(blob, attachment.originalName)
+    } catch {
+      preview?.close()
+      setError(mode === 'open' ? 'Unable to open attachment. Allow pop-ups or use Download.' : 'Unable to download attachment.')
+    }
+    finally { pending.current = false; setDownloading(null) }
   }
   const name = [attachment.uploadedBy?.firstName, attachment.uploadedBy?.lastName].filter(value => typeof value === 'string' && value.trim()).join(' ')
   return <li className="min-w-0 rounded-xl bg-slate-50 p-4">
     <p className="break-all text-sm font-semibold">{attachment.originalName}</p>
     <p className="mt-1 break-words text-xs text-slate-600">{attachment.mimeType} · {formatAttachmentSize(attachment.fileSize)}</p>
     <p className="mt-1 break-words text-xs text-slate-500">{name ? `Uploaded by ${name} · ` : ''}{formatTicketDate(attachment.createdAt)}</p>
-    <button type="button" disabled={downloading} onClick={download} aria-label={`Download ${attachment.originalName}`} className="mt-3 rounded text-sm font-semibold text-teal-800 underline focus-visible:outline-2 disabled:opacity-60">{downloading ? 'Downloading...' : 'Download'}</button>
+    <div className="mt-3 flex flex-wrap gap-4">
+      {['open', 'download'].map(mode => <button key={mode} type="button" disabled={Boolean(downloading)} onClick={() => download(mode)} aria-label={`${mode === 'open' ? 'Open' : 'Download'} ${attachment.originalName}`} className="cursor-pointer rounded text-sm font-semibold text-teal-800 underline focus-visible:outline-2 disabled:cursor-not-allowed disabled:opacity-60">{mode === 'open' ? downloading === 'open' ? 'Opening...' : 'Open' : downloading === 'download' ? 'Downloading...' : 'Download'}</button>)}
+    </div>
     {error && <AuthFeedback>{error}</AuthFeedback>}
   </li>
 }

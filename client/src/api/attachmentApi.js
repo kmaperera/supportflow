@@ -17,6 +17,7 @@ export async function downloadTicketAttachment(ticketId, attachment) {
   const expected = `/api/v1/tickets/${encodeURIComponent(ticketId)}/attachments/${encodeURIComponent(attachment.id)}/download`
   if (attachment.downloadPath !== expected) throw new Error('Invalid attachment download path')
   // The configured base URL already includes /api/v1. Keep authentication on our API.
-  const { data } = await api.get(attachment.downloadPath.slice('/api/v1'.length), { responseType: 'blob', timeout: 60000 })
+  const { data } = await api.get(attachment.downloadPath.slice('/api/v1'.length), { responseType: 'blob', headers: { Accept: '*/*' }, timeout: 60000 })
+  if (!(data instanceof Blob) || data.size === 0) throw new Error('Invalid attachment resource')
   return data
 }
