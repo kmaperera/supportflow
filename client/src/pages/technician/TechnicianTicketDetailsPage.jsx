@@ -7,6 +7,7 @@ import { canResolveTicket, validateResolutionSummary } from './ticketResolution'
 import TicketPriorityControl from './TicketPriorityControl'
 import { canManagePriority } from './ticketPriorityEligibility'
 import TicketStatusActions from './TicketStatusActions'
+import TicketSlaTimers from './TicketSlaTimers'
 import { getApiErrorMessage } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
 import TicketStatusTimeline from '../employee/TicketStatusTimeline'
@@ -154,6 +155,7 @@ function TicketWorkspace({ ticketId, userId }) {
     </section>}
     {current?.ticket && <>
       <TechnicianTicketDetailsContent ticket={current.ticket} userId={userId} />
+      <TicketSlaTimers ticket={current.ticket} />
       <TicketStatusActions ticket={current.ticket} userId={userId} pending={updating} onUpdate={changeStatus} />
       <TicketResolveControl ticket={current.ticket} userId={userId} summary={resolutionSummary} onSummaryChange={setResolutionSummary} pending={updating} resolving={resolving} onResolve={resolve} />
       <TicketPriorityControl ticket={current.ticket} userId={userId} pending={updating} onUpdate={changePriority} />
