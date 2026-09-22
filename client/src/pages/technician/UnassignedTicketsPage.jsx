@@ -108,7 +108,7 @@ export function SelfAssignAction({ ticket, pending, onAssign }) {
   const eligible = ticket.status === 'OPEN' && ticket.assignedTo === null
   return <>
     {!eligible && <p id={`assignment-help-${ticket.id}`} className="text-sm text-slate-600">Only open, unassigned tickets can be self-assigned.</p>}
-    <button type="button" disabled={pending || !eligible} aria-label={`${pending ? 'Assigning' : 'Assign to me'}: ${ticket.ticketNumber}`} aria-describedby={!eligible ? `assignment-help-${ticket.id}` : undefined} onClick={() => onAssign(ticket)} className={`${actionClass} cursor-pointer disabled:cursor-not-allowed`}>{pending ? 'Assigning...' : 'Assign to me'}</button>
+    <button type="button" disabled={pending || !eligible} aria-label={`${pending ? 'Assigning' : 'Assign to me'}: ${ticket.ticketNumber}`} aria-describedby={!eligible ? `assignment-help-${ticket.id}` : undefined} onClick={() => onAssign(ticket)} className={`${actionClass} w-full cursor-pointer justify-center disabled:cursor-not-allowed sm:w-auto`}>{pending ? 'Assigning...' : 'Assign to me'}</button>
   </>
 }
 
