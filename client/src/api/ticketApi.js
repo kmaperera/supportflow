@@ -1,6 +1,12 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function updateTicketStatus(ticketId, status) {
+  const { data } = await api.patch(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/status`, { status })
+  if (data?.success !== true || !data.data?.ticket?.id || typeof data.data.ticket.status !== 'string') throw new Error('Invalid status update response')
+  return data.data.ticket
+}
+
 export async function selfAssignTicket(ticketId) {
   const { data } = await api.post(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/self-assign`)
   if (data?.success !== true || !data.data?.ticket?.id) throw new Error('Invalid self-assignment response')

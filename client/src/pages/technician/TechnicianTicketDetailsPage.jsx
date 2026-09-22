@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
-import { getTicketById } from '../../api/ticketApi'
+import { getTicketById, updateTicketStatus } from '../../api/ticketApi'
+import TicketStatusActions from './TicketStatusActions'
 import { getApiErrorMessage } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
 import TicketStatusTimeline from '../employee/TicketStatusTimeline'
@@ -20,6 +21,12 @@ export default function TechnicianTicketDetailsPage() {
 function TicketWorkspace({ ticketId, userId }) {
   const [attempt, setAttempt] = useState(0)
   const [result, setResult] = useState(null)
+  const [updating, setUpdating] = useState(false)
+  const pending = useRef(false)
+  const mounted = useRef(false)
+  const [notice, setNotice] = useState(null)
+  const [historyRevision, setHistoryRevision] = useState(0)
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   useEffect(() => {
     const controller = new AbortController()
     getTicketById(ticketId, { signal: controller.signal }).then(ticket => {
@@ -33,11 +40,38 @@ function TicketWorkspace({ ticketId, userId }) {
   }, [ticketId, attempt])
   const current = result?.attempt === attempt ? result : null
   const unassigned = current?.ticket?.assignedTo === null
+  async function changeStatus(status) {
+    if (pending.current || !current?.ticket) return
+    pending.current = true
+    setUpdating(true)
+    setNotice(null)
+    try {
+      const ticket = await updateTicketStatus(ticketId, status)
+      if (!mounted.current) return
+      setResult({ attempt, ticket })
+      setHistoryRevision(value => value + 1)
+      setNotice({ text: 'Ticket status updated successfully.' })
+    } catch (error) {
+      if (!mounted.current) return
+      const code = error?.response?.status
+      const stale = [400, 403, 404, 409, 422].includes(code)
+      const message = error?.response?.data?.message
+      const safeMessages = ['Ticket is already in the requested status', 'Ticket must be assigned before its status can be updated']
+      setNotice({ error: true, text: code === 409
+        ? `${safeMessages.includes(message) ? message : 'This status change is no longer available for the ticket'}. Refreshing ticket details.`
+        : getApiErrorMessage(error, stale ? 'This ticket could not be updated. Refreshing ticket details.' : 'Unable to update ticket status. Please try again.') })
+      if (stale) setAttempt(value => value + 1)
+    } finally {
+      pending.current = false
+      if (mounted.current) setUpdating(false)
+    }
+  }
   return <div className="space-y-6">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <Link to={unassigned ? '/technician/tickets/unassigned' : '/technician/tickets/assigned'} className={actionClass}>{unassigned ? 'Back to Unassigned Queue' : 'Back to My Assigned Tickets'}</Link>
-      {current?.ticket && <button type="button" className={actionClass} onClick={() => setAttempt(value => value + 1)}>Refresh</button>}
+      {current?.ticket && <button type="button" disabled={updating} className={actionClass} onClick={() => setAttempt(value => value + 1)}>Refresh</button>}
     </div>
+    {notice && <AuthFeedback variant={notice.error ? 'error' : 'success'}>{notice.text}</AuthFeedback>}
     {!current && <p role="status">Loading ticket...</p>}
     {current?.error && <section className="space-y-3">
       <h1 className="text-2xl font-semibold">{current.unavailable ? 'Ticket unavailable' : 'Unable to load ticket'}</h1>
@@ -46,7 +80,8 @@ function TicketWorkspace({ ticketId, userId }) {
     </section>}
     {current?.ticket && <>
       <TechnicianTicketDetailsContent ticket={current.ticket} userId={userId} />
-      <TicketStatusTimeline key={`${ticketId}:${attempt}`} ticketId={ticketId} title="Status History" />
+      <TicketStatusActions ticket={current.ticket} userId={userId} pending={updating} onUpdate={changeStatus} />
+      <TicketStatusTimeline key={`${ticketId}:${attempt}:${historyRevision}`} ticketId={ticketId} title="Status History" />
     </>}
   </div>
 }
