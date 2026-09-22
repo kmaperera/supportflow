@@ -19,5 +19,14 @@ try {
  assert.equal((await markAllNotificationsRead()).unreadCount, 0)
  api.defaults.adapter = async config => ({ config, status: 200, headers: {}, data: { success: true, data: { notifications: [{ ...notification, type: 'INTERNAL_NOTE' }], pagination: {}, unreadCount: 0 } } })
  await assert.rejects(() => getNotifications(), /Unexpected employee notification/)
+ assert.equal((await getNotifications({ allowInternal: true })).notifications[0].type, 'INTERNAL_NOTE')
+ const internal = { ...notification, type: 'INTERNAL_NOTE' }
+ api.defaults.adapter = async config => {
+  assert.equal(config.url, '/notifications/71/read')
+  assert.equal(config.data, undefined)
+  return { config, status: 200, headers: {}, data: { success: true, data: { notification: internal } } }
+ }
+ assert.deepEqual(await markNotificationRead(71, { allowInternal: true }), internal)
+ await assert.rejects(() => markNotificationRead(71), /Unexpected employee notification/)
  console.log('Notification endpoints, pagination parameters, deduplication, persisted read responses and internal rejection passed.')
 } finally { await server.close() }

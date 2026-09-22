@@ -16,7 +16,7 @@ import MyAssignedTicketsPage from '../pages/technician/MyAssignedTicketsPage'
 import TechnicianTicketDetailsPage from '../pages/technician/TechnicianTicketDetailsPage'
 import UnassignedTicketsPage from '../pages/technician/UnassignedTicketsPage'
 import TechnicianLayout from '../layouts/TechnicianLayout'
-import TechnicianPlaceholderPage from '../pages/technician/TechnicianPlaceholderPage'
+import SharedNotificationsPage from '../pages/shared/NotificationsPage'
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage'
 import NotFoundPage from '../pages/shared/NotFoundPage'
 import ProtectedRoute from './ProtectedRoute'
@@ -66,7 +66,7 @@ function AppRoutes() {
             <Route path="tickets/assigned" element={<MyAssignedTicketsPage />} />
             <Route path="tickets/:ticketId" element={<TechnicianTicketDetailsPage />} />
             <Route path="tickets/unassigned" element={<UnassignedTicketsPage />} />
-            <Route path="notifications" element={<TechnicianPlaceholderPage title="Notifications" phase="15.16" />} />
+            <Route path="notifications" element={<SharedNotificationsPage />} />
             <Route path="profile" element={<ProfilePage embedded />} />
             <Route path="dashboard" element={<Navigate to="/technician" replace />} />
             <Route path="*" element={<NotFoundPage />} />
