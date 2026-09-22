@@ -8,7 +8,7 @@ const workloadSections = {
   resolution: ['average-resolution-time', 'summary'],
   sla: ['sla-compliance', 'summary'],
 }
-export async function getTechnicianStatisticsSection(section, { signal } = {}) {
+export async function getDashboardStatisticsSection(section, { signal } = {}) {
   const contract = workloadSections[section]
   if (!contract) throw new Error('Unknown statistics section')
   const { data } = await api.get(`${API_ENDPOINTS.DASHBOARD}/${contract[0]}`, { signal })
@@ -26,6 +26,26 @@ export async function getTechnicianStatisticsSection(section, { signal } = {}) {
   })
   if (data?.success !== true || !valid) throw new Error('Invalid workload statistics response')
   return result
+}
+
+export const getTechnicianStatisticsSection = getDashboardStatisticsSection
+
+export async function getAdminDashboardSection(section, { signal } = {}) {
+  if (section === 'workload') {
+    const { data } = await api.get(`${API_ENDPOINTS.DASHBOARD}/technician-workload`, { signal })
+    const technicians = data?.data?.technicians
+    if (data?.success !== true || !Array.isArray(technicians) || technicians.some(row => !row?.technicianId || typeof row.technicianName !== 'string' || !Number.isSafeInteger(row.activeTickets) || row.activeTickets < 0)) throw new Error('Invalid technician workload response')
+    return technicians
+  }
+  if (['priority', 'sla'].includes(section)) return getDashboardStatisticsSection(section, { signal })
+  if (!['summary', 'recent'].includes(section)) throw new Error('Unknown admin dashboard section')
+  const { data } = await api.get(`${API_ENDPOINTS.DASHBOARD}/${section === 'summary' ? 'admin/summary' : 'recent-tickets'}`, { signal, ...(section === 'recent' ? { params: { limit: 5 } } : {}) })
+  const value = data?.data?.[section === 'summary' ? 'summary' : 'tickets']
+  const valid = section === 'summary'
+    ? value && ['totalTickets', 'activeTickets', 'unassignedTickets', 'openTickets', 'assignedTickets', 'inProgressTickets', 'waitingForUserTickets', 'resolvedTickets', 'closedTickets', 'reopenedTickets'].every(key => Number.isSafeInteger(value[key]) && value[key] >= 0)
+    : Array.isArray(value) && value.every(ticket => ticket?.id && typeof ticket.ticketNumber === 'string' && typeof ticket.title === 'string')
+  if (data?.success !== true || !valid) throw new Error('Invalid admin dashboard response')
+  return value
 }
 
 export async function getTechnicianDashboard({ signal } = {}) {
