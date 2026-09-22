@@ -5,7 +5,7 @@ import AuthFeedback from '../../auth/AuthFeedback'
 import { formatTicketDate } from './ticketFormatting'
 import { attachmentTypes, validateAttachment, formatAttachmentSize } from './attachmentFormatting'
 
-export default function TicketAttachments({ ticketId, status }) {
+export default function TicketAttachments({ ticketId, status, canUpload = true, disabled = false, onUploadingChange, onAccessChanged }) {
   const [list, setList] = useState({ loading: true, attachments: [], error: false })
   const [attempt, setAttempt] = useState(0)
   const [file, setFile] = useState(null)
@@ -27,14 +27,15 @@ export default function TicketAttachments({ ticketId, status }) {
     setList(previous => ({ ...previous, loading: true, error: false }))
     setAttempt(value => value + 1)
   }
-  const allowed = ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'WAITING_FOR_USER', 'REOPENED'].includes(status)
+  const allowed = canUpload && ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'WAITING_FOR_USER', 'REOPENED'].includes(status)
   async function submit(event) {
     event.preventDefault()
-    if (pending.current || !allowed) return
+    if (pending.current || disabled || !allowed) return
     const validation = validateAttachment(file)
     if (validation) { setError(validation); return }
     pending.current = true
     setUploading(true)
+    onUploadingChange?.(true)
     setError(null)
     setSuccess(false)
     try {
@@ -50,19 +51,20 @@ export default function TicketAttachments({ ticketId, status }) {
         cause?.response?.status === 409 ? 'This ticket no longer accepts attachments.' :
         [403, 404].includes(cause?.response?.status) ? 'This attachment or ticket is not available.' :
         getApiErrorMessage(cause, 'Unable to upload attachment. Please check the file and try again.'))
-    } finally { pending.current = false; if (active.current) setUploading(false) }
+      if (active.current && [403, 404, 409].includes(cause?.response?.status)) await onAccessChanged?.()
+    } finally { pending.current = false; onUploadingChange?.(false); if (active.current) setUploading(false) }
   }
   return <section aria-labelledby="attachments-heading" className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 lg:p-8">
     <h2 id="attachments-heading" className="text-lg font-semibold">Attachments</h2>
     {list.loading ? <p role="status" className="mt-4 text-sm">Loading attachments...</p> : list.error ? <div className="mt-4"><AuthFeedback>Unable to load attachments.</AuthFeedback><button type="button" onClick={reload} className="mt-2 rounded text-teal-800 underline focus-visible:outline-2">Retry attachments</button></div> : !list.attachments.length ? <p className="mt-4 text-sm text-slate-600">No attachments yet.</p> : <ul className="mt-4 space-y-3">{list.attachments.map(attachment => <AttachmentRow key={attachment.id} attachment={attachment} ticketId={ticketId} />)}</ul>}
     {allowed ? <form onSubmit={submit} noValidate className="mt-6 space-y-3">
       <label htmlFor="ticket-attachment" className="block text-sm font-semibold">Add attachment</label>
-      <input ref={input} id="ticket-attachment" type="file" accept={Object.keys(attachmentTypes).join(',')} disabled={uploading} onChange={event => { setFile(event.target.files?.[0] || null); setError(null); setSuccess(false) }} aria-describedby="attachment-help attachment-error" className="block w-full min-w-0 text-sm file:mr-3 file:rounded-lg file:border file:border-slate-300 file:px-3 file:py-2" />
+      <input ref={input} id="ticket-attachment" type="file" accept={Object.keys(attachmentTypes).join(',')} disabled={uploading || disabled} onChange={event => { setFile(event.target.files?.[0] || null); setError(null); setSuccess(false) }} aria-describedby="attachment-help attachment-error" className="block w-full min-w-0 text-sm focus-visible:outline-2 file:mr-3 file:cursor-pointer file:rounded-lg file:border file:border-slate-300 file:px-3 file:py-2" />
       <p id="attachment-help" className="text-xs text-slate-500">One file, maximum 10 MB. JPG/JPEG, PNG, WEBP, PDF, TXT, CSV, DOC/DOCX, XLS/XLSX.</p>
       <div id="attachment-error">{error && <AuthFeedback>{error}</AuthFeedback>}</div>
-      <button type="submit" disabled={uploading} className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60">{uploading ? 'Uploading...' : 'Upload'}</button>
+      <button type="submit" disabled={uploading || disabled} className="cursor-pointer rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60">{uploading ? 'Uploading...' : 'Upload Attachment'}</button>
       <p role="status" className="text-sm text-teal-800">{success ? 'Attachment uploaded successfully.' : uploading ? 'Uploading attachment...' : ''}</p>
-    </form> : <p className="mt-6 text-sm text-slate-600">This ticket does not accept new attachments in its current status.</p>}
+    </form> : <div className="mt-6 text-sm text-slate-600"><p>{canUpload ? 'This ticket does not accept new attachments in its current status.' : 'Attachments are read-only unless this ticket is assigned to you.'}</p>{error && <AuthFeedback>{error}</AuthFeedback>}</div>}
   </section>
 }
 
