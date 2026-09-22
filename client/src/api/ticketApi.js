@@ -152,3 +152,11 @@ export async function reopenTicket(ticketId) {
   if (data?.success !== true || !data.data?.ticket?.id) throw new Error('Invalid ticket reopen response')
   return data.data.ticket
 }
+
+export async function resolveTicket(ticketId, resolutionSummary) {
+  const { data } = await api.patch(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/resolve`, {
+    resolutionSummary: resolutionSummary.trim(),
+  })
+  if (data?.success !== true || !data.data?.ticket?.id) throw new Error('Invalid ticket resolution response')
+  return data.data.ticket
+}

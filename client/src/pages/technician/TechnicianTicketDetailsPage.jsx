@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
-import { getTicketById, updateTicketStatus, updateTicketPriority } from '../../api/ticketApi'
+import { getTicketById, updateTicketStatus, updateTicketPriority, resolveTicket } from '../../api/ticketApi'
+import TicketResolveControl from './TicketResolveControl'
+import { canResolveTicket, validateResolutionSummary } from './ticketResolution'
 import TicketPriorityControl from './TicketPriorityControl'
 import { canManagePriority } from './ticketPriorityEligibility'
 import TicketStatusActions from './TicketStatusActions'
@@ -33,6 +35,8 @@ function TicketWorkspace({ ticketId, userId }) {
   const [historyRevision, setHistoryRevision] = useState(0)
   const [replyDraft, setReplyDraft] = useState('')
   const [noteDraft, setNoteDraft] = useState('')
+  const [resolutionSummary, setResolutionSummary] = useState('')
+  const [resolving, setResolving] = useState(false)
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   useEffect(() => {
     const controller = new AbortController()
@@ -56,6 +60,33 @@ function TicketWorkspace({ ticketId, userId }) {
       if (!mounted.current) return
       if ([403, 404].includes(error?.response?.status)) setResult({ attempt, unavailable: true, error: 'Ticket not found or you do not have access to it.' })
       else setNotice({ error: true, text: 'Unable to refresh ticket details. Use Refresh to try again.' })
+    }
+  }
+  async function resolve() {
+    if (pending.current || !current?.ticket || !canResolveTicket(current.ticket, userId)) return
+    const validation = validateResolutionSummary(resolutionSummary)
+    if (validation) { setNotice({ error: true, text: validation }); return }
+    pending.current = true
+    setUpdating(true); setResolving(true); setNotice(null)
+    try {
+      const ticket = await resolveTicket(ticketId, resolutionSummary)
+      if (!mounted.current) return
+      setResult({ attempt, ticket })
+      setResolutionSummary('')
+      setNotice({ text: 'Ticket resolved successfully.' })
+      setHistoryRevision(value => value + 1)
+      await refreshAfterReply()
+    } catch (error) {
+      if (!mounted.current) return
+      const stale = [400, 403, 404, 409, 422].includes(error?.response?.status)
+      setNotice({ error: true, text: getApiErrorMessage(error, stale ? 'This ticket could not be resolved. Check its current state and your resolution summary.' : 'Unable to resolve ticket. Please try again.') })
+      if (stale) {
+        setHistoryRevision(value => value + 1)
+        await refreshAfterReply()
+      }
+    } finally {
+      pending.current = false
+      if (mounted.current) { setUpdating(false); setResolving(false) }
     }
   }
   async function changePriority(priorityId) {
@@ -124,6 +155,7 @@ function TicketWorkspace({ ticketId, userId }) {
     {current?.ticket && <>
       <TechnicianTicketDetailsContent ticket={current.ticket} userId={userId} />
       <TicketStatusActions ticket={current.ticket} userId={userId} pending={updating} onUpdate={changeStatus} />
+      <TicketResolveControl ticket={current.ticket} userId={userId} summary={resolutionSummary} onSummaryChange={setResolutionSummary} pending={updating} resolving={resolving} onResolve={resolve} />
       <TicketPriorityControl ticket={current.ticket} userId={userId} pending={updating} onUpdate={changePriority} />
       <TicketStatusTimeline key={`${ticketId}:${attempt}:${historyRevision}`} ticketId={ticketId} title="Status History" />
       <TicketConversation ticketId={ticketId} status={current.ticket.status} assignedTo={current.ticket.assignedTo} disabled={updating} draft={replyDraft} onDraftChange={setReplyDraft} onSendingChange={value => { pending.current = value; setUpdating(value) }} onPosted={() => refreshAfterReply()} onAccessChanged={() => refreshAfterReply(true)} />
@@ -148,6 +180,7 @@ export function TechnicianTicketDetailsContent({ ticket, userId }) {
     ['Assigned technician', ticket.assignedTo === null ? 'Unassigned' : personName(ticket.assignee) || 'Name unavailable'],
     ['Created', formatTicketDate(ticket.createdAt)],
     ['Updated', formatTicketDate(ticket.updatedAt)],
+    ...(ticket.resolvedAt ? [['Resolved', formatTicketDate(ticket.resolvedAt)]] : []),
   ]
   return <>
     <header className={panelClass}>
@@ -163,6 +196,7 @@ export function TechnicianTicketDetailsContent({ ticket, userId }) {
       <section className={panelClass} aria-labelledby="workspace-description-heading">
         <h2 id="workspace-description-heading" className="text-lg font-semibold">Description</h2>
         <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-700">{ticket.description}</p>
+        {ticket.resolutionSummary && <div className="mt-6"><h3 className="font-semibold">Resolution summary</h3><p className="mt-2 whitespace-pre-wrap text-sm leading-7">{ticket.resolutionSummary}</p></div>}
       </section>
       <section className={panelClass} aria-labelledby="workspace-information-heading">
         <h2 id="workspace-information-heading" className="text-lg font-semibold">Ticket information</h2>
