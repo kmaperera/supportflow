@@ -1,6 +1,12 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function updateTicketPriority(ticketId, priorityId) {
+  const { data } = await api.patch(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/priority`, { priorityId })
+  if (data?.success !== true || !data.data?.ticket?.id || !data.data.ticket.priority?.id) throw new Error('Invalid priority update response')
+  return data.data.ticket
+}
+
 export async function updateTicketStatus(ticketId, status) {
   const { data } = await api.patch(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/status`, { status })
   if (data?.success !== true || !data.data?.ticket?.id || typeof data.data.ticket.status !== 'string') throw new Error('Invalid status update response')

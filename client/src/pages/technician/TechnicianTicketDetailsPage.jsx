@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
-import { getTicketById, updateTicketStatus } from '../../api/ticketApi'
+import { getTicketById, updateTicketStatus, updateTicketPriority } from '../../api/ticketApi'
+import TicketPriorityControl from './TicketPriorityControl'
+import { canManagePriority } from './ticketPriorityEligibility'
 import TicketStatusActions from './TicketStatusActions'
 import { getApiErrorMessage } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
@@ -40,6 +42,31 @@ function TicketWorkspace({ ticketId, userId }) {
   }, [ticketId, attempt])
   const current = result?.attempt === attempt ? result : null
   const unassigned = current?.ticket?.assignedTo === null
+  async function changePriority(priorityId) {
+    if (pending.current || !current?.ticket || !canManagePriority(current.ticket, userId) || String(current.ticket.priority?.id) === String(priorityId)) return
+    pending.current = true
+    setUpdating(true)
+    setNotice(null)
+    try {
+      const ticket = await updateTicketPriority(ticketId, priorityId)
+      if (!mounted.current) return
+      setResult({ attempt, ticket })
+      setNotice({ text: 'Priority updated successfully.' })
+    } catch (error) {
+      if (!mounted.current) return
+      const message = error?.response?.data?.message
+      const safeMessages = ['Selected ticket priority is inactive', 'Ticket priority not found', 'Ticket priority cannot be changed in its current status']
+      setNotice({ error: true, text: error?.response?.status < 500 && safeMessages.includes(message)
+        ? `${message}.` : getApiErrorMessage(error, 'Unable to update priority. Please try again.') })
+    } finally {
+      pending.current = false
+      if (mounted.current) {
+        setUpdating(false)
+        // Re-read authorization, priority and server-recalculated SLA deadlines.
+        setAttempt(value => value + 1)
+      }
+    }
+  }
   async function changeStatus(status) {
     if (pending.current || !current?.ticket) return
     pending.current = true
@@ -81,6 +108,7 @@ function TicketWorkspace({ ticketId, userId }) {
     {current?.ticket && <>
       <TechnicianTicketDetailsContent ticket={current.ticket} userId={userId} />
       <TicketStatusActions ticket={current.ticket} userId={userId} pending={updating} onUpdate={changeStatus} />
+      <TicketPriorityControl ticket={current.ticket} userId={userId} pending={updating} onUpdate={changePriority} />
       <TicketStatusTimeline key={`${ticketId}:${attempt}:${historyRevision}`} ticketId={ticketId} title="Status History" />
     </>}
   </div>
