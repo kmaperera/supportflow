@@ -8,6 +8,7 @@ import TicketStatusActions from './TicketStatusActions'
 import { getApiErrorMessage } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
 import TicketStatusTimeline from '../employee/TicketStatusTimeline'
+import TicketConversation from '../employee/TicketConversation'
 import { formatTicketDate, formatTicketPriority, formatTicketStatus } from '../employee/ticketFormatting'
 
 const actionClass = 'inline-flex min-h-11 items-center rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-50'
@@ -28,6 +29,7 @@ function TicketWorkspace({ ticketId, userId }) {
   const mounted = useRef(false)
   const [notice, setNotice] = useState(null)
   const [historyRevision, setHistoryRevision] = useState(0)
+  const [replyDraft, setReplyDraft] = useState('')
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   useEffect(() => {
     const controller = new AbortController()
@@ -42,6 +44,17 @@ function TicketWorkspace({ ticketId, userId }) {
   }, [ticketId, attempt])
   const current = result?.attempt === attempt ? result : null
   const unassigned = current?.ticket?.assignedTo === null
+  async function refreshAfterReply(accessChanged = false) {
+    if (accessChanged) setNotice({ error: true, text: 'This ticket no longer accepts your reply. Your draft has been kept. Refreshing ticket details.' })
+    try {
+      const ticket = await getTicketById(ticketId)
+      if (mounted.current) setResult({ attempt, ticket })
+    } catch (error) {
+      if (!mounted.current) return
+      if ([403, 404].includes(error?.response?.status)) setResult({ attempt, unavailable: true, error: 'Ticket not found or you do not have access to it.' })
+      else setNotice({ error: true, text: 'Unable to refresh ticket details. Use Refresh to try again.' })
+    }
+  }
   async function changePriority(priorityId) {
     if (pending.current || !current?.ticket || !canManagePriority(current.ticket, userId) || String(current.ticket.priority?.id) === String(priorityId)) return
     pending.current = true
@@ -110,6 +123,7 @@ function TicketWorkspace({ ticketId, userId }) {
       <TicketStatusActions ticket={current.ticket} userId={userId} pending={updating} onUpdate={changeStatus} />
       <TicketPriorityControl ticket={current.ticket} userId={userId} pending={updating} onUpdate={changePriority} />
       <TicketStatusTimeline key={`${ticketId}:${attempt}:${historyRevision}`} ticketId={ticketId} title="Status History" />
+      <TicketConversation ticketId={ticketId} status={current.ticket.status} assignedTo={current.ticket.assignedTo} disabled={updating} draft={replyDraft} onDraftChange={setReplyDraft} onSendingChange={value => { pending.current = value; setUpdating(value) }} onPosted={() => refreshAfterReply()} onAccessChanged={() => refreshAfterReply(true)} />
     </>}
   </div>
 }
