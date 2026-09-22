@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
+import NotificationReadNotice from '../shared/NotificationReadNotice'
 import { getTicketById, updateTicketStatus, updateTicketPriority, resolveTicket } from '../../api/ticketApi'
 import TicketResolveControl from './TicketResolveControl'
 import { canResolveTicket, validateResolutionSummary } from './ticketResolution'
@@ -23,7 +24,7 @@ const personName = person => [person?.firstName, person?.lastName].filter(value 
 export default function TechnicianTicketDetailsPage() {
   const { ticketId } = useParams()
   const { user } = useAuth()
-  return <TicketWorkspace key={`${user?.id}:${ticketId}`} ticketId={ticketId} userId={user?.id} />
+  return <><NotificationReadNotice /><TicketWorkspace key={`${user?.id}:${ticketId}`} ticketId={ticketId} userId={user?.id} /></>
 }
 
 function TicketWorkspace({ ticketId, userId }) {

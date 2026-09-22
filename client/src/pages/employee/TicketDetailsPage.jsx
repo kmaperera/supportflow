@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
+import NotificationReadNotice from '../shared/NotificationReadNotice'
 import { getTicketById } from '../../api/ticketApi'
 import { getApiErrorMessage } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
@@ -16,7 +17,7 @@ import { formatTicketDate, formatTicketPriority, formatTicketStatus } from './ti
 export default function TicketDetailsPage() {
   const { ticketId } = useParams()
   const { user } = useAuth()
-  return <TicketDetails key={`${user?.id}:${ticketId}`} ticketId={ticketId} />
+  return <><NotificationReadNotice /><TicketDetails key={`${user?.id}:${ticketId}`} ticketId={ticketId} /></>
 }
 
 function TicketDetails({ ticketId }) {

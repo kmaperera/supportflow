@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../../api/notificationApi'
 import { getApiErrorMessage } from '../../api/apiError'
@@ -14,6 +14,11 @@ export default function NotificationsPage() {
   return <Notifications key={`${user?.id}:${user?.role}`} technician={user?.role === 'TECHNICIAN'} />
 }
 function Notifications({ technician }) {
+  const navigate = useNavigate()
+  const active = useRef(false)
+  useEffect(() => { active.current = true; return () => { active.current = false } }, [])
+  const [openingId, setOpeningId] = useState(null)
+  const opening = useRef(false)
   const [request, setRequest] = useState({ page: 1, attempt: 0 })
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
@@ -42,8 +47,22 @@ function Notifications({ technician }) {
         const wasUnread = previous.data.notifications.some(item => String(item.id) === key && !item.isRead)
         return { ...previous, data: { ...previous.data, unreadCount: Math.max(0, previous.data.unreadCount - (wasUnread ? 1 : 0)), notifications: previous.data.notifications.map(item => String(item.id) === key ? notification : item) } }
       })
-    } catch (cause) { setError(getApiErrorMessage(cause, 'Unable to mark notification as read. Please try again.')) }
+    } catch (cause) {
+      const message = getApiErrorMessage(cause, 'Unable to mark notification as read. Please try again.')
+      setError(message)
+      return message
+    }
     finally { pending.current.delete(key); setPendingIds([...pending.current]) }
+  }
+  async function viewTicket(item) {
+    if (opening.current || pending.current.has(String(item.id)) || allPending.current) return
+    opening.current = true
+    setOpeningId(String(item.id))
+    const readError = item.isRead ? null : await markOne(item.id)
+    if (!active.current) return
+    navigate(`/${technician ? 'technician' : 'employee'}/tickets/${encodeURIComponent(item.ticketId)}`, {
+      state: readError ? { notificationReadError: true } : null,
+    })
   }
   async function markAll() {
     if (allPending.current || pending.current.size) return
@@ -69,7 +88,7 @@ function Notifications({ technician }) {
         <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-700">{item.message}</p>
         <p className="mt-2 text-xs text-slate-500">{formatTicketDate(item.createdAt)}</p>
         <div className="mt-3 flex flex-wrap gap-3">
-          {item.ticketId != null && /^[1-9]\d*$/.test(String(item.ticketId)) && <Link className={buttonClass} to={`/${technician ? 'technician' : 'employee'}/tickets/${encodeURIComponent(item.ticketId)}`}>View Ticket</Link>}
+          {item.ticketId != null && /^[1-9]\d*$/.test(String(item.ticketId)) && <button type="button" className={buttonClass} disabled={openingId !== null || markingAll || pendingIds.includes(String(item.id))} onClick={() => viewTicket(item)}>{openingId === String(item.id) ? 'Opening...' : 'View Ticket'}</button>}
           {!item.isRead && <button type="button" className={buttonClass} disabled={markingAll || pendingIds.includes(String(item.id))} onClick={() => markOne(item.id)}>{pendingIds.includes(String(item.id)) ? 'Marking as read...' : 'Mark as read'}</button>}
         </div>
       </li>)}</ul>}
