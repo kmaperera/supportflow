@@ -135,6 +135,7 @@ async function getAttachmentForDownload(ticketId, attachmentId, currentUser) {
   return {
     originalName: attachment.original_name, mimeType: attachment.mime_type,
     fileSize: attachment.file_size, fileUrl: attachment.file_url,
+    publicId: attachment.public_id, resourceType: attachment.resource_type,
   };
 }
 

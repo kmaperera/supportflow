@@ -28,7 +28,7 @@ export default function TechnicianLayout() {
         <nav aria-label="Technician navigation">
           <ul className="space-y-1">
             {technicianNavigation.map(item => <li key={item.path}>
-              <NavLink to={item.path} end onClick={() => { if (menuOpen) closeMenu() }} className={({ isActive }) => `block rounded-lg px-3 py-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 ${isActive ? 'bg-teal-50 text-teal-900 underline underline-offset-4 ring-1 ring-inset ring-teal-200' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>{item.label}</NavLink>
+              <NavLink to={item.path} end onClick={() => { if (menuOpen) closeMenu() }} className={({ isActive }) => `block rounded-lg px-3 py-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 ${isActive ? 'bg-teal-50 text-teal-900 ring-1 ring-inset ring-teal-200' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>{item.label}</NavLink>
             </li>)}
           </ul>
         </nav>

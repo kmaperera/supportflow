@@ -150,6 +150,7 @@ test("downloads enforce ownership and internal visibility across historical stat
         } else {
           assert.deepEqual(await service.getAttachmentForDownload(5, 10, user), {
             originalName: "report.txt", mimeType: "text/plain", fileSize: 3, fileUrl: asset.secureUrl,
+            publicId: undefined, resourceType: undefined,
           });
         }
       }
@@ -213,6 +214,28 @@ test("download controller sends safe binary headers and never fetches denied req
     assert.equal(result.error.message, "Attachment download failed");
     assert.equal(result.res.body, undefined);
   }
+});
+
+test("blocked PDF delivery uses a server-only signed download and bounds actual bytes", async (t) => {
+  const { fetchAttachment } = require('../src/services/attachmentDownload.service');
+  cloudinary.utils = { private_download_url(id, format, options) {
+    assert.equal(id, 'stored-id');
+    assert.equal(format, 'pdf');
+    assert.equal(options.resource_type, 'image');
+    assert.equal(options.type, 'upload');
+    assert.ok(options.expires_at > Date.now() / 1000);
+    return 'https://example.com/signed';
+  } };
+  const info = { fileUrl: asset.secureUrl, publicId: 'stored-id', resourceType: 'image', originalName: 'report.pdf' };
+  const remote = t.mock.method(globalThis, 'fetch', async url => url === asset.secureUrl
+    ? new Response('denied', { status: 401 }) : new Response('%PDF-contents'));
+  assert.equal((await fetchAttachment(info)).toString(), '%PDF-contents');
+  assert.equal(remote.mock.callCount(), 2);
+  remote.mock.mockImplementation(async () => new Response('missing', { status: 404 }));
+  await assert.rejects(fetchAttachment(info), error => error.errors[0].remoteStatus === 404);
+  remote.mock.mockImplementation(async () => new Response(new Uint8Array(10 * 1024 * 1024 + 1)));
+  await assert.rejects(fetchAttachment(info), error => error.errors[0].code === 'ATTACHMENT_TRANSFER_FAILED');
+  await assert.rejects(fetchAttachment({}), { statusCode: 502 });
 });
 
 test("authorization and workflow failures never upload", async (t) => {
