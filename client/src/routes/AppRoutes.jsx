@@ -19,6 +19,9 @@ import UnassignedTicketsPage from '../pages/technician/UnassignedTicketsPage'
 import TechnicianLayout from '../layouts/TechnicianLayout'
 import SharedNotificationsPage from '../pages/shared/NotificationsPage'
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage'
+import AdminLayout from '../layouts/AdminLayout'
+import { adminNavigation } from '../layouts/adminNavigation'
+import AdminPlaceholderPage from '../pages/admin/AdminPlaceholderPage'
 import NotFoundPage from '../pages/shared/NotFoundPage'
 import ProtectedRoute from './ProtectedRoute'
 import RoleRoute from './RoleRoute'
@@ -75,8 +78,13 @@ function AppRoutes() {
           </Route>
         </Route>
         <Route element={<RoleRoute role={ROLES.ADMIN} />}>
-          <Route path="/admin" element={<AdminDashboardPage />} />
-          <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboardPage />} />
+            {adminNavigation.filter(item => item.phase && item.path !== '/admin').map(item => <Route key={item.path} path={item.path.slice('/admin/'.length)} element={<AdminPlaceholderPage title={item.title} phase={item.phase} />} />)}
+            <Route path="profile" element={<ProfilePage embedded />} />
+            <Route path="dashboard" element={<Navigate to="/admin" replace />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
         </Route>
       </Route>
       <Route path="*" element={<NotFoundPage />} />
