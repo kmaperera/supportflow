@@ -14,11 +14,15 @@ try {
       const eligible = assignedTo === 7 && ['IN_PROGRESS', 'WAITING_FOR_USER'].includes(status)
       assert.equal(canResolveTicket(ticket, '7'), eligible)
       const html = renderToString(React.createElement(Control, { ticket, userId: '7', summary: '', pending: true }))
-      assert.equal(html.includes('Resolution summary'), eligible)
+      assert.equal(html.includes('Resolution note *'), eligible)
       if (eligible) assert.match(html, /type="submit" disabled=""/)
     }
   }
-  assert.ok(validateResolutionSummary('         '))
+  assert.equal(validateResolutionSummary('         '), 'Resolution note is required.')
+  for (const summary of ['', '   ', 'Issue fixed successfully']) {
+    const html = renderToString(React.createElement(Control, { ticket: { assignedTo: 7, status: 'IN_PROGRESS' }, userId: 7, summary, pending: false }))
+    assert.equal(/type="submit" disabled=""/.test(html), !summary.trim())
+  }
   assert.ok(validateResolutionSummary('123456789'))
   assert.equal(validateResolutionSummary('😀'.repeat(10)), null)
   assert.equal(validateResolutionSummary('x'.repeat(5000)), null)
