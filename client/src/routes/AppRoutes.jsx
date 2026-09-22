@@ -12,6 +12,7 @@ import { employeeNavigation } from '../layouts/employeeNavigation'
 import EmployeePlaceholderPage from '../pages/employee/EmployeePlaceholderPage'
 import EmployeeDashboardPage from '../pages/employee/EmployeeDashboardPage'
 import TechnicianDashboardPage from '../pages/technician/TechnicianDashboardPage'
+import TechnicianWorkloadPage from '../pages/technician/TechnicianWorkloadPage'
 import MyAssignedTicketsPage from '../pages/technician/MyAssignedTicketsPage'
 import TechnicianTicketDetailsPage from '../pages/technician/TechnicianTicketDetailsPage'
 import UnassignedTicketsPage from '../pages/technician/UnassignedTicketsPage'
@@ -63,6 +64,7 @@ function AppRoutes() {
         <Route element={<RoleRoute role={ROLES.TECHNICIAN} />}>
           <Route path="/technician" element={<TechnicianLayout />}>
             <Route index element={<TechnicianDashboardPage />} />
+            <Route path="workload" element={<TechnicianWorkloadPage />} />
             <Route path="tickets/assigned" element={<MyAssignedTicketsPage />} />
             <Route path="tickets/:ticketId" element={<TechnicianTicketDetailsPage />} />
             <Route path="tickets/unassigned" element={<UnassignedTicketsPage />} />

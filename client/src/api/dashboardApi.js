@@ -1,6 +1,33 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+const workloadSections = {
+  status: ['status-distribution', 'distribution'],
+  priority: ['priority-distribution', 'distribution'],
+  response: ['average-first-response-time', 'summary'],
+  resolution: ['average-resolution-time', 'summary'],
+  sla: ['sla-compliance', 'summary'],
+}
+export async function getTechnicianStatisticsSection(section, { signal } = {}) {
+  const contract = workloadSections[section]
+  if (!contract) throw new Error('Unknown statistics section')
+  const { data } = await api.get(`${API_ENDPOINTS.DASHBOARD}/${contract[0]}`, { signal })
+  const result = data?.data?.[contract[1]]
+  const count = value => Number.isSafeInteger(value) && value >= 0
+  const duration = value => value === null || (Number.isFinite(value) && value >= 0)
+  let valid = false
+  if (section === 'status' || section === 'priority') valid = Array.isArray(result) && result.every(row => count(row.count) && typeof row[section === 'status' ? 'status' : 'priorityName'] === 'string')
+  if (section === 'response') valid = result && count(result.respondedTickets) && duration(result.averageFirstResponseMinutes)
+  if (section === 'resolution') valid = result && count(result.resolvedTickets) && duration(result.averageResolutionMinutes)
+  if (section === 'sla') valid = ['response', 'resolution'].every(kind => {
+    const value = result?.[kind]
+    return value && ['trackedTickets', 'metTickets', 'missedTickets', 'pendingTickets', 'completedTickets'].every(key => count(value[key])) &&
+      (value.compliancePercentage === null || (Number.isFinite(value.compliancePercentage) && value.compliancePercentage >= 0 && value.compliancePercentage <= 100))
+  })
+  if (data?.success !== true || !valid) throw new Error('Invalid workload statistics response')
+  return result
+}
+
 export async function getTechnicianDashboard({ signal } = {}) {
   const [summaryResponse, recentResponse, slaResponse] = await Promise.all([
     api.get(`${API_ENDPOINTS.DASHBOARD}/technician/summary`, { signal }),
