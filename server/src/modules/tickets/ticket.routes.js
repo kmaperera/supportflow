@@ -7,6 +7,14 @@ const { reopenTicketValidation, closeTicketValidation, resolveTicketValidation, 
 const { getTicketAssignmentHistory, getTicketStatusHistory, reopenTicket, closeTicket, resolveTicket, updateTicketPriority, updateTicketStatus, assignTicketByAdmin, selfAssignTicket, getTicketQueue, createTicket, getMyTickets, getTicketById, updateEmployeeTicket } = require("./ticket.controller");
 
 const router = express.Router();
+const categoryController = require('./ticketCategory.controller');
+const categoryValidation = require('./ticketCategory.validation');
+const adminCategoryAccess = [authenticate, authorizeRoles(USER_ROLES.ADMIN)];
+router.get('/admin/categories', ...adminCategoryAccess, categoryController.list);
+router.get('/admin/categories/:categoryId', ...adminCategoryAccess, categoryValidation.categoryIdValidation(), validate, categoryController.get);
+router.post('/admin/categories', ...adminCategoryAccess, categoryValidation.createCategoryValidation, validate, categoryController.create);
+router.patch('/admin/categories/:categoryId', ...adminCategoryAccess, categoryValidation.updateCategoryValidation, validate, categoryController.update);
+router.patch('/admin/categories/:categoryId/status', ...adminCategoryAccess, categoryValidation.setCategoryActiveStatusValidation, validate, categoryController.status);
 const lookupController = require('./ticket.controller');
 const metadataRoles = authorizeRoles(USER_ROLES.EMPLOYEE, USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN);
 router.get('/categories', authenticate, metadataRoles, lookupController.getTicketCategories);
