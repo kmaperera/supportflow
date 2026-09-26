@@ -20,6 +20,7 @@ import TechnicianLayout from '../layouts/TechnicianLayout'
 import SharedNotificationsPage from '../pages/shared/NotificationsPage'
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage'
 import UserManagementPage from '../pages/admin/UserManagementPage'
+import CreateUserPage from '../pages/admin/CreateUserPage'
 import AdminLayout from '../layouts/AdminLayout'
 import { adminNavigation } from '../layouts/adminNavigation'
 import AdminPlaceholderPage from '../pages/admin/AdminPlaceholderPage'
@@ -82,6 +83,7 @@ function AppRoutes() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboardPage />} />
             <Route path="users" element={<UserManagementPage />} />
+            <Route path="users/new" element={<CreateUserPage />} />
             {adminNavigation.filter(item => item.phase && !['/admin', '/admin/users'].includes(item.path)).map(item => <Route key={item.path} path={item.path.slice('/admin/'.length)} element={<AdminPlaceholderPage title={item.title} phase={item.phase} />} />)}
             <Route path="profile" element={<ProfilePage embedded />} />
             <Route path="dashboard" element={<Navigate to="/admin" replace />} />

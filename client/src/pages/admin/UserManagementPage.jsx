@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import AuthFeedback from '../../auth/AuthFeedback'
 import { getUsers } from '../../api/userApi'
@@ -16,6 +17,12 @@ export default function UserManagementPage() {
 }
 
 function UserList() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [created, setCreated] = useState(location.state?.userCreated === true)
+  useEffect(() => {
+    if (location.state?.userCreated === true) navigate(location.pathname, { replace: true, state: null })
+  }, [location, navigate])
   const [search, setSearch] = useState('')
   const [query, setQuery] = useState(defaults)
   const [result, setResult] = useState(null)
@@ -39,7 +46,8 @@ function UserList() {
   function change(values) { setQuery(previous => ({ ...previous, ...values, search: search.trim(), page: 1 })) }
   function reset() { setSearch(''); setQuery({ ...defaults }) }
   return <div className="space-y-5">
-    <header><h1 className="text-2xl font-semibold">User Management</h1><p className="mt-2 text-slate-600">View user accounts, roles, and account status.</p></header>
+    <header><h1 className="text-2xl font-semibold">User Management</h1><p className="mt-2 text-slate-600">View user accounts, roles, and account status.</p><Link to="/admin/users/new" className={`${button} mt-3 inline-flex items-center`}>Create User</Link></header>
+    {created && <div><AuthFeedback variant="success">User created successfully.</AuthFeedback><button type="button" className={button} onClick={() => setCreated(false)}>Dismiss</button></div>}
     <div className="grid min-w-0 gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-2 xl:grid-cols-4">
       <label className="min-w-0 text-sm font-medium">Search<input type="search" className={input} placeholder="Search users..." value={search} onChange={event => setSearch(event.target.value)} aria-describedby="user-search-help" /><span id="user-search-help" className="mt-1 block text-xs text-slate-500">Search first name, last name, or email.</span></label>
       <label className="text-sm font-medium">Role<select className={input} value={query.role} onChange={event => change({ role: event.target.value })}><option value="">All roles</option>{Object.entries(roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>

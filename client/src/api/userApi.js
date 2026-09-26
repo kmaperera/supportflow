@@ -1,6 +1,14 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function createUser({ firstName, lastName, email, role, password, phone, department }) {
+  const payload = { firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim().toLowerCase(), role, password }
+  for (const [key, value] of Object.entries({ phone, department })) if (value) payload[key] = value
+  const { data } = await api.post(API_ENDPOINTS.USERS, payload)
+  if (data?.success !== true || !data.data?.user?.id) throw new Error('Invalid create-user response')
+  return data.data.user
+}
+
 export async function getUsers({ page = 1, limit = 20, search, role, isActive, sortBy = 'created_at', order = 'DESC', signal } = {}) {
   const params = { page, limit, sortBy, order }
   for (const [key, value] of Object.entries({ search: search?.trim(), role, isActive })) {
