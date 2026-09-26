@@ -7,7 +7,7 @@ import { adminNavigation } from './adminNavigation'
 export default function AdminLayout() {
   const { user } = useAuth()
   const { location, menuButton, menuOpen, closeMenu, toggleMenu } = useWorkspaceMenu()
-  const page = location.pathname.startsWith('/admin/categories/') ? { title: location.pathname.endsWith('/new') ? 'Add Category' : 'Edit Category' } : location.pathname === '/admin/users/new' ? { title: 'Create User' } : adminNavigation.find(item => matchPath({ path: item.path, end: true }, location.pathname))
+  const page = location.pathname.startsWith('/admin/tickets/') ? { title: 'Ticket Details' } : location.pathname.startsWith('/admin/categories/') ? { title: location.pathname.endsWith('/new') ? 'Add Category' : 'Edit Category' } : location.pathname === '/admin/users/new' ? { title: 'Create User' } : adminNavigation.find(item => matchPath({ path: item.path, end: true }, location.pathname))
   const name = [user?.firstName, user?.lastName].filter(value => typeof value === 'string' && value.trim()).map(value => value.trim()).join(' ')
   const displayName = name || (typeof user?.email === 'string' && user.email.trim()) || 'Admin'
   return <div className="min-h-screen bg-slate-50 text-slate-900 [overflow-wrap:anywhere] lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] [&_button]:min-h-11 [&_button]:max-w-full">
@@ -21,7 +21,7 @@ export default function AdminLayout() {
       <div id="admin-navigation" className={`${menuOpen ? 'flex' : 'hidden'} absolute top-full left-0 max-h-[calc(100dvh-7rem)] w-full flex-col overflow-y-auto border-b border-slate-200 bg-white lg:static lg:flex lg:max-h-none lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:border-0`}>
         <nav aria-label="Admin navigation" className="px-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:py-1">
           <ul className="space-y-1">{adminNavigation.map(item => <li key={item.path}>
-            <NavLink to={item.path} end={!['/admin/users', '/admin/categories'].includes(item.path)} onClick={() => { if (menuOpen) closeMenu() }} className={({ isActive }) => `block rounded-lg px-3 py-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 ${isActive ? 'bg-teal-50 text-teal-900 ring-1 ring-inset ring-teal-200' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>{item.label}</NavLink>
+            <NavLink to={item.path} end={!['/admin/users', '/admin/categories', '/admin/tickets'].includes(item.path)} onClick={() => { if (menuOpen) closeMenu() }} className={({ isActive }) => `block rounded-lg px-3 py-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 ${isActive ? 'bg-teal-50 text-teal-900 ring-1 ring-inset ring-teal-200' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>{item.label}</NavLink>
           </li>)}</ul>
         </nav>
         <div className="shrink-0 px-6 pb-6 pt-3"><div className="border-t border-slate-200"><LogoutButton /></div></div>

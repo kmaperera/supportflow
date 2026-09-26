@@ -1,6 +1,15 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function getAdminTickets({ page = 1, limit = 10, search, status, categoryId, priorityId, assignment, sortBy, order, signal } = {}) {
+  const params = { page, limit }
+  for (const [key, value] of Object.entries({ search: search?.trim(), status, categoryId, priorityId, assignment, sortBy, order })) {
+    if (value !== undefined && value !== '') params[key] = value
+  }
+  const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/queue`, { params, signal })
+  return readTechnicianTicketList(data)
+}
+
 export async function getTicketInternalNotes(ticketId, { signal } = {}) {
   const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/comments`, { signal })
   if (data?.success !== true || !Array.isArray(data.data?.comments)) throw new Error('Invalid internal notes response')
