@@ -3,7 +3,7 @@ import { createServer } from 'vite'
 const server = await createServer({ server: { middlewareMode: true }, appType: 'custom' })
 try {
   const { default: api } = await server.ssrLoadModule('/src/api/axios.js')
-  const { getUsers, updateUserStatus, changeUserRole } = await server.ssrLoadModule('/src/api/userApi.js')
+  const { getUsers, updateUserStatus, changeUserRole, getTechnicianWorkloads } = await server.ssrLoadModule('/src/api/userApi.js')
   const pagination = { currentPage: 1, limit: 20, totalRecords: 0, totalPages: 0, hasNext: false, hasPrevious: false }
   api.defaults.adapter = async config => {
     assert.equal(config.method, 'get')
@@ -27,6 +27,16 @@ try {
     assert.deepEqual(await updateUserStatus(42, isActive), { id: 42, isActive })
   }
   const failure = Object.assign(new Error('Forbidden'), { response: { status: 403 } })
+  const technicians = [{ id: 42, workload: { totalActive: 3 } }]
+  api.defaults.adapter = async config => {
+    assert.equal(config.method, 'get')
+    assert.equal(config.url, '/users/technician-workload')
+    return { config, status: 200, headers: {}, data: { success: true, data: { technicians } } }
+  }
+  assert.deepEqual(await getTechnicianWorkloads(), technicians)
+  api.defaults.adapter = async config => ({ config, status: 200, headers: {}, data: { success: true, data: { technicians: [{ id: 42 }] } } })
+  await assert.rejects(getTechnicianWorkloads(), /Invalid technician workload response/)
+  console.log('Aggregate technician workload contract and missing-count rejection passed.')
   for (const role of ['EMPLOYEE', 'TECHNICIAN', 'ADMIN']) {
     api.defaults.adapter = async config => {
       assert.equal(config.method, 'patch')

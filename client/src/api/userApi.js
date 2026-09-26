@@ -1,6 +1,13 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function getTechnicianWorkloads({ signal } = {}) {
+  const { data } = await api.get(`${API_ENDPOINTS.USERS}/technician-workload`, { signal })
+  const technicians = data?.data?.technicians
+  if (data?.success !== true || !Array.isArray(technicians) || technicians.some(user => !user?.id || !Number.isInteger(user.workload?.totalActive) || user.workload.totalActive < 0)) throw new Error('Invalid technician workload response')
+  return technicians
+}
+
 export async function changeUserRole(userId, role) {
   const { data } = await api.patch(`${API_ENDPOINTS.USERS}/${encodeURIComponent(userId)}/role`, { role })
   if (data?.success !== true || !data.data?.user?.id || !['EMPLOYEE', 'TECHNICIAN', 'ADMIN'].includes(data.data.user.role)) throw new Error('Invalid user role response')
