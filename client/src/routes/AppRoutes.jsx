@@ -1,3 +1,5 @@
+import CategoryManagementPage from '../pages/admin/CategoryManagementPage'
+import CategoryFormPage from '../pages/admin/CategoryFormPage'
 import TechnicianManagementPage from '../pages/admin/TechnicianManagementPage'
 import { Route, Routes } from 'react-router-dom'
 import LoginPage from '../pages/auth/LoginPage'
@@ -83,10 +85,13 @@ function AppRoutes() {
         <Route element={<RoleRoute role={ROLES.ADMIN} />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboardPage />} />
+            <Route path="categories" element={<CategoryManagementPage />} />
+            <Route path="categories/new" element={<CategoryFormPage />} />
+            <Route path="categories/:categoryId/edit" element={<CategoryFormPage />} />
             <Route path="technicians" element={<TechnicianManagementPage />} />
             <Route path="users" element={<UserManagementPage />} />
             <Route path="users/new" element={<CreateUserPage />} />
-            {adminNavigation.filter(item => item.phase && !['/admin', '/admin/users', '/admin/technicians'].includes(item.path)).map(item => <Route key={item.path} path={item.path.slice('/admin/'.length)} element={<AdminPlaceholderPage title={item.title} phase={item.phase} />} />)}
+            {adminNavigation.filter(item => item.phase && !['/admin', '/admin/users', '/admin/technicians', '/admin/categories'].includes(item.path)).map(item => <Route key={item.path} path={item.path.slice('/admin/'.length)} element={<AdminPlaceholderPage title={item.title} phase={item.phase} />} />)}
             <Route path="profile" element={<ProfilePage embedded />} />
             <Route path="dashboard" element={<Navigate to="/admin" replace />} />
             <Route path="*" element={<NotFoundPage />} />
