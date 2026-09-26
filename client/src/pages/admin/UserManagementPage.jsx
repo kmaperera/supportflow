@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import AuthFeedback from '../../auth/AuthFeedback'
-import { getUsers, updateUserStatus } from '../../api/userApi'
+import { changeUserRole, getUsers, updateUserStatus } from '../../api/userApi'
 import { getApiErrorMessage } from '../../api/apiError'
 import { formatTicketDate } from '../employee/ticketFormatting'
 
@@ -19,6 +19,7 @@ export default function UserManagementPage() {
 
 function UserList({ currentAdminId }) {
   const [confirming, setConfirming] = useState(null)
+  const [roleEditor, setRoleEditor] = useState(null)
   const [pending, setPending] = useState({})
   const [feedback, setFeedback] = useState(null)
   const inFlight = useRef(new Set())
@@ -33,6 +34,31 @@ function UserList({ currentAdminId }) {
   const [search, setSearch] = useState('')
   const [query, setQuery] = useState(defaults)
   const [result, setResult] = useState(null)
+  async function saveRole(user) {
+    const id = String(user.id)
+    const role = roleEditor?.role
+    if (inFlight.current.has(id) || id === String(currentAdminId) || roleEditor?.id !== id || !roleEditor.confirm || !Object.hasOwn(roles, role) || role === user.role) return
+    inFlight.current.add(id)
+    setPending(previous => ({ ...previous, [id]: 'role' }))
+    setFeedback(null)
+    try {
+      await changeUserRole(user.id, role)
+      if (!mounted.current) return
+      setRoleEditor(previous => previous?.id === id ? null : previous)
+      setFeedback({ success: true, message: 'User role updated successfully.' })
+      setQuery(previous => ({ ...previous, attempt: previous.attempt + 1 }))
+    } catch (error) {
+      if (!mounted.current) return
+      const message = error?.response?.data?.message
+      const safe = error?.response?.status === 400 && ['You cannot change your own role', 'Invalid role'].includes(message)
+        ? message : error?.response?.status === 404 ? 'User not found.' : getApiErrorMessage(error, 'Unable to change user role. Please try again.')
+      setFeedback({ success: false, message: safe })
+      setRoleEditor(previous => previous?.id === id ? { ...previous, confirm: false } : previous)
+    } finally {
+      inFlight.current.delete(id)
+      if (mounted.current) setPending(previous => ({ ...previous, [id]: false }))
+    }
+  }
   async function changeStatus(user) {
     const id = String(user.id)
     if (inFlight.current.has(id) || (user.isActive && id === String(currentAdminId))) return
@@ -98,10 +124,15 @@ function UserList({ currentAdminId }) {
         <dl className="mt-3 grid min-w-0 gap-4 text-sm sm:grid-cols-2">{[['Email', user.email], ['Role', roles[user.role] || 'Unknown role'], ['Status', user.isActive ? 'Active' : 'Inactive'], ['Created', formatTicketDate(user.createdAt)]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-slate-500">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
         {user.mustChangePassword === true && <p className="mt-4 text-sm font-medium">Password change required</p>}
         <div className="mt-4 space-y-3">
+          {String(user.id) === String(currentAdminId) ? <p className="text-sm text-slate-600">You cannot change your own role.</p> : roleEditor?.id === String(user.id) ? <div className="space-y-3 rounded-lg border border-slate-200 p-3">
+            <label className="block text-sm font-medium">New role<select className={input} value={roleEditor.role} disabled={Boolean(pending[user.id]) || roleEditor.confirm} onChange={event => setRoleEditor(previous => ({ ...previous, role: event.target.value, confirm: false }))}>{Object.entries(roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            {roleEditor.confirm && <p className="text-sm">Change role from {roles[user.role]} to {roles[roleEditor.role]}? This will update the user's application permissions.</p>}
+            <div className="flex flex-wrap gap-3"><button type="button" className={button} disabled={Boolean(pending[user.id]) || roleEditor.role === user.role} onClick={() => roleEditor.confirm ? saveRole(user) : setRoleEditor(previous => ({ ...previous, confirm: true }))}>{pending[user.id] === 'role' ? 'Updating role...' : roleEditor.confirm ? 'Confirm role change' : 'Update Role'}</button><button type="button" className={button} disabled={Boolean(pending[user.id])} onClick={() => setRoleEditor(null)}>Cancel</button></div>
+          </div> : <button type="button" className={button} disabled={Boolean(pending[user.id])} onClick={() => { setConfirming(null); setRoleEditor({ id: String(user.id), role: user.role, confirm: false }) }}>Change Role</button>}
           {user.isActive && String(user.id) === String(currentAdminId) ? <p className="text-sm text-slate-600">You cannot deactivate your own account.</p> : confirming === String(user.id) ? <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-3">
             <p className="text-sm">Deactivate this user? This user will no longer be able to sign in until reactivated.</p>
-            <div className="flex flex-wrap gap-3"><button type="button" className={`${button} border-red-700 text-red-700`} disabled={pending[user.id]} onClick={() => changeStatus(user)}>{pending[user.id] ? 'Deactivating...' : 'Confirm deactivation'}</button><button type="button" className={button} disabled={pending[user.id]} onClick={() => setConfirming(null)}>Cancel</button></div>
-          </div> : <button type="button" className={`${button} ${user.isActive ? 'border-red-700 text-red-700' : ''}`} disabled={pending[user.id]} onClick={() => user.isActive ? setConfirming(String(user.id)) : changeStatus(user)}>{pending[user.id] ? (user.isActive ? 'Deactivating...' : 'Activating...') : user.isActive ? 'Deactivate' : 'Activate'}</button>}
+            <div className="flex flex-wrap gap-3"><button type="button" className={`${button} border-red-700 text-red-700`} disabled={pending[user.id]} onClick={() => changeStatus(user)}>{pending[user.id] === true ? 'Deactivating...' : 'Confirm deactivation'}</button><button type="button" className={button} disabled={pending[user.id]} onClick={() => setConfirming(null)}>Cancel</button></div>
+          </div> : <button type="button" className={`${button} ${user.isActive ? 'border-red-700 text-red-700' : ''}`} disabled={pending[user.id]} onClick={() => user.isActive ? setConfirming(String(user.id)) : changeStatus(user)}>{pending[user.id] === true ? (user.isActive ? 'Deactivating...' : 'Activating...') : user.isActive ? 'Deactivate' : 'Activate'}</button>}
         </div>
       </li>)}</ul>}
       {current.data.pagination.totalPages > 1 && <nav aria-label="User pagination" className="flex flex-wrap items-center gap-3"><button type="button" className={button} disabled={!current.data.pagination.hasPrevious} onClick={() => setQuery(previous => ({ ...previous, page: previous.page - 1 }))}>Previous</button><p>Page {current.data.pagination.currentPage} of {current.data.pagination.totalPages}</p><button type="button" className={button} disabled={!current.data.pagination.hasNext} onClick={() => setQuery(previous => ({ ...previous, page: previous.page + 1 }))}>Next</button></nav>}

@@ -1,6 +1,12 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function changeUserRole(userId, role) {
+  const { data } = await api.patch(`${API_ENDPOINTS.USERS}/${encodeURIComponent(userId)}/role`, { role })
+  if (data?.success !== true || !data.data?.user?.id || !['EMPLOYEE', 'TECHNICIAN', 'ADMIN'].includes(data.data.user.role)) throw new Error('Invalid user role response')
+  return data.data.user
+}
+
 export async function updateUserStatus(userId, isActive) {
   const { data } = await api.patch(`${API_ENDPOINTS.USERS}/${encodeURIComponent(userId)}/status`, { isActive })
   if (data?.success !== true || !data.data?.user?.id || typeof data.data.user.isActive !== 'boolean') throw new Error('Invalid user status response')
