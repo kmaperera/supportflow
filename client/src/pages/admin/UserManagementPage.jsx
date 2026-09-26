@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import AuthFeedback from '../../auth/AuthFeedback'
-import { getUsers } from '../../api/userApi'
+import { getUsers, updateUserStatus } from '../../api/userApi'
+import { getApiErrorMessage } from '../../api/apiError'
 import { formatTicketDate } from '../employee/ticketFormatting'
 
 const roles = { EMPLOYEE: 'Employee', TECHNICIAN: 'Technician', ADMIN: 'Admin' }
@@ -13,10 +14,16 @@ const input = 'mt-1 block min-h-11 w-full min-w-0 rounded-lg border border-slate
 
 export default function UserManagementPage() {
   const { user } = useAuth()
-  return <UserList key={user?.id} />
+  return <UserList key={user?.id} currentAdminId={user?.id} />
 }
 
-function UserList() {
+function UserList({ currentAdminId }) {
+  const [confirming, setConfirming] = useState(null)
+  const [pending, setPending] = useState({})
+  const [feedback, setFeedback] = useState(null)
+  const inFlight = useRef(new Set())
+  const mounted = useRef(false)
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   const location = useLocation()
   const navigate = useNavigate()
   const [created, setCreated] = useState(location.state?.userCreated === true)
@@ -26,6 +33,32 @@ function UserList() {
   const [search, setSearch] = useState('')
   const [query, setQuery] = useState(defaults)
   const [result, setResult] = useState(null)
+  async function changeStatus(user) {
+    const id = String(user.id)
+    if (inFlight.current.has(id) || (user.isActive && id === String(currentAdminId))) return
+    inFlight.current.add(id)
+    setPending(previous => ({ ...previous, [id]: true }))
+    setFeedback(null)
+    try {
+      const updated = await updateUserStatus(user.id, !user.isActive)
+      if (!mounted.current) return
+      setFeedback({ success: true, message: updated.isActive ? 'User activated successfully.' : 'User deactivated successfully.' })
+      setQuery(previous => ({ ...previous, attempt: previous.attempt + 1 }))
+    } catch (error) {
+      if (!mounted.current) return
+      const message = error?.response?.data?.message
+      const safe = error?.response?.status === 400 && message === 'You cannot deactivate your own account'
+        ? message
+        : error?.response?.status === 404 ? 'User not found.' : getApiErrorMessage(error, 'Unable to update user status. Please try again.')
+      setFeedback({ success: false, message: safe })
+    } finally {
+      inFlight.current.delete(id)
+      if (mounted.current) {
+        setPending(previous => ({ ...previous, [id]: false }))
+        setConfirming(previous => previous === id ? null : previous)
+      }
+    }
+  }
   useEffect(() => {
     const timeout = setTimeout(() => setQuery(previous => previous.search === search.trim() ? previous : { ...previous, search: search.trim(), page: 1 }), 500)
     return () => clearTimeout(timeout)
@@ -48,6 +81,7 @@ function UserList() {
   return <div className="space-y-5">
     <header><h1 className="text-2xl font-semibold">User Management</h1><p className="mt-2 text-slate-600">View user accounts, roles, and account status.</p><Link to="/admin/users/new" className={`${button} mt-3 inline-flex items-center`}>Create User</Link></header>
     {created && <div><AuthFeedback variant="success">User created successfully.</AuthFeedback><button type="button" className={button} onClick={() => setCreated(false)}>Dismiss</button></div>}
+    {feedback && <AuthFeedback variant={feedback.success ? 'success' : 'error'}>{feedback.message}</AuthFeedback>}
     <div className="grid min-w-0 gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-2 xl:grid-cols-4">
       <label className="min-w-0 text-sm font-medium">Search<input type="search" className={input} placeholder="Search users..." value={search} onChange={event => setSearch(event.target.value)} aria-describedby="user-search-help" /><span id="user-search-help" className="mt-1 block text-xs text-slate-500">Search first name, last name, or email.</span></label>
       <label className="text-sm font-medium">Role<select className={input} value={query.role} onChange={event => change({ role: event.target.value })}><option value="">All roles</option>{Object.entries(roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
@@ -63,6 +97,12 @@ function UserList() {
         <h2 className="break-words text-lg font-semibold">{[user.firstName, user.lastName].filter(value => typeof value === 'string' && value.trim()).join(' ') || 'Name unavailable'}</h2>
         <dl className="mt-3 grid min-w-0 gap-4 text-sm sm:grid-cols-2">{[['Email', user.email], ['Role', roles[user.role] || 'Unknown role'], ['Status', user.isActive ? 'Active' : 'Inactive'], ['Created', formatTicketDate(user.createdAt)]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-slate-500">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
         {user.mustChangePassword === true && <p className="mt-4 text-sm font-medium">Password change required</p>}
+        <div className="mt-4 space-y-3">
+          {user.isActive && String(user.id) === String(currentAdminId) ? <p className="text-sm text-slate-600">You cannot deactivate your own account.</p> : confirming === String(user.id) ? <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-3">
+            <p className="text-sm">Deactivate this user? This user will no longer be able to sign in until reactivated.</p>
+            <div className="flex flex-wrap gap-3"><button type="button" className={`${button} border-red-700 text-red-700`} disabled={pending[user.id]} onClick={() => changeStatus(user)}>{pending[user.id] ? 'Deactivating...' : 'Confirm deactivation'}</button><button type="button" className={button} disabled={pending[user.id]} onClick={() => setConfirming(null)}>Cancel</button></div>
+          </div> : <button type="button" className={`${button} ${user.isActive ? 'border-red-700 text-red-700' : ''}`} disabled={pending[user.id]} onClick={() => user.isActive ? setConfirming(String(user.id)) : changeStatus(user)}>{pending[user.id] ? (user.isActive ? 'Deactivating...' : 'Activating...') : user.isActive ? 'Deactivate' : 'Activate'}</button>}
+        </div>
       </li>)}</ul>}
       {current.data.pagination.totalPages > 1 && <nav aria-label="User pagination" className="flex flex-wrap items-center gap-3"><button type="button" className={button} disabled={!current.data.pagination.hasPrevious} onClick={() => setQuery(previous => ({ ...previous, page: previous.page - 1 }))}>Previous</button><p>Page {current.data.pagination.currentPage} of {current.data.pagination.totalPages}</p><button type="button" className={button} disabled={!current.data.pagination.hasNext} onClick={() => setQuery(previous => ({ ...previous, page: previous.page + 1 }))}>Next</button></nav>}
     </>}

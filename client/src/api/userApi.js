@@ -1,6 +1,12 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function updateUserStatus(userId, isActive) {
+  const { data } = await api.patch(`${API_ENDPOINTS.USERS}/${encodeURIComponent(userId)}/status`, { isActive })
+  if (data?.success !== true || !data.data?.user?.id || typeof data.data.user.isActive !== 'boolean') throw new Error('Invalid user status response')
+  return data.data.user
+}
+
 export async function createUser({ firstName, lastName, email, role, password, phone, department }) {
   const payload = { firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim().toLowerCase(), role, password }
   for (const [key, value] of Object.entries({ phone, department })) if (value) payload[key] = value
