@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import AdminKnowledgeBasePage from '../pages/admin/AdminKnowledgeBasePage'
 import KbArticleFormPage from '../pages/admin/KbArticleFormPage'
 import SlaSettingsPage from '../pages/admin/SlaSettingsPage'
@@ -43,6 +44,8 @@ import ChangePasswordPage from '../pages/auth/ChangePasswordPage'
 import { ROLES } from '../auth/roles'
 import ProfileRoute from './ProfileRoute'
 import ProfilePage from '../pages/auth/ProfilePage'
+
+const AdminAnalyticsPage = lazy(() => import('../pages/admin/AdminAnalyticsPage'))
 
 function AppRoutes() {
   return (
@@ -92,6 +95,7 @@ function AppRoutes() {
         <Route element={<RoleRoute role={ROLES.ADMIN} />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboardPage />} />
+            <Route path="analytics" element={<Suspense fallback={<p role="status">Loading analytics...</p>}><AdminAnalyticsPage /></Suspense>} />
             <Route path="notifications" element={<SharedNotificationsPage />} />
             <Route path="knowledge-base" element={<AdminKnowledgeBasePage />} />
             <Route path="knowledge-base/articles/new" element={<KbArticleFormPage />} />
@@ -106,7 +110,7 @@ function AppRoutes() {
             <Route path="technicians" element={<TechnicianManagementPage />} />
             <Route path="users" element={<UserManagementPage />} />
             <Route path="users/new" element={<CreateUserPage />} />
-            {adminNavigation.filter(item => item.phase && !['/admin', '/admin/users', '/admin/technicians', '/admin/categories', '/admin/tickets', '/admin/sla', '/admin/knowledge-base', '/admin/notifications'].includes(item.path)).map(item => <Route key={item.path} path={item.path.slice('/admin/'.length)} element={<AdminPlaceholderPage title={item.title} phase={item.phase} />} />)}
+            {adminNavigation.filter(item => item.phase && !['/admin', '/admin/users', '/admin/technicians', '/admin/categories', '/admin/tickets', '/admin/sla', '/admin/knowledge-base', '/admin/notifications', '/admin/analytics'].includes(item.path)).map(item => <Route key={item.path} path={item.path.slice('/admin/'.length)} element={<AdminPlaceholderPage title={item.title} phase={item.phase} />} />)}
             <Route path="profile" element={<ProfilePage embedded />} />
             <Route path="dashboard" element={<Navigate to="/admin" replace />} />
             <Route path="*" element={<NotFoundPage />} />

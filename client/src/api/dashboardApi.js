@@ -1,6 +1,22 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function getAdminAnalyticsSection(section, { signal, period = 'monthly' } = {}) {
+  if (['summary', 'workload'].includes(section)) return getAdminDashboardSection(section, { signal })
+  if (['status', 'priority', 'response', 'resolution', 'sla'].includes(section)) return getDashboardStatisticsSection(section, { signal })
+  const contracts = { category: ['category-distribution', 'distribution'], satisfaction: ['satisfaction-summary', 'summary'], trend: ['ticket-trend', 'trend'] }
+  const contract = contracts[section]
+  if (!contract || (section === 'trend' && !['daily', 'monthly'].includes(period))) throw new Error('Invalid analytics query')
+  const { data } = await api.get(`${API_ENDPOINTS.DASHBOARD}/${contract[0]}`, { signal, ...(section === 'trend' ? { params: { period } } : {}) })
+  const value = data?.data?.[contract[1]]
+  const count = number => Number.isSafeInteger(number) && number >= 0
+  const valid = section === 'category' ? Array.isArray(value) && value.every(row => typeof row.categoryName === 'string' && count(row.count))
+    : section === 'trend' ? data.data?.period === period && Array.isArray(value) && value.every(row => typeof row[period === 'daily' ? 'date' : 'month'] === 'string' && count(row.count))
+      : value && count(value.totalRatings) && count(value.satisfiedRatings) && (value.averageRating === null || (Number.isFinite(value.averageRating) && value.averageRating >= 1 && value.averageRating <= 5)) && (value.satisfactionPercentage === null || (Number.isFinite(value.satisfactionPercentage) && value.satisfactionPercentage >= 0 && value.satisfactionPercentage <= 100))
+  if (data?.success !== true || !valid) throw new Error('Invalid analytics response')
+  return value
+}
+
 const workloadSections = {
   status: ['status-distribution', 'distribution'],
   priority: ['priority-distribution', 'distribution'],
