@@ -1,3 +1,4 @@
+import SlaSettingsPage from '../pages/admin/SlaSettingsPage'
 import AdminTechnicianWorkloadPage from '../pages/admin/AdminTechnicianWorkloadPage'
 import AdminTicketsPage from '../pages/admin/AdminTicketsPage'
 import AdminTicketDetailsPage from '../pages/admin/AdminTicketDetailsPage'
@@ -60,6 +61,7 @@ function AppRoutes() {
             <Route index element={<EmployeeDashboardPage />} />
             <Route path="profile" element={<ProfilePage embedded />} />
             <Route path="tickets/new" element={<CreateTicketPage />} />
+            <Route path="sla" element={<SlaSettingsPage />} />
             <Route path="tickets" element={<MyTicketsPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="knowledge-base" element={<KnowledgeBasePage />} />
@@ -88,6 +90,7 @@ function AppRoutes() {
         <Route element={<RoleRoute role={ROLES.ADMIN} />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboardPage />} />
+            <Route path="sla" element={<SlaSettingsPage />} />
             <Route path="tickets" element={<AdminTicketsPage />} />
             <Route path="tickets/:ticketId" element={<AdminTicketDetailsPage />} />
             <Route path="categories" element={<CategoryManagementPage />} />
@@ -97,7 +100,7 @@ function AppRoutes() {
             <Route path="technicians" element={<TechnicianManagementPage />} />
             <Route path="users" element={<UserManagementPage />} />
             <Route path="users/new" element={<CreateUserPage />} />
-            {adminNavigation.filter(item => item.phase && !['/admin', '/admin/users', '/admin/technicians', '/admin/categories', '/admin/tickets'].includes(item.path)).map(item => <Route key={item.path} path={item.path.slice('/admin/'.length)} element={<AdminPlaceholderPage title={item.title} phase={item.phase} />} />)}
+            {adminNavigation.filter(item => item.phase && !['/admin', '/admin/users', '/admin/technicians', '/admin/categories', '/admin/tickets', '/admin/sla'].includes(item.path)).map(item => <Route key={item.path} path={item.path.slice('/admin/'.length)} element={<AdminPlaceholderPage title={item.title} phase={item.phase} />} />)}
             <Route path="profile" element={<ProfilePage embedded />} />
             <Route path="dashboard" element={<Navigate to="/admin" replace />} />
             <Route path="*" element={<NotFoundPage />} />
