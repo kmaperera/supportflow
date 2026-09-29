@@ -5,6 +5,7 @@ import { getApiErrorMessage } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
 import TicketStatusTimeline from '../employee/TicketStatusTimeline'
 import AdminTicketMetadata from './AdminTicketMetadata'
+import AdminTicketAssignment from './AdminTicketAssignment'
 
 export default function AdminTicketDetailsPage() {
   const { ticketId } = useParams()
@@ -13,6 +14,15 @@ export default function AdminTicketDetailsPage() {
 function TicketDetails({ ticketId }) {
   const [attempt, setAttempt] = useState(0)
   const [result, setResult] = useState(null)
+  const [revision, setRevision] = useState(0)
+  const [refreshError, setRefreshError] = useState(null)
+  async function refresh() {
+    setRevision(value => value + 1)
+    try {
+      const ticket = await getTicketById(ticketId)
+      setResult({ attempt, ticket }); setRefreshError(null)
+    } catch { setRefreshError('Unable to refresh ticket details. Please retry before making another change.') }
+  }
   useEffect(() => {
     const controller = new AbortController()
     getTicketById(ticketId, { signal: controller.signal }).then(ticket => {
@@ -32,8 +42,10 @@ function TicketDetails({ ticketId }) {
     {!current && <p role="status">Loading ticket...</p>}
     {current?.error && <div className="space-y-3"><AuthFeedback>{current.error}</AuthFeedback><button className={action} onClick={() => setAttempt(value => value + 1)}>Retry</button></div>}
     {ticket && <>
+      {refreshError && <div><AuthFeedback>{refreshError}</AuthFeedback><button className={action} onClick={refresh}>Retry refresh</button></div>}
       <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6"><p className="break-all text-sm font-semibold text-teal-800">{ticket.ticketNumber}</p><h2 className="mt-1 break-words text-xl font-semibold">{ticket.title}</h2><AdminTicketMetadata ticket={ticket} detail /><h3 className="mt-6 font-semibold">Description</h3><p className="mt-2 whitespace-pre-wrap break-words text-slate-700">{ticket.description}</p></section>
-      <TicketStatusTimeline ticketId={ticket.id} />
+      {!refreshError && <AdminTicketAssignment ticket={ticket} refresh={refresh} />}
+      <TicketStatusTimeline key={revision} ticketId={ticket.id} />
     </>}
   </div>
 }

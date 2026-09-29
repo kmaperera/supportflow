@@ -1,6 +1,12 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function assignTicket(ticketId, technicianId) {
+  const { data } = await api.patch(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/assign`, { technicianId })
+  if (data?.success !== true || !data.data?.ticket?.id) throw new Error('Invalid assignment response')
+  return data.data.ticket
+}
+
 export async function getAdminTickets({ page = 1, limit = 10, search, status, categoryId, priorityId, assignment, sortBy, order, signal } = {}) {
   const params = { page, limit }
   for (const [key, value] of Object.entries({ search: search?.trim(), status, categoryId, priorityId, assignment, sortBy, order })) {

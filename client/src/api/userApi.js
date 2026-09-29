@@ -1,6 +1,12 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function getAssignableTechnicians({ signal } = {}) {
+  const { data } = await api.get(`${API_ENDPOINTS.USERS}/assignable-technicians`, { signal })
+  if (data?.success !== true || !Array.isArray(data.data?.technicians)) throw new Error('Invalid technician response')
+  return data.data.technicians
+}
+
 export async function getTechnicianWorkloads({ signal } = {}) {
   const { data } = await api.get(`${API_ENDPOINTS.USERS}/technician-workload`, { signal })
   const technicians = data?.data?.technicians
