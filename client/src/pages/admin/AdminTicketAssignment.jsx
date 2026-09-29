@@ -131,7 +131,7 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
       <p className="text-sm">The ticket will return to Open with no assigned technician. Assignment history will be retained and the removed technician will be notified.</p>
       <div className="flex flex-wrap gap-3"><button type="button" className={button} disabled={busy} onClick={() => setUnassignConfirmation(null)}>Cancel</button><button type="button" className={`${button} border-red-700 text-red-700 hover:bg-red-50`} disabled={busy} onClick={removeAssignment}>{busy ? 'Unassigning...' : 'Confirm Unassign'}</button></div>
     </div> : <div className="flex flex-wrap items-start gap-3">
-    {!eligible ? <p className="text-sm text-slate-600">Assignment cannot be changed on resolved or closed tickets.</p> : !open ? <button className={button} disabled={busy} onClick={() => { setOpen(true); setAttempt(value => value + 1); setSelected(''); setConfirm(false) }}>{assigned ? 'Reassign' : 'Assign technician'}</button> : <div className="space-y-3">
+    {!eligible ? <p className="text-sm text-slate-600">Assignment cannot be changed on resolved or closed tickets.</p> : !open ? <button className={button} disabled={busy} onClick={() => { setOpen(true); setAttempt(value => value + 1); setSelected(''); setConfirm(false) }}>{assigned ? 'Reassign' : 'Assign technician'}</button> : <div className="w-full min-w-0 max-w-lg space-y-3">
       {!current && <p role="status">Loading technicians...</p>}
       {current?.error && <><AuthFeedback>Unable to load technicians.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></>}
       {current?.data && <>
@@ -139,10 +139,12 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
           <TechnicianCombobox technicians={current.data} counts={counts} selected={selected} currentId={ticket.assignedTo} disabled={busy || confirm} onSelect={value => { setSelected(value); setConfirm(false) }} />
           {workload?.error && <p className="text-sm text-slate-600">Workload counts are unavailable. You can still choose a technician.</p>}
           {confirm && chosen && <p>{assigned ? `Reassign this ticket from ${name(ticket.assignee)} to ${name(chosen)}?` : `Assign this ticket to ${name(chosen)}?`}</p>}
-          <button className={button} disabled={busy || !chosen || !canConfirmAssignment(ticket, selected)} onClick={() => confirm ? save() : setConfirm(true)}>{busy ? assigned ? 'Reassigning...' : 'Assigning...' : confirm ? 'Confirm' : 'Continue'}</button>
         </>}
       </>}
-      <button className={`${button} ml-3`} disabled={busy} onClick={() => { setOpen(false); setConfirm(false) }}>Cancel</button>
+      <div className="flex flex-wrap gap-3">
+      {current?.data?.length > 0 && <button className={button} disabled={busy || !chosen || !canConfirmAssignment(ticket, selected)} onClick={() => confirm ? save() : setConfirm(true)}>{busy ? assigned ? 'Reassigning...' : 'Assigning...' : confirm ? 'Confirm' : 'Continue'}</button>}
+      <button className={button} disabled={busy} onClick={() => { setOpen(false); setConfirm(false) }}>Cancel</button>
+      </div>
     </div>}
     {!open && canUnassign && <button type="button" className={`${button} border-red-700 text-red-700 hover:bg-red-50`} disabled={busy} onClick={() => setUnassignConfirmation({ id: ticket.assignment.id, name: name(ticket.assignee) })}>Unassign</button>}
     </div>}
