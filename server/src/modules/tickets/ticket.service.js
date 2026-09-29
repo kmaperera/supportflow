@@ -209,7 +209,13 @@ async function getTicketById(ticketId, currentUser) {
     (currentUser.role === USER_ROLES.TECHNICIAN &&
       (ticket.assigned_to === null || String(ticket.assigned_to) === userId));
   if (!allowed) throw new ApiError(404, "Ticket not found");
-  return mapTicket(ticket);
+  const result = mapTicket(ticket);
+  if (currentUser.role === USER_ROLES.ADMIN) {
+    result.assignment = ticket.active_assignment_id == null ? null : {
+      id: ticket.active_assignment_id, technicianId: ticket.assigned_to,
+    };
+  }
+  return result;
 }
 
 async function calculatePriorityDeadlines(ticket, priorityId, db) {
@@ -424,7 +430,7 @@ async function selfAssignTicket(ticketId, currentUser) {
   }
 }
 
-async function unassignTicketByAdmin(ticketId, currentAdmin) {
+async function unassignTicketByAdmin(ticketId, expectedAssignmentId, currentAdmin) {
   if (!isValidTicketUserId(ticketId)) throw new ApiError(400, "Ticket ID must be a positive integer");
   if (!currentAdmin || !isValidTicketUserId(currentAdmin.id) ||
       typeof currentAdmin.role !== "string" || !currentAdmin.role) {
@@ -432,6 +438,10 @@ async function unassignTicketByAdmin(ticketId, currentAdmin) {
   }
   if (currentAdmin.role !== USER_ROLES.ADMIN) {
     throw new ApiError(403, "You do not have permission to access this resource");
+  }
+
+  if (!isValidTicketUserId(expectedAssignmentId)) {
+    throw new ApiError(422, "Expected assignment ID must be a positive integer");
   }
 
   const connection = await pool.getConnection();
@@ -444,7 +454,10 @@ async function unassignTicketByAdmin(ticketId, currentAdmin) {
     }
     const ticket = await ticketRepository.findById(ticketId, connection);
     if (!ticket) throw new ApiError(404, "Ticket not found");
-    await ticketAssignmentService.assertCanUnassign(ticket, connection);
+    const activeAssignment = await ticketAssignmentService.assertCanUnassign(ticket, connection);
+    if (String(activeAssignment.id) !== String(expectedAssignmentId)) {
+      throw new ApiError(409, "Ticket assignment has changed. Refresh and try again.");
+    }
     if (![TICKET_STATUSES.ASSIGNED, TICKET_STATUSES.IN_PROGRESS,
       TICKET_STATUSES.WAITING_FOR_USER, TICKET_STATUSES.REOPENED].includes(ticket.status)) {
       throw new ApiError(409, "Ticket cannot be unassigned in its current status");

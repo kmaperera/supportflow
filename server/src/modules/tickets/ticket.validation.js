@@ -74,7 +74,11 @@ const ticketIdValidation = [
   param("id").custom(positiveId).withMessage("Ticket ID must be a positive integer"),
 ];
 
-const unassignTicketValidation = [...ticketIdValidation];
+const unassignTicketValidation = [
+  ...ticketIdValidation,
+  body("expectedAssignmentId").custom(positiveId)
+    .withMessage("Expected assignment ID must be a positive integer"),
+];
 
 const updateEmployeeTicketValidation = [
   ...ticketIdValidation,

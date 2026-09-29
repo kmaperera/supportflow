@@ -12,6 +12,9 @@ const TICKET_SELECT = `
     t.category_id, c.name AS category_name,
     t.priority_id, p.name AS priority_name, p.sort_order AS priority_sort_order,
     t.assigned_to,
+    (SELECT a.id FROM ticket_assignments a
+      WHERE a.ticket_id = t.id AND a.unassigned_at IS NULL
+      ORDER BY a.id DESC LIMIT 1) AS active_assignment_id,
     assignee.first_name AS assignee_first_name,
     assignee.last_name AS assignee_last_name,
     assignee.email AS assignee_email,

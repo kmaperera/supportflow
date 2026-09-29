@@ -34,7 +34,7 @@ for (const operation of ["self", "assign", "reassign", "noop", "unassign"]) {
       t.mock.method(tickets, "lockById", async (id, db) => { check(db); return ticket; });
       t.mock.method(tickets, "findById", async (id, db) => { check(db); return { ...ticket }; });
       t.mock.method(assignments, "findActiveAssignmentsByTicketId", async (id, db) => {
-        check(db); return previous === null ? [] : [{ technician_id: previous }];
+        check(db); return previous === null ? [] : [{ id: 10, technician_id: previous }];
       });
       t.mock.method(users, "findById", async (id, db) => { check(db); return { id: 8, role: "TECHNICIAN", is_active: true }; });
       for (const method of ["assignTechnician", "updateAssignment"]) {
@@ -52,7 +52,7 @@ for (const operation of ["self", "assign", "reassign", "noop", "unassign"]) {
       });
       const admin = { id: 1, role: "ADMIN" };
       const promise = operation === "self" ? service.selfAssignTicket(5, { id: 8, role: "TECHNICIAN" })
-        : operation === "unassign" ? service.unassignTicketByAdmin(5, admin)
+        : operation === "unassign" ? service.unassignTicketByAdmin(5, 10, admin)
           : service.assignTicketByAdmin(5, 8, admin);
       if (failAt) {
         await assert.rejects(promise, err => err === failure);

@@ -60,7 +60,7 @@ const selfAssignTicket = asyncHandler(async (req, res) => {
 });
 
 const unassignTicketByAdmin = asyncHandler(async (req, res) => {
-  const ticket = await service.unassignTicketByAdmin(req.params.id, req.user);
+  const ticket = await service.unassignTicketByAdmin(req.params.id, req.body.expectedAssignmentId, req.user);
   res.status(200).json({
     success: true, message: "Ticket unassigned successfully", data: { ticket },
   });
