@@ -1,3 +1,4 @@
+import AdminTechnicianWorkloadPage from '../pages/admin/AdminTechnicianWorkloadPage'
 import AdminTicketsPage from '../pages/admin/AdminTicketsPage'
 import AdminTicketDetailsPage from '../pages/admin/AdminTicketDetailsPage'
 import CategoryManagementPage from '../pages/admin/CategoryManagementPage'
@@ -92,6 +93,7 @@ function AppRoutes() {
             <Route path="categories" element={<CategoryManagementPage />} />
             <Route path="categories/new" element={<CategoryFormPage />} />
             <Route path="categories/:categoryId/edit" element={<CategoryFormPage />} />
+            <Route path="technicians/workload" element={<AdminTechnicianWorkloadPage />} />
             <Route path="technicians" element={<TechnicianManagementPage />} />
             <Route path="users" element={<UserManagementPage />} />
             <Route path="users/new" element={<CreateUserPage />} />

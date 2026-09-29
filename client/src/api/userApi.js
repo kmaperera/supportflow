@@ -7,8 +7,8 @@ export async function getAssignableTechnicians({ signal } = {}) {
   return data.data.technicians
 }
 
-export async function getTechnicianWorkloads({ signal } = {}) {
-  const { data } = await api.get(`${API_ENDPOINTS.USERS}/technician-workload`, { signal })
+export async function getTechnicianWorkloads({ signal, search } = {}) {
+  const { data } = await api.get(`${API_ENDPOINTS.USERS}/technician-workload`, { signal, ...(search?.trim() ? { params: { search: search.trim() } } : {}) })
   const technicians = data?.data?.technicians
   if (data?.success !== true || !Array.isArray(technicians) || technicians.some(user => !user?.id || !Number.isInteger(user.workload?.totalActive) || user.workload.totalActive < 0)) throw new Error('Invalid technician workload response')
   return technicians
