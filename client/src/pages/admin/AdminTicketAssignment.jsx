@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { assignTicket } from '../../api/ticketApi'
+import { assignTicket, unassignTicket } from '../../api/ticketApi'
 import { getAssignableTechnicians, getTechnicianWorkloads } from '../../api/userApi'
 import { getApiErrorMessage } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
@@ -66,6 +66,7 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
   const [confirm, setConfirm] = useState(false)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
+  const [unassignConfirmation, setUnassignConfirmation] = useState(null)
   const pending = useRef(false)
   const mounted = useRef(false)
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
@@ -78,9 +79,31 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
   }, [open, attempt])
   const assigned = ticket.assignedTo != null
   const eligible = !['RESOLVED', 'CLOSED'].includes(ticket.status)
+  const canUnassign = assigned && ticket.assignment?.id != null && ['ASSIGNED', 'IN_PROGRESS', 'WAITING_FOR_USER', 'REOPENED'].includes(ticket.status)
   const current = options?.attempt === attempt ? options : null
   const chosen = current?.data?.find(person => String(person.id) === selected)
   const counts = new Map(workload?.attempt === attempt ? workload.data?.map(person => [String(person.id), person.workload.totalActive]) : [])
+  async function removeAssignment() {
+    if (pending.current || !unassignConfirmation || !canUnassign) return
+    pending.current = true; setBusy(true); setNotice(null)
+    try {
+      // Keep the ID captured when confirmation opened; never substitute a newer assignment.
+      await unassignTicket(ticket.id, unassignConfirmation.id)
+      if (!mounted.current) return
+      setSelected(''); setConfirm(false); setOpen(false)
+      setNotice({ success: true, text: 'Ticket unassigned successfully.' })
+      await refresh()
+    } catch (error) {
+      if (!mounted.current) return
+      const message = error?.response?.data?.message
+      const safe = ['Ticket assignment has changed. Refresh and try again.', 'Ticket is already unassigned', 'Ticket cannot be unassigned in its current status', 'Ticket not found']
+      setNotice({ success: false, text: safe.includes(message) ? message : getApiErrorMessage(error, 'Unable to unassign ticket. Please try again.') })
+      await refresh()
+    } finally {
+      pending.current = false
+      if (mounted.current) { setBusy(false); setUnassignConfirmation(null) }
+    }
+  }
   async function save() {
     if (pending.current || !confirm || !chosen || !canConfirmAssignment(ticket, selected)) return
     pending.current = true; setBusy(true); setNotice(null)
@@ -103,6 +126,11 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
     <h2 id="assignment-heading" className="text-lg font-semibold">Assignment</h2>
     <dl><dt className="text-sm text-slate-500">Current technician</dt><dd className="mt-1 break-words">{assigned ? name(ticket.assignee) : 'Unassigned'}</dd></dl>
     {notice && <AuthFeedback variant={notice.success ? 'success' : 'error'}>{notice.text}</AuthFeedback>}
+    {unassignConfirmation ? <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-3">
+      <p className="font-medium">Unassign this ticket from {unassignConfirmation.name}?</p>
+      <p className="text-sm">The ticket will return to Open with no assigned technician. Assignment history will be retained and the removed technician will be notified.</p>
+      <div className="flex flex-wrap gap-3"><button type="button" className={button} disabled={busy} onClick={() => setUnassignConfirmation(null)}>Cancel</button><button type="button" className={`${button} border-red-700 text-red-700 hover:bg-red-50`} disabled={busy} onClick={removeAssignment}>{busy ? 'Unassigning...' : 'Confirm Unassign'}</button></div>
+    </div> : <div className="flex flex-wrap items-start gap-3">
     {!eligible ? <p className="text-sm text-slate-600">Assignment cannot be changed on resolved or closed tickets.</p> : !open ? <button className={button} disabled={busy} onClick={() => { setOpen(true); setAttempt(value => value + 1); setSelected(''); setConfirm(false) }}>{assigned ? 'Reassign' : 'Assign technician'}</button> : <div className="space-y-3">
       {!current && <p role="status">Loading technicians...</p>}
       {current?.error && <><AuthFeedback>Unable to load technicians.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></>}
@@ -115,6 +143,8 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
         </>}
       </>}
       <button className={`${button} ml-3`} disabled={busy} onClick={() => { setOpen(false); setConfirm(false) }}>Cancel</button>
+    </div>}
+    {!open && canUnassign && <button type="button" className={`${button} border-red-700 text-red-700 hover:bg-red-50`} disabled={busy} onClick={() => setUnassignConfirmation({ id: ticket.assignment.id, name: name(ticket.assignee) })}>Unassign</button>}
     </div>}
   </section>
 }

@@ -1,6 +1,12 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function unassignTicket(ticketId, expectedAssignmentId) {
+  const { data } = await api.patch(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/unassign`, { expectedAssignmentId })
+  if (data?.success !== true || !data.data?.ticket?.id) throw new Error('Invalid unassignment response')
+  return data.data.ticket
+}
+
 export async function assignTicket(ticketId, technicianId) {
   const { data } = await api.patch(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/assign`, { technicianId })
   if (data?.success !== true || !data.data?.ticket?.id) throw new Error('Invalid assignment response')
