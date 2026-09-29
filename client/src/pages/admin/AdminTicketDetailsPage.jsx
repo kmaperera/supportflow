@@ -6,6 +6,7 @@ import AuthFeedback from '../../auth/AuthFeedback'
 import TicketStatusTimeline from '../employee/TicketStatusTimeline'
 import AdminTicketMetadata from './AdminTicketMetadata'
 import AdminTicketAssignment from './AdminTicketAssignment'
+import NotificationReadNotice from '../shared/NotificationReadNotice'
 
 export default function AdminTicketDetailsPage() {
   const { ticketId } = useParams()
@@ -37,6 +38,7 @@ function TicketDetails({ ticketId }) {
   const ticket = current?.ticket
   const action = 'inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2'
   return <div className="space-y-5">
+    <NotificationReadNotice />
     <Link className={action} to="/admin/tickets">Back to tickets</Link>
     <h1 className="text-2xl font-semibold">Ticket Details</h1>
     {!current && <p role="status">Loading ticket...</p>}
