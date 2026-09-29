@@ -20,4 +20,9 @@ const setCategoryActiveStatus = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Knowledge Base category status updated successfully", data: { category } });
 });
 
-module.exports = { createCategory, updateCategory, setCategoryActiveStatus };
+const getCategories = asyncHandler(async (req, res) => {
+  const categories = await service.getCategories();
+  res.status(200).json({ success: true, message: "Knowledge Base categories retrieved successfully", data: { categories } });
+});
+
+module.exports = { getCategories, createCategory, updateCategory, setCategoryActiveStatus };

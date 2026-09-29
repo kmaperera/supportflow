@@ -105,4 +105,8 @@ async function setCategoryActiveStatus(categoryId, isActive, db) {
   return mapCategory(await requireCategory(categoryId, db));
 }
 
-module.exports = { createCategory, updateCategory, setCategoryActiveStatus };
+async function getCategories(db) {
+  return (await repository.findAll(db)).map(mapCategory);
+}
+
+module.exports = { getCategories, createCategory, updateCategory, setCategoryActiveStatus };

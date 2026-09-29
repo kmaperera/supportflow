@@ -14,6 +14,8 @@ const router = express.Router();
 router.post("/articles/suggestions", authenticate,
   authorizeRoles(USER_ROLES.EMPLOYEE, USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN), articleController.getSuggestedArticles);
 
+router.get("/categories", authenticate, authorizeRoles(USER_ROLES.ADMIN), controller.getCategories);
+
 router.post("/categories", authenticate, authorizeRoles(USER_ROLES.ADMIN),
   createCategoryValidation, validate, controller.createCategory);
 
