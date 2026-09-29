@@ -48,6 +48,7 @@ app.use("/api/v1/sla", slaPolicyRoutes);
 app.use("/api/v1/knowledge-base", knowledgeBaseRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/reports", reportsRoutes);
+app.use("/api/v1/audit-logs", require("./modules/audit/audit.routes"));
 
 app.use((req, res, next) => {
   next(new ApiError(404, `Route ${req.path} not found`));
