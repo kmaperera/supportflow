@@ -1,3 +1,5 @@
+import AdminKnowledgeBasePage from '../pages/admin/AdminKnowledgeBasePage'
+import KbArticleFormPage from '../pages/admin/KbArticleFormPage'
 import SlaSettingsPage from '../pages/admin/SlaSettingsPage'
 import AdminTechnicianWorkloadPage from '../pages/admin/AdminTechnicianWorkloadPage'
 import AdminTicketsPage from '../pages/admin/AdminTicketsPage'
@@ -90,6 +92,9 @@ function AppRoutes() {
         <Route element={<RoleRoute role={ROLES.ADMIN} />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboardPage />} />
+            <Route path="knowledge-base" element={<AdminKnowledgeBasePage />} />
+            <Route path="knowledge-base/articles/new" element={<KbArticleFormPage />} />
+            <Route path="knowledge-base/articles/:articleId/edit" element={<KbArticleFormPage />} />
             <Route path="sla" element={<SlaSettingsPage />} />
             <Route path="tickets" element={<AdminTicketsPage />} />
             <Route path="tickets/:ticketId" element={<AdminTicketDetailsPage />} />
@@ -100,7 +105,7 @@ function AppRoutes() {
             <Route path="technicians" element={<TechnicianManagementPage />} />
             <Route path="users" element={<UserManagementPage />} />
             <Route path="users/new" element={<CreateUserPage />} />
-            {adminNavigation.filter(item => item.phase && !['/admin', '/admin/users', '/admin/technicians', '/admin/categories', '/admin/tickets', '/admin/sla'].includes(item.path)).map(item => <Route key={item.path} path={item.path.slice('/admin/'.length)} element={<AdminPlaceholderPage title={item.title} phase={item.phase} />} />)}
+            {adminNavigation.filter(item => item.phase && !['/admin', '/admin/users', '/admin/technicians', '/admin/categories', '/admin/tickets', '/admin/sla', '/admin/knowledge-base'].includes(item.path)).map(item => <Route key={item.path} path={item.path.slice('/admin/'.length)} element={<AdminPlaceholderPage title={item.title} phase={item.phase} />} />)}
             <Route path="profile" element={<ProfilePage embedded />} />
             <Route path="dashboard" element={<Navigate to="/admin" replace />} />
             <Route path="*" element={<NotFoundPage />} />
