@@ -12,9 +12,9 @@ export default function TechnicianLayout() {
     .filter(value => typeof value === 'string' && value.trim()).map(value => value.trim()).join(' ')
   const displayName = name || (typeof user?.email === 'string' && user.email.trim()) || 'Technician'
 
-  return <div className="min-h-screen bg-slate-50 text-slate-900 [overflow-wrap:anywhere] lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] [&_.break-words]:[overflow-wrap:anywhere] [&_button]:min-h-11 [&_button]:max-w-full">
+  return <div className="workspace-ui min-h-screen bg-slate-50 text-slate-900 [overflow-wrap:anywhere] lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] [&_.break-words]:[overflow-wrap:anywhere] [&_button]:min-h-11 [&_button]:max-w-full">
     <a href="#technician-content" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-white focus:p-3 focus:text-teal-800">Skip to main content</a>
-    <aside className="border-b border-slate-200 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-y-auto lg:border-r lg:border-b-0">
+    <aside className="border-b border-slate-200 bg-white lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:overflow-y-auto lg:border-r lg:border-b-0">
       <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-6">
         <div className="min-w-0">
           <p className="text-xl font-bold tracking-tight text-teal-800">SupportFlow</p>

@@ -60,7 +60,7 @@ function LoginPage() {
   const inputClass = 'mt-2 block w-full rounded-lg border bg-white px-3.5 py-3 text-base text-slate-900 outline-none transition focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20'
 
   return (
-    <main className="min-h-screen bg-slate-50 font-sans text-slate-900 lg:grid lg:grid-cols-[1fr_1fr]">
+    <main className="auth-ui min-h-screen bg-slate-50 font-sans text-slate-900 lg:grid lg:grid-cols-[1fr_1fr]">
       <section className="relative hidden flex-col justify-between overflow-hidden bg-slate-900 px-12 py-12 text-white lg:flex xl:px-20" aria-label="About SupportFlow">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-400 text-xl font-bold text-slate-900" aria-hidden="true">S</span>

@@ -43,7 +43,7 @@ function TechnicianCombobox({ technicians, counts, selected, currentId, disabled
   return <div className="relative min-w-0" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) { setExpanded(false); setActive(-1) } }}>
     <label htmlFor={id} className="block text-sm font-medium">Technician</label>
     <input id={id} role="combobox" aria-autocomplete="list" aria-expanded={isOpen} aria-controls={`${id}-list`} aria-activedescendant={isOpen && options[active] ? `${id}-option-${active}` : undefined} autoComplete="off" className={input} disabled={disabled} placeholder="Search or select a technician..." value={isOpen ? query : chosen ? name(chosen) : ''} onFocus={open} onClick={open} onKeyDown={keyDown} onChange={event => { setQuery(event.target.value); setExpanded(true); setActive(-1); onSelect('') }} />
-    {isOpen && <div className="absolute inset-x-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-lg border border-slate-300 bg-white shadow-lg">
+    {isOpen && <div className="absolute inset-x-0 top-full z-20 mt-1 max-h-[min(16rem,45dvh)] overflow-y-auto rounded-lg border border-slate-300 bg-white shadow-lg">
       <ul id={`${id}-list`} role="listbox" aria-label="Assignable technicians" ref={list}>{options.map((person, index) => {
         const current = String(person.id) === String(currentId)
         return <li id={`${id}-option-${index}`} key={person.id} role="option" aria-selected={String(person.id) === selected} aria-disabled={current} className={`min-w-0 break-words p-3 text-sm ${current ? 'cursor-not-allowed text-slate-500' : 'cursor-pointer hover:bg-teal-50'} ${active === index ? 'bg-teal-50 ring-1 ring-inset ring-teal-700' : ''}`} onMouseDown={event => event.preventDefault()} onClick={() => select(person)}>

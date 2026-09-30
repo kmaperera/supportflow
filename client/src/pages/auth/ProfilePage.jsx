@@ -19,7 +19,7 @@ export default function ProfilePage({ embedded = false }) {
   const initials = names.map(name => Array.from(name)[0]).join('').toUpperCase() || '?'
   const role = roleLabels[user.role]
   return (
-    <Container className={embedded ? 'min-w-0' : 'min-h-screen bg-slate-50 px-4 py-6 sm:px-6 sm:py-16'}>
+    <Container className={embedded ? 'auth-ui min-w-0' : 'auth-ui min-h-screen bg-slate-50 px-4 py-6 sm:px-6 sm:py-16'}>
       <div className="mx-auto max-w-2xl">
         {!embedded && <Link to={getRoleHome(user.role)} className="rounded text-sm font-semibold text-teal-800 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700">Return to dashboard</Link>}
         <h1 className={`${embedded ? '' : 'mt-6 '}text-2xl sm:text-3xl font-semibold text-slate-900`}>My Profile</h1>

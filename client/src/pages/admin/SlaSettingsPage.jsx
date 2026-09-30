@@ -22,7 +22,7 @@ export default function SlaSettingsPage() {
     {success && <AuthFeedback variant="success">SLA policy updated successfully.</AuthFeedback>}
     {!current && <p role="status">Loading SLA settings...</p>}
     {current?.error && <div className="space-y-3"><AuthFeedback>Unable to load SLA settings.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></div>}
-    {current?.data && (!current.data.length ? <p>No SLA policies found.</p> : <div className="grid min-w-0 gap-4 lg:grid-cols-2">{current.data.map(policy => <PolicyCard key={policy.id} policy={policy} onSaved={() => { setSuccess(true); setAttempt(value => value + 1) }} />)}</div>)}
+    {current?.data && (!current.data.length ? <p>No SLA policies found.</p> : <div className="grid min-w-0 gap-4 xl:grid-cols-2">{current.data.map(policy => <PolicyCard key={policy.id} policy={policy} onSaved={() => { setSuccess(true); setAttempt(value => value + 1) }} />)}</div>)}
   </div>
 }
 function PolicyCard({ policy, onSaved }) {
