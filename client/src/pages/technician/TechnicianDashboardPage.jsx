@@ -1,4 +1,6 @@
-﻿import { useEffect, useState } from 'react'
+import PageHeader from '../../layouts/PageHeader'
+import SummaryCard from '../../layouts/SummaryCard'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import AuthFeedback from '../../auth/AuthFeedback'
@@ -6,7 +8,7 @@ import { getApiErrorMessage } from '../../api/apiError'
 import { getTechnicianDashboard } from '../../api/dashboardApi'
 import { ticketStatuses, formatTicketStatus, formatTicketPriority, formatTicketDate } from '../employee/ticketFormatting'
 
-const panelClass = 'min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6'
+const panelClass = 'min-w-0 layout-panel'
 const actionClass = 'inline-flex min-h-11 items-center rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700'
 
 export default function TechnicianDashboardPage() {
@@ -27,15 +29,11 @@ function TechnicianDashboard({ user }) {
     return () => controller.abort()
   }, [attempt])
   const firstName = typeof user?.firstName === 'string' ? user.firstName.trim() : ''
-  return <div className="space-y-6">
-    <section aria-labelledby="technician-dashboard-heading">
-      <h1 id="technician-dashboard-heading" className="text-2xl font-semibold sm:text-3xl">Welcome back{firstName ? `, ${firstName}` : ''}</h1>
-      <p className="mt-2 text-slate-600">Here's an overview of your support workload.</p>
-      <div className="mt-5 flex flex-wrap gap-3">
+  return <div className="layout-page">
+    <PageHeader titleId="technician-dashboard-heading" title={<>Welcome back{firstName ? `, ${firstName}` : ''}</>} description="Here's an overview of your support workload." actions={<>
         <Link to="/technician/tickets/assigned" className={actionClass}>View My Assigned Tickets</Link>
         <Link to="/technician/tickets/unassigned" className={actionClass}>View Unassigned Queue</Link>
-      </div>
-    </section>
+      </>} />
     {state.loading && <p role="status" className={panelClass}>Loading dashboard...</p>}
     {state.error && <div className={panelClass}>
       <AuthFeedback>{state.error}</AuthFeedback>
@@ -53,10 +51,7 @@ export function TechnicianDashboardContent({ data: { summary, tickets, sla } }) 
       {[
         ['Active Assigned Tickets', summary.activeAssignedTickets], ['Assigned', summary.assignedTickets],
         ['Waiting for User', summary.waitingForUserTickets], ['Resolved Tickets', summary.resolvedTickets],
-      ].map(([label, count]) => <div key={label} className={panelClass}>
-        <dt className="text-sm font-medium text-slate-600">{label}</dt>
-        <dd className="mt-3 text-3xl font-semibold tabular-nums">{count}</dd>
-      </div>)}
+      ].map(([label, count]) => <SummaryCard key={label} label={label} value={count} />)}
     </dl>
     <section className={panelClass} aria-labelledby="recent-assigned-heading">
       <h2 id="recent-assigned-heading" className="text-lg font-semibold">Recent Assigned Tickets</h2>

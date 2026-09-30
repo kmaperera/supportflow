@@ -25,7 +25,7 @@ export default function TicketResolveControl({ ticket, userId, summary, onSummar
       <div id="resolution-error">{error && <AuthFeedback>{error}</AuthFeedback>}</div>
       {confirming ? <div className="space-y-3">
         <p className="text-sm font-semibold">Resolve this ticket?</p>
-        <div className="flex flex-wrap gap-3">
+        <div className="layout-actions">
           <button type="button" disabled={pending} className={buttonClass} onClick={() => setConfirming(false)}>Cancel</button>
           <button type="button" disabled={pending || resolving || !summary.trim()} className={buttonClass} onClick={onResolve}>{resolving ? 'Resolving...' : 'Confirm Resolve'}</button>
         </div>

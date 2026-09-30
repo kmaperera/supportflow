@@ -49,12 +49,12 @@ function CategoryForm({ id }) {
       }
     } finally { pending.current = false; if (mounted.current) setSaving(false) }
   }
-  return <div className="max-w-3xl space-y-5">
+  return <div className="layout-narrow layout-page">
     <h1 className="text-2xl font-semibold">{id ? 'Edit Category' : 'Add Category'}</h1>
-    {!loaded ? loadError ? <div className="space-y-3"><AuthFeedback>Unable to load category.</AuthFeedback><button className={button} onClick={() => { setLoadError(false); setAttempt(value => value + 1) }}>Retry</button><button className={`${button} ml-3`} onClick={() => navigate('/admin/categories')}>Cancel</button></div> : <p role="status">Loading category...</p> : <form onSubmit={submit} noValidate className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
+    {!loaded ? loadError ? <div className="space-y-3"><AuthFeedback>Unable to load category.</AuthFeedback><button className={button} onClick={() => { setLoadError(false); setAttempt(value => value + 1) }}>Retry</button><button className={`${button} ml-3`} onClick={() => navigate('/admin/categories')}>Cancel</button></div> : <p role="status">Loading category...</p> : <form onSubmit={submit} noValidate className="space-y-4 layout-panel">
       {error && <AuthFeedback>{error}</AuthFeedback>}
       {['name', 'description'].map(field => <div key={field}><label htmlFor={`category-${field}`} className="text-sm font-semibold">{field === 'name' ? 'Name *' : 'Description (optional)'}</label>{field === 'name' ? <input id="category-name" required className={input} value={values.name} disabled={saving} aria-invalid={Boolean(errors.name)} aria-describedby="category-name-error" onChange={event => { setValues(previous => ({ ...previous, name: event.target.value })); setErrors(previous => ({ ...previous, name: null })) }} /> : <textarea id="category-description" rows={3} className={input} disabled={saving} value={values.description} aria-invalid={Boolean(errors.description)} aria-describedby="category-description-error" onChange={event => { setValues(previous => ({ ...previous, description: event.target.value })); setErrors(previous => ({ ...previous, description: null })) }} />}<div id={`category-${field}-error`}>{errors[field] && <p role="alert" className="mt-1 text-sm text-red-700">{errors[field]}</p>}</div></div>)}
-      <div className="flex flex-wrap gap-3"><button className={button} type="submit" disabled={saving}>{saving ? id ? 'Saving...' : 'Creating...' : id ? 'Save Category' : 'Create Category'}</button><button className={button} type="button" disabled={saving} onClick={() => navigate('/admin/categories')}>Cancel</button></div>
+      <div className="layout-actions"><button className={button} type="submit" disabled={saving}>{saving ? id ? 'Saving...' : 'Creating...' : id ? 'Save Category' : 'Create Category'}</button><button className={button} type="button" disabled={saving} onClick={() => navigate('/admin/categories')}>Cancel</button></div>
     </form>}
   </div>
 }

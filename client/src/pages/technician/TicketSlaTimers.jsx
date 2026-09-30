@@ -40,7 +40,7 @@ function TimingCard({ title, dueAt, completedAt, completedLabel, timestampLabel,
 
 export default function TicketSlaTimers({ ticket }) {
   const stopped = ['RESOLVED', 'CLOSED'].includes(ticket.status)
-  return <section aria-labelledby="sla-heading" className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
+  return <section aria-labelledby="sla-heading" className="min-w-0 layout-panel">
     <h2 id="sla-heading" className="text-lg font-semibold">SLA</h2>
     <div className="mt-4 grid min-w-0 gap-4 md:grid-cols-2">
       <TimingCard key={`response:${ticket.id}:${ticket.responseDueAt}:${ticket.firstResponseAt}:${ticket.status}`} title="Response SLA" createdAt={ticket.createdAt} recordedBreach={ticket.slaResponseBreached} dueAt={ticket.responseDueAt} completedAt={ticket.firstResponseAt} completedLabel="Responded" timestampLabel="First response" stopped={stopped} />

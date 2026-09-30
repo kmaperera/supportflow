@@ -1,3 +1,5 @@
+import PageContainer from './PageContainer'
+import WorkspaceHeader from './WorkspaceHeader'
 import { NavLink, Outlet, matchPath } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import LogoutButton from '../auth/LogoutButton'
@@ -28,11 +30,8 @@ export default function AdminLayout() {
       </div>
     </aside>
     <div className="min-w-0">
-      <header className="flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-        <p className="min-w-0 font-semibold">{page?.title || 'Admin workspace'}</p>
-        <div className="min-w-0 sm:max-w-[60%] sm:text-right"><p className="text-sm font-medium">{displayName}</p><p className="mt-1 text-xs text-slate-500">Admin</p></div>
-      </header>
-      <main id="admin-content" tabIndex={-1} className="w-full min-w-0 p-4 sm:p-6 lg:p-8"><Outlet /></main>
+      <WorkspaceHeader title={page?.title || 'Admin workspace'} displayName={displayName} role="Admin" />
+      <PageContainer id="admin-content"><Outlet /></PageContainer>
     </div>
   </div>
 }

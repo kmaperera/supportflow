@@ -37,7 +37,7 @@ function TicketDetails({ ticketId }) {
   const current = result?.attempt === attempt ? result : null
   const ticket = current?.ticket
   const action = 'inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2'
-  return <div className="space-y-5">
+  return <div className="layout-page">
     <NotificationReadNotice />
     <Link className={action} to="/admin/tickets">Back to tickets</Link>
     <h1 className="text-2xl font-semibold">Ticket Details</h1>
@@ -45,7 +45,7 @@ function TicketDetails({ ticketId }) {
     {current?.error && <div className="space-y-3"><AuthFeedback>{current.error}</AuthFeedback><button className={action} onClick={() => setAttempt(value => value + 1)}>Retry</button></div>}
     {ticket && <>
       {refreshError && <div><AuthFeedback>{refreshError}</AuthFeedback><button className={action} onClick={refresh}>Retry refresh</button></div>}
-      <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6"><p className="break-all text-sm font-semibold text-teal-800">{ticket.ticketNumber}</p><h2 className="mt-1 break-words text-xl font-semibold">{ticket.title}</h2><AdminTicketMetadata ticket={ticket} detail /><h3 className="mt-6 font-semibold">Description</h3><p className="mt-2 whitespace-pre-wrap break-words text-slate-700">{ticket.description}</p></section>
+      <section className="min-w-0 layout-panel"><p className="break-all text-sm font-semibold text-teal-800">{ticket.ticketNumber}</p><h2 className="mt-1 break-words text-xl font-semibold">{ticket.title}</h2><AdminTicketMetadata ticket={ticket} detail /><h3 className="mt-6 font-semibold">Description</h3><p className="mt-2 whitespace-pre-wrap break-words text-slate-700">{ticket.description}</p></section>
       {!refreshError && <AdminTicketAssignment ticket={ticket} refresh={refresh} />}
       <TicketStatusTimeline key={revision} ticketId={ticket.id} />
     </>}

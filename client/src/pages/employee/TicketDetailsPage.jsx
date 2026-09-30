@@ -1,3 +1,4 @@
+import MetadataList from '../../layouts/MetadataList'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -42,7 +43,7 @@ function TicketDetails({ ticketId }) {
     })
     return () => controller.abort()
   }, [ticketId, attempt])
-  return <div className="space-y-6">
+  return <div className="layout-page">
     <Link to="/employee/tickets" className="inline-block rounded text-sm font-semibold text-teal-800 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2">Back to My Tickets</Link>
     {notice && <AuthFeedback variant={notice.error ? 'error' : 'success'}>{notice.text}</AuthFeedback>}
     {state.ticket?.status === 'RESOLVED' && user?.id != null && String(state.ticket.createdBy) === String(user.id) && <div className="flex flex-wrap items-start gap-3"><CloseTicketButton disabled={actionPending} onPendingChange={setActionPending} ticketId={ticketId} onClosed={ticket => {
@@ -91,7 +92,7 @@ export function TicketDetailsContent({ ticket }) {
     ...(ticket.closedAt ? [['Closed', formatTicketDate(ticket.closedAt)]] : []),
   ]
   return <>
-    <header className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 lg:p-8">
+    <header className="layout-panel">
       <p className="break-all text-sm font-semibold text-teal-800">{ticket.ticketNumber}</p>
       <h1 className="mt-2 break-words text-2xl font-semibold">{ticket.title}</h1>
       <dl className="mt-4 flex flex-wrap gap-6 text-sm">
@@ -99,13 +100,11 @@ export function TicketDetailsContent({ ticket }) {
         <div><dt className="text-slate-500">Priority</dt><dd className="mt-1 font-semibold">{formatTicketPriority(ticket.priority?.name)}</dd></div>
       </dl>
     </header>
-    <section aria-labelledby="ticket-metadata-heading" className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 lg:p-8">
+    <section aria-labelledby="ticket-metadata-heading" className="layout-panel">
       <h2 id="ticket-metadata-heading" className="text-lg font-semibold">Ticket information</h2>
-      <dl className="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-        {metadata.map(([label, value]) => <div key={label}><dt className="text-sm text-slate-500">{label}</dt><dd className="mt-1 break-words text-sm">{value}</dd></div>)}
-      </dl>
+      <MetadataList fields={metadata} />
     </section>
-    <section aria-labelledby="ticket-description-heading" className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 lg:p-8">
+    <section aria-labelledby="ticket-description-heading" className="layout-panel">
       <h2 id="ticket-description-heading" className="text-lg font-semibold">Description</h2>
       <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">{ticket.description}</p>
     </section>

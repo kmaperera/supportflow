@@ -1,3 +1,4 @@
+import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -26,11 +27,8 @@ function AssignedTickets() {
     return () => controller.abort()
   }, [request])
   const current = result?.request === request ? result : null
-  return <div className="space-y-6">
-    <header>
-      <h1 className="text-2xl font-semibold">My Assigned Tickets</h1>
-      <p className="mt-2 text-slate-600">Your active workload: Assigned, In Progress, Waiting for User, and Reopened tickets.</p>
-    </header>
+  return <div className="layout-page">
+    <PageHeader title="My Assigned Tickets" description="Your active workload: Assigned, In Progress, Waiting for User, and Reopened tickets." />
     {!current && <p role="status">Loading assigned tickets...</p>}
     {current?.error && <div className="space-y-3"><AuthFeedback>{current.error}</AuthFeedback>
       <button type="button" className={actionClass} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button>
@@ -48,7 +46,7 @@ function AssignedTickets() {
 }
 
 export function AssignedTicketsList({ tickets, totalRecords }) {
-  if (!tickets.length) return <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
+  if (!tickets.length) return <section className="layout-panel">
     <h2 className="text-lg font-semibold">{totalRecords === 0 ? "You don't have any assigned tickets right now." : 'No assigned tickets on this page.'}</h2>
     <Link to="/technician/tickets/unassigned" className={`${actionClass} mt-4`}>View Unassigned Queue</Link>
   </section>

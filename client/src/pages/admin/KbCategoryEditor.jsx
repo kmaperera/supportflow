@@ -33,6 +33,6 @@ export default function KbCategoryEditor({ category, onSaved, onCancel }) {
       {field === 'name' ? <input id={`kb-category-${field}`} required className={input} disabled={saving} value={values[field]} onChange={event => { setValues(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [field]: null })) }} aria-invalid={Boolean(errors[field])} aria-describedby={`kb-category-${field}-error`} /> : <textarea id={`kb-category-${field}`} rows={3} className={input} disabled={saving} value={values[field]} onChange={event => { setValues(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [field]: null })) }} aria-invalid={Boolean(errors[field])} aria-describedby={`kb-category-${field}-error`} />}
       <p id={`kb-category-${field}-error`} role={errors[field] ? 'alert' : undefined} className="mt-1 text-sm text-red-700">{errors[field]}</p>
     </div>)}
-    <div className="flex flex-wrap gap-3"><button className={button} disabled={saving}>{saving ? category ? 'Saving...' : 'Creating...' : category ? 'Save KB Category' : 'Create KB Category'}</button><button type="button" className={button} disabled={saving} onClick={onCancel}>Cancel</button></div>
+    <div className="layout-actions"><button className={button} disabled={saving}>{saving ? category ? 'Saving...' : 'Creating...' : category ? 'Save KB Category' : 'Create KB Category'}</button><button type="button" className={button} disabled={saving} onClick={onCancel}>Cancel</button></div>
   </form>
 }

@@ -5,7 +5,7 @@ import { getTicketCategories, getTicketPriorities } from '../../api/ticketApi'
 const controlClass = 'mt-1 block min-h-11 w-full min-w-0 rounded-lg border border-slate-300 bg-white p-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-teal-700'
 
 export default function QueueFilters({ query, search, setSearch, onChange, onSearch, onReset }) {
-  return <form aria-label="Queue search and filters" onSubmit={event => { event.preventDefault(); onSearch() }} className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 [&_select]:min-h-11 [&_select]:text-base sm:[&_select]:text-sm">
+  return <form aria-label="Queue search and filters" onSubmit={event => { event.preventDefault(); onSearch() }} className="space-y-4 layout-panel [&_select]:min-h-11 [&_select]:text-base sm:[&_select]:text-sm">
     <div className="flex flex-wrap items-end gap-3">
       <label className="min-w-0 basis-full text-sm font-medium sm:flex-1">Search
         <input type="search" maxLength={200} placeholder="Search tickets..." value={search} onChange={event => setSearch(event.target.value)} aria-describedby="queue-search-hint" className={controlClass} />

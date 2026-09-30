@@ -1,3 +1,4 @@
+import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { auditFilterFields, getAuditLogs } from '../../api/auditApi'
 import { getApiErrorMessage } from '../../api/apiError'
@@ -35,18 +36,18 @@ export default function AdminAuditLogsPage() {
     if (!Object.keys(next).length) setRequest({ filters, page: 1 })
   }
   function clear() { setDraft(blank()); setErrors({}); setRequest({ filters: blank(), page: 1 }) }
-  return <div className="space-y-5">
-    <header><h1 className="text-2xl font-semibold">Audit Logs</h1><p className="mt-1 text-slate-600">Review administrative and security-related events.</p></header>
-    <form onSubmit={apply} noValidate className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
+  return <div className="layout-page">
+    <PageHeader title="Audit Logs" description="Review administrative and security-related events." />
+    <form onSubmit={apply} noValidate className="space-y-4 layout-panel">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{auditFilterFields.map(field => <div key={field} className="min-w-0"><label htmlFor={`audit-${field}`} className="text-sm font-semibold">{labels[field]}</label><input id={`audit-${field}`} className="mt-1 block min-h-11 w-full min-w-0 rounded-lg border border-slate-300 p-3 focus-visible:outline-2 focus-visible:outline-teal-700" type={field.endsWith('Date') ? 'date' : field === 'search' ? 'search' : 'text'} inputMode={field.endsWith('Id') ? 'numeric' : undefined} maxLength={field === 'search' ? 200 : field.endsWith('Id') ? 20 : 100} value={draft[field]} onChange={event => { setDraft(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [field]: null })) }} aria-invalid={Boolean(errors[field])} aria-describedby={`audit-${field}-error`} /><p id={`audit-${field}-error`} role={errors[field] ? 'alert' : undefined} className="mt-1 text-sm text-red-700">{errors[field]}</p></div>)}</div>
       <p className="text-sm text-slate-500">Search matches action and description. Dates include the full UTC calendar day. Results appear newest first.</p>
-      <div className="flex flex-wrap gap-3"><button type="submit" className={button} disabled={!current}>Apply filters</button><button type="button" className={button} onClick={clear} disabled={!Object.values(draft).some(Boolean) && !filtered}>Clear filters</button></div>
+      <div className="layout-actions"><button type="submit" className={button} disabled={!current}>Apply filters</button><button type="button" className={button} onClick={clear} disabled={!Object.values(draft).some(Boolean) && !filtered}>Clear filters</button></div>
     </form>
     {unapplied && <p className="text-sm text-slate-600">Apply filters to update the results.</p>}
     {!current && <p role="status">Loading audit logs...</p>}
     {current?.error && <div className="space-y-3"><AuthFeedback>{current.error}</AuthFeedback><button className={button} onClick={() => setRequest(previous => ({ ...previous }))}>Retry</button></div>}
-    {current?.data && <section className="min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6" aria-label="Audit records">
-      {!current.data.logs.length ? <p>{filtered ? 'No audit logs match your current filters.' : 'No audit logs found.'}</p> : <div className="overflow-x-auto focus-visible:outline-2 focus-visible:outline-teal-700" tabIndex={0} aria-label="Scrollable audit table"><table className="w-full text-left text-sm"><caption className="sr-only">Audit logs, newest first</caption><thead><tr>{['Time', 'Actor', 'Action', 'Target', 'Details'].map(label => <th scope="col" className="p-3" key={label}>{label}</th>)}</tr></thead><tbody>{current.data.logs.map(log => <tr key={log.id} className="border-t border-slate-200">
+    {current?.data && <section className="min-w-0 space-y-4 layout-panel" aria-label="Audit records">
+      {!current.data.logs.length ? <p>{filtered ? 'No audit logs match your current filters.' : 'No audit logs found.'}</p> : <div className="layout-table focus-visible:outline-2 focus-visible:outline-teal-700" tabIndex={0} aria-label="Scrollable audit table"><table className="w-full text-left text-sm"><caption className="sr-only">Audit logs, newest first</caption><thead><tr>{['Time', 'Actor', 'Action', 'Target', 'Details'].map(label => <th scope="col" className="p-3" key={label}>{label}</th>)}</tr></thead><tbody>{current.data.logs.map(log => <tr key={log.id} className="border-t border-slate-200">
         <td className="min-w-40 p-3 align-top"><time dateTime={log.createdAt} title={log.createdAt}>{formatTicketDate(log.createdAt)}</time></td>
         <td className="min-w-40 p-3 align-top">{log.actor ? <><p>{log.actor.name || log.actor.email || `User ${log.actor.id}`}</p>{log.actor.email && <p className="break-all text-slate-500">{log.actor.email}</p>}{log.actor.role && <p className="text-xs text-slate-500">{log.actor.role}</p>}</> : 'No actor recorded'}</td>
         <td className="min-w-40 break-words p-3 align-top">{log.action}{log.metadata?.isDemo && <p className="mt-1 font-semibold text-slate-500">Demo record</p>}</td>

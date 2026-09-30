@@ -5,7 +5,7 @@ import { formatTicketPriority } from '../employee/ticketFormatting'
 import { canManagePriority } from './ticketPriorityEligibility'
 
 export default function TicketPriorityControl({ ticket, userId, pending, onUpdate }) {
-  return <section aria-labelledby="ticket-priority-heading" className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
+  return <section aria-labelledby="ticket-priority-heading" className="min-w-0 layout-panel">
     <h2 id="ticket-priority-heading" className="text-lg font-semibold">Priority</h2>
     <p className="mt-3 text-sm">Current priority: <span className="font-semibold">{formatTicketPriority(ticket.priority?.name)}</span></p>
     {canManagePriority(ticket, userId) && <PriorityForm key={String(ticket.priority?.id)} ticket={ticket} pending={pending} onUpdate={onUpdate} />}

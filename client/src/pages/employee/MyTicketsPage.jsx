@@ -1,3 +1,4 @@
+import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -45,11 +46,8 @@ function MyTickets() {
     return () => controller.abort()
   }, [request])
   const current = result?.request === request ? result : null
-  return <div className="space-y-6">
-    <header className="flex flex-wrap items-start justify-between gap-4">
-      <div><h1 className="text-2xl font-semibold">My Tickets</h1><p className="mt-2 text-slate-600">Track your support requests and their current status.</p></div>
-      <Link to="/employee/tickets/new" className={actionClass}>Create Ticket</Link>
-    </header>
+  return <div className="layout-page">
+    <PageHeader title="My Tickets" description="Track your support requests and their current status." actions={<><Link to="/employee/tickets/new" className={actionClass}>Create Ticket</Link></>} />
     <TicketFilters query={request} search={search} setSearch={setSearch} onChange={changeFilters} onSearch={() => changeFilters({})} onReset={resetFilters} />
     {createdNumber && <div>
       <AuthFeedback variant="success">Ticket {createdNumber} created successfully.</AuthFeedback>

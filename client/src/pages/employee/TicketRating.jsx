@@ -31,7 +31,7 @@ export default function TicketRating({ ticketId, onConflict }) {
       setError([403, 404].includes(cause?.response?.status) ? 'Feedback is not available for this ticket.' : cause?.response?.status === 422 ? 'Choose a rating from 1 to 5 and keep feedback within 1,000 characters.' : getApiErrorMessage(cause, 'Unable to save your rating. Please try again.'))
     } finally { pending.current = false; setSubmitting(false) }
   }
-  return <section aria-labelledby="rating-heading" className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 lg:p-8">
+  return <section aria-labelledby="rating-heading" className="min-w-0 layout-panel">
     <h2 id="rating-heading" className="text-lg font-semibold">Rate Support</h2>
     {!editing && saved ? <div className="mt-4 space-y-3">
       <AuthFeedback variant="success">Your support rating was saved.</AuthFeedback>
@@ -50,7 +50,7 @@ export default function TicketRating({ ticketId, onConflict }) {
         <textarea id="support-feedback" value={comment} onChange={event => setComment(event.target.value)} maxLength={1000} rows={4} className="block w-full min-w-0 resize-y rounded-lg border border-slate-300 p-3 text-sm focus-visible:outline-2 focus-visible:outline-teal-700" />
         <p className="text-xs text-slate-500">Maximum 1,000 characters.</p>
       </fieldset>
-      <div className="flex flex-wrap gap-3">
+      <div className="layout-actions">
         <button type="submit" disabled={submitting} className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50">{submitting ? 'Submitting...' : saved ? 'Update Rating' : 'Submit Rating'}</button>
         {saved && <button type="button" disabled={submitting} onClick={() => { setRating(String(saved.rating)); setComment(saved.comment || ''); setError(null); setEditing(false) }} className="rounded px-3 py-2 text-sm underline focus-visible:outline-2">Cancel</button>}
       </div>

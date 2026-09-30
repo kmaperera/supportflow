@@ -1,3 +1,4 @@
+import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getPublishedArticles } from '../../api/knowledgeBaseApi'
@@ -21,8 +22,8 @@ export default function KnowledgeBasePage() {
   }, [request])
   const current = result?.request === request ? result : null
   function reset() { setSearch(''); setRequest({ page: 1, search: '', attempt: 0 }) }
-  return <div className="space-y-5">
-    <h1 className="text-2xl font-semibold">Knowledge Base</h1>
+  return <div className="layout-page">
+    <PageHeader title="Knowledge Base" />
     <p className="text-slate-600">Find helpful guides and answers for common support issues.</p>
     <form onSubmit={event => { event.preventDefault(); setRequest({ page: 1, search: search.trim(), attempt: request.attempt + 1 }) }} className="flex flex-wrap items-end gap-3">
       <label className="min-w-0 basis-full sm:flex-1 text-sm font-semibold">Search articles<input type="search" maxLength={200} value={search} onChange={event => setSearch(event.target.value)} className="mt-2 block w-full rounded-lg border border-slate-300 bg-white p-3 focus-visible:outline-2 focus-visible:outline-teal-700" placeholder="Search titles and content..." /></label>

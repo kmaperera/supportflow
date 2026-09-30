@@ -1,3 +1,4 @@
+import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -11,11 +12,8 @@ const sections = [['status', 'Workload by status'], ['priority', 'Workload by pr
 export default function TechnicianWorkloadPage() {
   const { user } = useAuth()
   const [revision, setRevision] = useState(0)
-  return <div className="space-y-6">
-    <header className="space-y-3"><h1 className="text-2xl font-semibold">My Workload &amp; Statistics</h1>
-      <p className="text-slate-600">Statistics for tickets currently assigned to you, across all dates. Reassigned tickets are not included.</p>
-      <div className="flex flex-wrap gap-3"><Link className={buttonClass} to="/technician/tickets/assigned">View My Assigned Tickets</Link><button type="button" className={buttonClass} onClick={() => setRevision(value => value + 1)}>Refresh</button></div>
-    </header>
+  return <div className="layout-page">
+    <PageHeader title="My Workload &amp; Statistics" description="Statistics for tickets currently assigned to you, across all dates. Reassigned tickets are not included." actions={<><Link className={buttonClass} to="/technician/tickets/assigned">View My Assigned Tickets</Link><button type="button" className={buttonClass} onClick={() => setRevision(value => value + 1)}>Refresh</button></>} />
     <div className="grid min-w-0 gap-6 lg:grid-cols-2">{sections.map(([kind, title]) => <StatisticsSection key={`${user?.id}:${kind}:${revision}`} kind={kind} title={title} />)}</div>
   </div>
 }
@@ -31,7 +29,7 @@ function StatisticsSection({ kind, title }) {
     return () => controller.abort()
   }, [kind, attempt])
   const current = result?.attempt === attempt ? result : null
-  return <section className="min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
+  return <section className="min-w-0 space-y-4 layout-panel">
     <h2 className="text-lg font-semibold">{title}</h2>
     {!current ? <p role="status">Loading workload statistics...</p> : current.error ? <><AuthFeedback>Unable to load workload statistics.</AuthFeedback><button type="button" className={buttonClass} onClick={() => setAttempt(value => value + 1)}>Retry</button></> : <StatisticsContent kind={kind} data={current.data} />}
   </section>

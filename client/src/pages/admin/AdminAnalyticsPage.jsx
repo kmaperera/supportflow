@@ -1,3 +1,5 @@
+import PageHeader from '../../layouts/PageHeader'
+import SummaryCard from '../../layouts/SummaryCard'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
@@ -10,8 +12,8 @@ const button = 'inline-flex min-h-11 cursor-pointer items-center rounded-lg bord
 export default function AdminAnalyticsPage() {
   const [revision, setRevision] = useState(0)
   const [period, setPeriod] = useState('monthly')
-  return <div className="space-y-6">
-    <header className="space-y-3"><h1 className="text-2xl font-semibold">Analytics Dashboard</h1><p className="text-slate-600">Organization-wide support metrics across all dates, except the created-ticket trend's selected period.</p><button className={button} onClick={() => setRevision(value => value + 1)}>Refresh analytics</button></header>
+  return <div className="layout-page">
+    <PageHeader title="Analytics Dashboard" description="Organization-wide support metrics across all dates, except the created-ticket trend's selected period." actions={<><button className={button} onClick={() => setRevision(value => value + 1)}>Refresh analytics</button></>} />
     <AnalyticsSection key={`summary:${revision}`} kind="summary" title="Ticket overview" />
     <section className="space-y-3"><label htmlFor="analytics-period" className="block text-sm font-semibold">Created-ticket trend period</label><select id="analytics-period" className="min-h-11 w-full max-w-sm rounded-lg border border-slate-300 bg-white p-3 focus-visible:outline-2 focus-visible:outline-teal-700" value={period} onChange={event => setPeriod(event.target.value)}><option value="monthly">Last 12 months (UTC)</option><option value="daily">Last 30 days (UTC)</option></select><AnalyticsSection key={`trend:${period}:${revision}`} kind="trend" title="Created-ticket trend" period={period} /></section>
     <div className="grid min-w-0 gap-6 xl:grid-cols-2">{[['status', 'Ticket status distribution'], ['priority', 'Ticket priority distribution'], ['category', 'Tickets by category'], ['response', 'Average first-response time'], ['resolution', 'Average resolution time'], ['satisfaction', 'Support satisfaction']].map(([kind, title]) => <AnalyticsSection key={`${kind}:${revision}`} kind={kind} title={title} />)}</div>
@@ -30,7 +32,7 @@ function AnalyticsSection({ kind, title, period }) {
     return () => controller.abort()
   }, [kind, period, attempt])
   const current = result?.attempt === attempt ? result : null
-  return <section className="min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6"><h2 className="text-lg font-semibold">{title}</h2>
+  return <section className="min-w-0 space-y-4 layout-panel"><h2 className="text-lg font-semibold">{title}</h2>
     {!current ? <p role="status">Loading analytics...</p> : current.error ? <><AuthFeedback>Unable to load analytics.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry {title.toLowerCase()}</button></> : <AnalyticsContent kind={kind} data={current.data} period={period} />}
   </section>
 }
@@ -38,7 +40,7 @@ function Values({ rows }) {
   return <dl className="space-y-2">{rows.map(([label, value]) => <div key={label} className="flex flex-wrap justify-between gap-3 border-b border-slate-100 pb-2"><dt>{label}</dt><dd className="font-semibold tabular-nums">{value}</dd></div>)}</dl>
 }
 function AnalyticsContent({ kind, data, period }) {
-  if (kind === 'summary') return <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[['Total tickets', 'totalTickets'], ['Active tickets', 'activeTickets'], ['Resolved tickets', 'resolvedTickets'], ['Unassigned tickets', 'unassignedTickets']].map(([label, field]) => <div key={field} className="rounded-xl bg-slate-50 p-4"><dt className="text-sm text-slate-600">{label}</dt><dd className="mt-2 text-3xl font-semibold">{data[field]}</dd></div>)}</dl>
+  if (kind === 'summary') return <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[['Total tickets', 'totalTickets'], ['Active tickets', 'activeTickets'], ['Resolved tickets', 'resolvedTickets'], ['Unassigned tickets', 'unassignedTickets']].map(([label, field]) => <SummaryCard key={field} label={label} value={data[field]} />)}</dl>
   if (['status', 'priority', 'category', 'trend'].includes(kind)) {
     const rows = data.map(row => ({ label: kind === 'status' ? formatTicketStatus(row.status) : kind === 'priority' ? formatTicketPriority(row.priorityName) : kind === 'category' ? row.categoryName : row[period === 'daily' ? 'date' : 'month'], count: row.count }))
     if (!rows.some(row => row.count > 0)) return <p>No data available for this period.</p>
@@ -55,5 +57,5 @@ function AnalyticsContent({ kind, data, period }) {
   }
   if (kind === 'sla') return <><p className="text-sm text-slate-600">Compliance covers completed milestones only. Pending milestones may already be overdue; these counts are not current warning or breach totals.</p><div className="grid gap-6 sm:grid-cols-2">{['response', 'resolution'].map(dimension => <div key={dimension} className="space-y-3"><h3 className="font-semibold">{dimension === 'response' ? 'First response' : 'Resolution'}</h3><Values rows={[[ 'Compliance', data[dimension].compliancePercentage === null ? 'Not available' : `${data[dimension].compliancePercentage}%` ], ...[['Tracked milestones', 'trackedTickets'], ['Met', 'metTickets'], ['Missed', 'missedTickets'], ['Pending', 'pendingTickets'], ['Completed', 'completedTickets']].map(([label, field]) => [label, data[dimension][field]])]} /></div>)}</div></>
   if (kind === 'satisfaction') return data.totalRatings === 0 ? <p>No support ratings available yet.</p> : <Values rows={[[ 'Average rating', `${data.averageRating} / 5` ], ['Rating count', data.totalRatings], ['Satisfied ratings (4â€“5)', data.satisfiedRatings], ['Satisfaction', `${data.satisfactionPercentage}%`]]} />
-  return <><Link className={button} to="/admin/technicians/workload">View technician workload</Link><p className="text-sm text-slate-600">Current assigned ticket counts from the server. Includes active and inactive technician accounts.</p>{!data.length ? <p>No technician workload data available.</p> : <div className="max-h-96 overflow-auto"><table className="w-full text-left text-sm"><caption className="sr-only">Current technician workload</caption><thead><tr>{['Technician', 'Account', 'Active tickets', 'Resolved tickets'].map(label => <th key={label} className="p-3">{label}</th>)}</tr></thead><tbody>{data.map(row => <tr key={row.technicianId} className="border-t border-slate-200"><th scope="row" className="p-3 font-medium">{row.technicianName || row.email}</th><td className="p-3">{row.isActive ? 'Active' : 'Inactive'}</td><td className="p-3">{row.activeTickets}</td><td className="p-3">{row.resolvedTickets}</td></tr>)}</tbody></table></div>}</>
+  return <><Link className={button} to="/admin/technicians/workload">View technician workload</Link><p className="text-sm text-slate-600">Current assigned ticket counts from the server. Includes active and inactive technician accounts.</p>{!data.length ? <p>No technician workload data available.</p> : <div className="max-h-96 layout-table"><table className="w-full text-left text-sm"><caption className="sr-only">Current technician workload</caption><thead><tr>{['Technician', 'Account', 'Active tickets', 'Resolved tickets'].map(label => <th key={label} className="p-3">{label}</th>)}</tr></thead><tbody>{data.map(row => <tr key={row.technicianId} className="border-t border-slate-200"><th scope="row" className="p-3 font-medium">{row.technicianName || row.email}</th><td className="p-3">{row.isActive ? 'Active' : 'Inactive'}</td><td className="p-3">{row.activeTickets}</td><td className="p-3">{row.resolvedTickets}</td></tr>)}</tbody></table></div>}</>
 }

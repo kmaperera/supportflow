@@ -1,3 +1,4 @@
+import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createUser } from '../../api/userApi'
@@ -46,10 +47,10 @@ export default function CreateUserPage() {
       }
     } finally { pending.current = false; if (active.current) setCreating(false) }
   }
-  return <div className="max-w-4xl space-y-5">
-    <header><h1 className="text-2xl font-semibold">Create User</h1><p className="mt-2 text-slate-600">New accounts are active and must change their password at first login.</p></header>
+  return <div className="layout-narrow layout-page">
+    <PageHeader title="Create User" description="New accounts are active and must change their password at first login." />
     {error && <AuthFeedback>{error}</AuthFeedback>}
-    <form onSubmit={submit} noValidate className="space-y-5 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
+    <form onSubmit={submit} noValidate className="space-y-5 layout-panel">
       <div className="grid min-w-0 gap-5 sm:grid-cols-2">{Object.entries(labels).map(([field, label]) => {
         const optional = ['phone', 'department'].includes(field)
         return <div key={field} className="min-w-0"><label htmlFor={`create-user-${field}`} className="text-sm font-semibold">{label}{optional ? ' (optional)' : ' *'}</label>
@@ -58,7 +59,7 @@ export default function CreateUserPage() {
           <div id={`create-user-${field}-error`}>{errors[field] && <p role="alert" className="mt-1 text-sm text-red-700">{errors[field]}</p>}</div>
         </div>
       })}</div>
-      <div className="flex flex-wrap gap-3"><button type="submit" className={button} disabled={creating}>{creating ? 'Creating user...' : 'Create User'}</button><button type="button" className={button} disabled={creating} onClick={() => navigate('/admin/users')}>Cancel</button></div>
+      <div className="layout-actions"><button type="submit" className={button} disabled={creating}>{creating ? 'Creating user...' : 'Create User'}</button><button type="button" className={button} disabled={creating} onClick={() => navigate('/admin/users')}>Cancel</button></div>
     </form>
   </div>
 }

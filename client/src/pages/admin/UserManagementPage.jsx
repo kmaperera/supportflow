@@ -1,3 +1,4 @@
+import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -104,11 +105,11 @@ function UserList({ currentAdminId }) {
   const filtered = Boolean(query.search || query.role || query.isActive)
   function change(values) { setQuery(previous => ({ ...previous, ...values, search: search.trim(), page: 1 })) }
   function reset() { setSearch(''); setQuery({ ...defaults }) }
-  return <div className="space-y-5">
-    <header><h1 className="text-2xl font-semibold">User Management</h1><p className="mt-2 text-slate-600">View user accounts, roles, and account status.</p><Link to="/admin/users/new" className={`${button} mt-3 inline-flex items-center`}>Create User</Link></header>
+  return <div className="layout-page">
+    <PageHeader title="User Management" description="View user accounts, roles, and account status." actions={<><Link to="/admin/users/new" className={`${button} inline-flex items-center`}>Create User</Link></>} />
     {created && <div><AuthFeedback variant="success">User created successfully.</AuthFeedback><button type="button" className={button} onClick={() => setCreated(false)}>Dismiss</button></div>}
     {feedback && <AuthFeedback variant={feedback.success ? 'success' : 'error'}>{feedback.message}</AuthFeedback>}
-    <div className="grid min-w-0 gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-4 layout-panel sm:grid-cols-2 xl:grid-cols-4">
       <label className="min-w-0 text-sm font-medium">Search<input type="search" className={input} placeholder="Search users..." value={search} onChange={event => setSearch(event.target.value)} aria-describedby="user-search-help" /><span id="user-search-help" className="mt-1 block text-xs text-slate-500">Search first name, last name, or email.</span></label>
       <label className="text-sm font-medium">Role<select className={input} value={query.role} onChange={event => change({ role: event.target.value })}><option value="">All roles</option>{Object.entries(roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       <label className="text-sm font-medium">Status<select className={input} value={query.isActive} onChange={event => change({ isActive: event.target.value })}><option value="">All users</option><option value="true">Active</option><option value="false">Inactive</option></select></label>
@@ -119,7 +120,7 @@ function UserList({ currentAdminId }) {
     {current?.error && <div className="space-y-3"><AuthFeedback>Unable to load users.</AuthFeedback><button type="button" className={button} onClick={() => setQuery(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></div>}
     {current?.data && <>
       <p className="text-sm text-slate-600">{current.data.pagination.totalRecords} users</p>
-      {!current.data.users.length ? <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-6"><p>{filtered ? 'No users match your current search or filters.' : 'No users found.'}</p>{filtered && <button type="button" className={button} onClick={reset}>Clear filters</button>}</section> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{current.data.users.map(user => <li key={user.id} className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
+      {!current.data.users.length ? <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-6"><p>{filtered ? 'No users match your current search or filters.' : 'No users found.'}</p>{filtered && <button type="button" className={button} onClick={reset}>Clear filters</button>}</section> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{current.data.users.map(user => <li key={user.id} className="min-w-0 layout-panel">
         <h2 className="break-words text-lg font-semibold">{[user.firstName, user.lastName].filter(value => typeof value === 'string' && value.trim()).join(' ') || 'Name unavailable'}</h2>
         <dl className="mt-3 grid min-w-0 gap-4 text-sm sm:grid-cols-2">{[['Email', user.email], ['Role', roles[user.role] || 'Unknown role'], ['Status', user.isActive ? 'Active' : 'Inactive'], ['Created', formatTicketDate(user.createdAt)]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-slate-500">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
         {user.mustChangePassword === true && <p className="mt-4 text-sm font-medium">Password change required</p>}
@@ -127,11 +128,11 @@ function UserList({ currentAdminId }) {
           {String(user.id) === String(currentAdminId) ? <p className="text-sm text-slate-600">You cannot change your own role.</p> : roleEditor?.id === String(user.id) ? <div className="space-y-3 rounded-lg border border-slate-200 p-3">
             <label className="block text-sm font-medium">New role<select className={input} value={roleEditor.role} disabled={Boolean(pending[user.id]) || roleEditor.confirm} onChange={event => setRoleEditor(previous => ({ ...previous, role: event.target.value, confirm: false }))}>{Object.entries(roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             {roleEditor.confirm && <p className="text-sm">Change role from {roles[user.role]} to {roles[roleEditor.role]}? This will update the user's application permissions.</p>}
-            <div className="flex flex-wrap gap-3"><button type="button" className={button} disabled={Boolean(pending[user.id]) || roleEditor.role === user.role} onClick={() => roleEditor.confirm ? saveRole(user) : setRoleEditor(previous => ({ ...previous, confirm: true }))}>{pending[user.id] === 'role' ? 'Updating role...' : roleEditor.confirm ? 'Confirm role change' : 'Update Role'}</button><button type="button" className={button} disabled={Boolean(pending[user.id])} onClick={() => setRoleEditor(null)}>Cancel</button></div>
+            <div className="layout-actions"><button type="button" className={button} disabled={Boolean(pending[user.id]) || roleEditor.role === user.role} onClick={() => roleEditor.confirm ? saveRole(user) : setRoleEditor(previous => ({ ...previous, confirm: true }))}>{pending[user.id] === 'role' ? 'Updating role...' : roleEditor.confirm ? 'Confirm role change' : 'Update Role'}</button><button type="button" className={button} disabled={Boolean(pending[user.id])} onClick={() => setRoleEditor(null)}>Cancel</button></div>
           </div> : <button type="button" className={button} disabled={Boolean(pending[user.id])} onClick={() => { setConfirming(null); setRoleEditor({ id: String(user.id), role: user.role, confirm: false }) }}>Change Role</button>}
           {user.isActive && String(user.id) === String(currentAdminId) ? <p className="text-sm text-slate-600">You cannot deactivate your own account.</p> : confirming === String(user.id) ? <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-3">
             <p className="text-sm">Deactivate this user? This user will no longer be able to sign in until reactivated.</p>
-            <div className="flex flex-wrap gap-3"><button type="button" className={`${button} border-red-700 text-red-700`} disabled={pending[user.id]} onClick={() => changeStatus(user)}>{pending[user.id] === true ? 'Deactivating...' : 'Confirm deactivation'}</button><button type="button" className={button} disabled={pending[user.id]} onClick={() => setConfirming(null)}>Cancel</button></div>
+            <div className="layout-actions"><button type="button" className={`${button} border-red-700 text-red-700`} disabled={pending[user.id]} onClick={() => changeStatus(user)}>{pending[user.id] === true ? 'Deactivating...' : 'Confirm deactivation'}</button><button type="button" className={button} disabled={pending[user.id]} onClick={() => setConfirming(null)}>Cancel</button></div>
           </div> : <button type="button" className={`${button} ${user.isActive ? 'border-red-700 text-red-700' : ''}`} disabled={pending[user.id]} onClick={() => user.isActive ? setConfirming(String(user.id)) : changeStatus(user)}>{pending[user.id] === true ? (user.isActive ? 'Deactivating...' : 'Activating...') : user.isActive ? 'Deactivate' : 'Activate'}</button>}
         </div>
       </li>)}</ul>}

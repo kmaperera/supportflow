@@ -10,7 +10,7 @@ const actions = {
 export default function TicketStatusActions({ ticket, userId, pending, onUpdate }) {
   const own = userId != null && ticket.assignedTo != null && String(ticket.assignedTo) === String(userId)
   const action = own ? actions[ticket.status] : null
-  return <section aria-labelledby="ticket-status-actions-heading" className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
+  return <section aria-labelledby="ticket-status-actions-heading" className="min-w-0 layout-panel">
     <h2 id="ticket-status-actions-heading" className="text-lg font-semibold">Ticket Status</h2>
     <div className="mt-3 flex flex-wrap items-center gap-4">
       <p className="text-sm">Current status: <span className="font-semibold">{formatTicketStatus(ticket.status)}</span></p>

@@ -1,5 +1,27 @@
 @import "tailwindcss";
 
+/* Structural primitives retain each page's semantic element and event handlers. */
+@utility layout-page {
+  @apply w-full min-w-0 space-y-6;
+}
+
+/* Forms/readable detail content; data pages remain full width. */
+@utility layout-narrow {
+  @apply mx-auto w-full min-w-0 max-w-3xl;
+}
+
+@utility layout-panel {
+  @apply min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6;
+}
+
+@utility layout-actions {
+  @apply flex flex-wrap items-center gap-3;
+}
+
+@utility layout-table {
+  @apply w-full min-w-0 overflow-auto;
+}
+
 /* Workspace and auth content must wrap rather than hiding page overflow. */
 :where(.employee-ui, .workspace-ui, .auth-ui) {
   overflow-wrap: anywhere;

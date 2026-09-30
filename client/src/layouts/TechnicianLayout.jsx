@@ -1,3 +1,5 @@
+import PageContainer from './PageContainer'
+import WorkspaceHeader from './WorkspaceHeader'
 import { NavLink, Outlet, matchPath } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import LogoutButton from '../auth/LogoutButton'
@@ -36,11 +38,8 @@ export default function TechnicianLayout() {
       </div>
     </aside>
     <div className="min-w-0">
-      <header className="flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-        <p className="min-w-0 font-semibold">{currentPage?.title || 'Technician workspace'}</p>
-        <div className="min-w-0 sm:max-w-[60%] sm:text-right"><p className="text-sm font-medium">{displayName}</p><p className="mt-1 text-xs text-slate-500">Technician</p></div>
-      </header>
-      <main id="technician-content" tabIndex={-1} className="w-full min-w-0 p-4 sm:p-6 lg:p-8"><Outlet /></main>
+      <WorkspaceHeader title={currentPage?.title || 'Technician workspace'} displayName={displayName} role="Technician" />
+      <PageContainer id="technician-content"><Outlet /></PageContainer>
     </div>
   </div>
 }

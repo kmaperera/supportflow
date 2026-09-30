@@ -1,3 +1,4 @@
+import PageHeader from '../../layouts/PageHeader'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { changeArticlePublication, changeKbCategoryStatus, getAdminArticles, getKbCategories } from '../../api/adminKnowledgeBaseApi'
@@ -17,9 +18,9 @@ export default function AdminKnowledgeBasePage() {
   useEffect(() => {
     if (location.state?.kbMessage) navigate(location.pathname, { replace: true, state: null })
   }, [location.pathname, location.state, navigate])
-  return <div className="space-y-5">
-    <header><h1 className="text-2xl font-semibold">Knowledge Base Management</h1><p className="mt-1 text-sm text-slate-600">Manage help articles and their Knowledge Base categories.</p></header>
-    <nav aria-label="Knowledge Base sections" className="flex flex-wrap gap-3">
+  return <div className="layout-page">
+    <PageHeader title="Knowledge Base Management" description="Manage help articles and their Knowledge Base categories." />
+    <nav aria-label="Knowledge Base sections" className="layout-actions">
       {[['articles', 'KB Articles'], ['categories', 'KB Categories']].map(([value, label]) => <button key={value} type="button" className={`${button} ${tab === value ? 'bg-teal-50 ring-1 ring-teal-700' : ''}`} aria-pressed={tab === value} onClick={() => { setTab(value); setMessage('') }}>{label}</button>)}
     </nav>
     {message && <AuthFeedback variant="success">{message}</AuthFeedback>}
@@ -76,14 +77,14 @@ function Articles({ categories }) {
       {resource.data.articles.map(article => <article key={article.id} className={kbCard}>
         <div><h3 className="text-lg font-semibold break-words">{article.title}</h3><p className="mt-1 text-sm text-slate-600">{article.categoryName} · {publicationLabel(article.status)} · {article.viewCount} views</p></div>
         <p className="text-sm text-slate-500">Created {formatTicketDate(article.createdAt)} · Updated {formatTicketDate(article.updatedAt)}</p>
-        <div className="flex flex-wrap gap-3">
+        <div className="layout-actions">
           <Link className={button} to={`/admin/knowledge-base/articles/${encodeURIComponent(article.id)}/edit`}>Edit<span className="sr-only"> {article.title}</span></Link>
           {article.status !== 'ARCHIVED' && <>
             <button className={button} disabled={Boolean(busy) || resource.loading || resource.error} onClick={() => publication(article, article.status === 'PUBLISHED' ? 'unpublish' : 'publish')}>{busy?.id === article.id && busy.action !== 'archive' ? busy.action === 'publish' ? 'Publishing...' : 'Unpublishing...' : article.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}<span className="sr-only"> {article.title}</span></button>
             <button className={button} disabled={Boolean(busy)} onClick={() => setArchive(article.id)}>Archive<span className="sr-only"> {article.title}</span></button>
           </>}
         </div>
-        {archive === article.id && <div className="space-y-3 rounded-lg border border-slate-300 p-3"><p>Archive “{article.title}”? Archived articles cannot be published again.</p><div className="flex flex-wrap gap-3"><button className={button} disabled={Boolean(busy)} onClick={() => publication(article, 'archive')}>{busy?.action === 'archive' ? 'Archiving...' : 'Confirm archive'}</button><button className={button} disabled={Boolean(busy)} onClick={() => setArchive(null)}>Cancel</button></div></div>}
+        {archive === article.id && <div className="space-y-3 rounded-lg border border-slate-300 p-3"><p>Archive “{article.title}”? Archived articles cannot be published again.</p><div className="layout-actions"><button className={button} disabled={Boolean(busy)} onClick={() => publication(article, 'archive')}>{busy?.action === 'archive' ? 'Archiving...' : 'Confirm archive'}</button><button className={button} disabled={Boolean(busy)} onClick={() => setArchive(null)}>Cancel</button></div></div>}
       </article>)}
       <div className="flex flex-wrap items-center gap-3"><p className="text-sm">{pagination.totalRecords} articles · Page {pagination.currentPage} of {Math.max(1, pagination.totalPages)}</p><button className={button} disabled={resource.loading || resource.error || !pagination.hasPrevious} onClick={() => setQuery(previous => ({ ...previous, page: previous.page - 1 }))}>Previous</button><button className={button} disabled={resource.loading || resource.error || !pagination.hasNext} onClick={() => setQuery(previous => ({ ...previous, page: previous.page + 1 }))}>Next</button></div>
     </div>}
@@ -116,7 +117,7 @@ function Categories({ resource }) {
     <div className="grid gap-4 xl:grid-cols-2">{resource.data?.map(category => <article key={category.id} className={kbCard}>
       <div><h3 className="text-lg font-semibold">{category.name}</h3><p className="mt-1 text-sm font-medium">{category.isActive ? 'Active' : 'Inactive'}</p></div>
       {category.description && <p className="whitespace-pre-wrap text-sm text-slate-600">{category.description}</p>}
-      <div className="flex flex-wrap gap-3"><button className={button} disabled={Boolean(editor) || Boolean(busy) || resource.loading || resource.error} onClick={() => { setEditor({ category }); setMessage('') }}>Edit<span className="sr-only"> {category.name}</span></button><button className={button} disabled={Boolean(editor) || Boolean(busy) || resource.loading || resource.error} onClick={() => toggle(category)}>{busy === category.id ? category.isActive ? 'Deactivating...' : 'Activating...' : category.isActive ? 'Deactivate' : 'Activate'}<span className="sr-only"> {category.name}</span></button></div>
+      <div className="layout-actions"><button className={button} disabled={Boolean(editor) || Boolean(busy) || resource.loading || resource.error} onClick={() => { setEditor({ category }); setMessage('') }}>Edit<span className="sr-only"> {category.name}</span></button><button className={button} disabled={Boolean(editor) || Boolean(busy) || resource.loading || resource.error} onClick={() => toggle(category)}>{busy === category.id ? category.isActive ? 'Deactivating...' : 'Activating...' : category.isActive ? 'Deactivate' : 'Activate'}<span className="sr-only"> {category.name}</span></button></div>
     </article>)}</div>
   </section>
 }

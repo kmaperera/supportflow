@@ -1,3 +1,4 @@
+import MetadataList from '../../layouts/MetadataList'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -18,7 +19,7 @@ import TicketAttachments from '../employee/TicketAttachments'
 import { formatTicketDate, formatTicketPriority, formatTicketStatus } from '../employee/ticketFormatting'
 
 const actionClass = 'inline-flex min-h-11 items-center rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-50'
-const panelClass = 'min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6'
+const panelClass = 'min-w-0 layout-panel'
 const personName = person => [person?.firstName, person?.lastName].filter(value => typeof value === 'string' && value.trim()).map(value => value.trim()).join(' ')
 
 export default function TechnicianTicketDetailsPage() {
@@ -142,7 +143,7 @@ function TicketWorkspace({ ticketId, userId }) {
       if (mounted.current) setUpdating(false)
     }
   }
-  return <div className="space-y-6">
+  return <div className="layout-page">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <Link to={unassigned ? '/technician/tickets/unassigned' : '/technician/tickets/assigned'} className={actionClass}>{unassigned ? 'Back to Unassigned Queue' : 'Back to My Assigned Tickets'}</Link>
       {current?.ticket && <button type="button" disabled={updating} className={actionClass} onClick={() => setAttempt(value => value + 1)}>Refresh</button>}
@@ -203,9 +204,7 @@ export function TechnicianTicketDetailsContent({ ticket, userId }) {
       </section>
       <section className={panelClass} aria-labelledby="workspace-information-heading">
         <h2 id="workspace-information-heading" className="text-lg font-semibold">Ticket information</h2>
-        <dl className="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-1">
-          {metadata.map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-sm text-slate-500">{label}</dt><dd className="mt-1 text-sm">{value}</dd></div>)}
-        </dl>
+        <MetadataList fields={metadata} columns="sm:grid-cols-2 xl:grid-cols-1" />
       </section>
     </div>
   </>

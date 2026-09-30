@@ -1,3 +1,4 @@
+import PageHeader from '../../layouts/PageHeader'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -92,8 +93,8 @@ function Notifications({ role, accessToken }) {
     } catch (cause) { if (active.current) setError(getApiErrorMessage(cause, 'Unable to mark notifications as read. Please try again.')) }
     finally { allPending.current = false; if (active.current) { setMarkingAll(false); if (realtimeDirty.current) refreshRealtime() } }
   }
-  return <div className="space-y-5">
-    <h1 className="text-2xl font-semibold">Notifications</h1>
+  return <div className="layout-page">
+    <PageHeader title="Notifications" />
     <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-slate-600">{admin ? 'Support activity notifications sent to your admin account.' : technician ? 'Updates about your support work and ticket activity.' : 'Updates about your support requests.'}</p><button type="button" className={buttonClass} disabled={!current || markingAll || pendingIds.length > 0} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Refresh</button></div>
     {error && <AuthFeedback>{error}</AuthFeedback>}
     {!current && <p role="status">Loading notifications...</p>}
@@ -106,7 +107,7 @@ function Notifications({ role, accessToken }) {
         <h2 className="mt-2 break-words font-semibold">{item.title}</h2>
         <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-700">{item.message}</p>
         <p className="mt-2 text-xs text-slate-500">{formatTicketDate(item.createdAt)}</p>
-        <div className="mt-3 flex flex-wrap gap-3">
+        <div className="mt-3 layout-actions">
           {item.ticketId != null && /^[1-9]\d*$/.test(String(item.ticketId)) && <button type="button" className={buttonClass} disabled={openingId !== null || markingAll || pendingIds.includes(String(item.id))} onClick={() => viewTicket(item)}>{openingId === String(item.id) ? 'Opening...' : 'View Ticket'}</button>}
           {!item.isRead && <button type="button" className={buttonClass} disabled={markingAll || pendingIds.includes(String(item.id))} onClick={() => markOne(item.id)}>{pendingIds.includes(String(item.id)) ? 'Marking as read...' : 'Mark as read'}</button>}
         </div>

@@ -1,3 +1,4 @@
+import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useRef, useState } from 'react'
 import { getReport, reportTypes } from '../../api/reportApi'
 import { getCategories } from '../../api/categoryApi'
@@ -21,7 +22,7 @@ const lookups = {
 }
 export default function AdminReportsPage() {
   const [type, setType] = useState('tickets')
-  return <div className="space-y-5"><header><h1 className="text-2xl font-semibold">Reports</h1><p className="mt-1 text-slate-600">Choose a report and criteria, then generate structured results.</p></header>
+  return <div className="layout-page"><PageHeader title="Reports" description="Choose a report and criteria, then generate structured results." />
     <div className="max-w-lg"><label className="text-sm font-semibold" htmlFor="report-type">Report type</label><select id="report-type" className={input} value={type} onChange={event => setType(event.target.value)}>{Object.entries(reportTypes).map(([key, value]) => <option key={key} value={key}>{value.label}</option>)}</select></div>
     <ReportForm key={type} type={type} />
   </div>
@@ -60,7 +61,7 @@ function ReportForm({ type }) {
   }
   function change(field, value) { setValues(previous => ({ ...previous, [field]: value })); setErrors(previous => ({ ...previous, [field]: null })) }
   return <>
-    <form noValidate onSubmit={event => { event.preventDefault(); generate({ ...values }) }} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
+    <form noValidate onSubmit={event => { event.preventDefault(); generate({ ...values }) }} className="space-y-4 layout-panel">
       <p className="text-sm text-slate-600">Dates select tickets created on inclusive UTC calendar days. {type === 'date-range' ? 'Both dates are required.' : 'Leave dates blank for all dates; either boundary may be used alone.'} Displayed ticket timestamps use your local timezone.</p>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{reportTypes[type].fields.map(field => <div key={field} className="min-w-0">
         <label className="text-sm font-semibold" htmlFor={`report-${field}`}>{labels[field]}{type === 'date-range' ? ' *' : ''}</label>
@@ -68,11 +69,11 @@ function ReportForm({ type }) {
         <p id={`report-${field}-error`} className="mt-1 text-sm text-red-700" role={errors[field] ? 'alert' : undefined}>{errors[field]}</p>
       </div>)}</div>
       {type === 'tickets' && <p className="text-sm text-slate-500">Search ticket number, title, requester or technician name/email.</p>}
-      <div className="flex flex-wrap gap-3"><button type="submit" className={button} disabled={loading}>{loading ? 'Generating report...' : 'Generate Report'}</button><button type="button" className={button} disabled={loading} onClick={() => { setValues(initial()); setErrors({}) }}>Clear filters</button></div>
+      <div className="layout-actions"><button type="submit" className={button} disabled={loading}>{loading ? 'Generating report...' : 'Generate Report'}</button><button type="button" className={button} disabled={loading} onClick={() => { setValues(initial()); setErrors({}) }}>Clear filters</button></div>
     </form>
     {loading && <p role="status">Generating report...</p>}
     {error && <div className="space-y-3"><AuthFeedback>{error}</AuthFeedback>{lastRequest && <button className={button} disabled={loading} onClick={() => generate(lastRequest.criteria, lastRequest.page)}>Retry</button>}</div>}
-    {result && <section className="min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6" aria-busy={loading}>
+    {result && <section className="min-w-0 space-y-4 layout-panel" aria-busy={loading}>
       <h2 className="text-lg font-semibold">{reportTypes[type].label} results</h2>
       <ReportExportActions key={JSON.stringify(result.criteria)} type={type} criteria={result.criteria} disabled={loading || Boolean(changed) || Boolean(error) || Object.values(errors).some(Boolean)} />
       {(changed || error) && <p role="status" className="text-sm text-amber-800">Showing the last successful report. Generate again to apply the current criteria.</p>}

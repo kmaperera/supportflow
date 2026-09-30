@@ -1,3 +1,5 @@
+import PageHeader from '../../layouts/PageHeader'
+import SummaryCard from '../../layouts/SummaryCard'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -7,7 +9,7 @@ import { getApiErrorMessage } from '../../api/apiError'
 import { ticketStatuses, formatTicketStatus, formatTicketPriority, formatTicketDate } from './ticketFormatting'
 
 const actionClass = 'inline-flex rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700'
-const panelClass = 'rounded-2xl border border-slate-200 bg-white p-4 sm:p-6'
+const panelClass = 'layout-panel'
 
 export function EmployeeDashboardContent({ data }) {
   const { summary, tickets } = data
@@ -16,10 +18,7 @@ export function EmployeeDashboardContent({ data }) {
       {[
         ['Total Tickets', summary.totalTickets], ['Active Tickets', summary.activeTickets],
         ['Resolved Tickets', summary.resolvedTickets], ['Closed Tickets', summary.closedTickets],
-      ].map(([label, count]) => <div key={label} className={panelClass}>
-        <dt className="text-sm font-medium text-slate-600">{label}</dt>
-        <dd className="mt-3 text-3xl font-semibold tabular-nums">{count}</dd>
-      </div>)}
+      ].map(([label, count]) => <SummaryCard key={label} label={label} value={count} />)}
     </dl>
     {summary.totalTickets === 0 ? <section className={panelClass} aria-labelledby="empty-tickets-heading">
       <h2 id="empty-tickets-heading" className="text-lg font-semibold">You haven't created any support tickets yet.</h2>
@@ -74,15 +73,11 @@ function EmployeeDashboard({ user }) {
     return () => controller.abort()
   }, [attempt])
   const firstName = typeof user?.firstName === 'string' ? user.firstName.trim() : ''
-  return <div className="space-y-6">
-    <section aria-labelledby="dashboard-heading">
-      <h1 id="dashboard-heading" className="break-words text-2xl font-semibold sm:text-3xl">Welcome back{firstName ? `, ${firstName}` : ''}</h1>
-      <p className="mt-2 text-slate-600">Here's an overview of your support requests.</p>
-      <div className="mt-5 flex flex-wrap gap-3">
+  return <div className="layout-page">
+    <PageHeader titleId="dashboard-heading" title={<>Welcome back{firstName ? `, ${firstName}` : ''}</>} description="Here's an overview of your support requests." actions={<>
         <Link to="/employee/tickets/new" className={actionClass}>Create Ticket</Link>
         <Link to="/employee/tickets" className={actionClass}>View My Tickets</Link>
-      </div>
-    </section>
+      </>} />
     {state.loading && <p role="status" className={panelClass}>Loading dashboard...</p>}
     {state.error && <div className={panelClass}>
       <AuthFeedback>{state.error}</AuthFeedback>

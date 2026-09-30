@@ -1,3 +1,4 @@
+import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getAdminTickets, getTicketPriorities } from '../../api/ticketApi'
@@ -34,9 +35,9 @@ export default function AdminTicketsPage() {
   const filtered = Boolean(query.search || query.status || query.categoryId || query.priorityId || query.assignment)
   function change(values) { setQuery(previous => ({ ...previous, ...values, search: search.trim(), page: 1 })) }
   function reset() { setSearch(''); setQuery({ ...defaults }) }
-  return <div className="space-y-5">
-    <header><h1 className="text-2xl font-semibold">Ticket Management</h1><p className="mt-2 text-slate-600">View all support tickets and inspect their details.</p></header>
-    <div className="grid min-w-0 gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-2 xl:grid-cols-3">
+  return <div className="layout-page">
+    <PageHeader title="Ticket Management" description="View all support tickets and inspect their details." />
+    <div className="grid gap-4 layout-panel sm:grid-cols-2 xl:grid-cols-3">
       <label className="min-w-0 text-sm font-medium">Search<input className={input} type="search" maxLength={200} placeholder="Search tickets..." aria-describedby="admin-ticket-search-help" value={search} onChange={event => setSearch(event.target.value)} /><span id="admin-ticket-search-help" className="text-xs text-slate-500">Ticket number, title, or description.</span></label>
       <label className="text-sm font-medium">Status<select className={input} value={query.status} onChange={event => change({ status: event.target.value })}><option value="">All statuses</option>{ticketStatuses.map(status => <option key={status.value} value={status.value}>{status.label}</option>)}</select></label>
       <LookupFilter label="Priority" load={getTicketPriorities} value={query.priorityId} onChange={value => change({ priorityId: value })} />

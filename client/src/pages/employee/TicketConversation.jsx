@@ -66,7 +66,7 @@ export default function TicketConversation({ ticketId, status, assignedTo, disab
       if (active.current) { setSending(false); onSendingChange?.(false) }
     }
   }
-  return <section aria-labelledby="conversation-heading" className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 lg:p-8">
+  return <section aria-labelledby="conversation-heading" className="min-w-0 layout-panel">
     <h2 id="conversation-heading" className="text-lg font-semibold">Conversation</h2>
     {conversation.loading ? <p role="status" className="mt-4 text-sm text-slate-600">Loading conversation...</p> : conversation.error ? <div className="mt-4">
       <AuthFeedback>Unable to load conversation.</AuthFeedback>

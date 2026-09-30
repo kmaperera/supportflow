@@ -1,3 +1,4 @@
+import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useRef, useState } from 'react'
 import { getSlaPolicies, updateSlaPolicy } from '../../api/slaPolicyApi'
 import { getApiErrorMessage } from '../../api/apiError'
@@ -16,8 +17,8 @@ export default function SlaSettingsPage() {
     return () => controller.abort()
   }, [attempt])
   const current = result?.attempt === attempt ? result : null
-  return <div className="space-y-5">
-    <header><h1 className="text-2xl font-semibold">SLA Settings</h1><p className="mt-2 text-slate-600">Configure response and resolution targets by priority.</p></header>
+  return <div className="layout-page">
+    <PageHeader title="SLA Settings" description="Configure response and resolution targets by priority." />
     <p className="text-sm text-slate-600">Changes apply to new tickets and future SLA recalculations triggered by priority changes. Existing ticket deadlines are not automatically rewritten.</p>
     {success && <AuthFeedback variant="success">SLA policy updated successfully.</AuthFeedback>}
     {!current && <p role="status">Loading SLA settings...</p>}
@@ -54,14 +55,14 @@ function PolicyCard({ policy, onSaved }) {
       }
     } finally { pending.current = false; if (mounted.current) setSaving(false) }
   }
-  return <section className="min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
+  return <section className="min-w-0 space-y-4 layout-panel">
     <h2 className="text-lg font-semibold">{formatTicketPriority(policy.priorityName)}</h2>
     <dl className="grid gap-4 text-sm sm:grid-cols-2">{[['Response target', formatPolicyMinutes(policy.responseTimeMinutes)], ['Resolution target', formatPolicyMinutes(policy.resolutionTimeMinutes)], ['Status', policy.isActive ? 'Active' : 'Inactive'], ['Updated', formatTicketDate(policy.updatedAt)]].map(([label, value]) => <div key={label}><dt className="text-slate-500">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
     {!editing ? <button className={button} onClick={() => { setEditing(true); setError(null); setErrors({}) }}>Edit</button> : <form onSubmit={submit} noValidate className="space-y-4 border-t border-slate-200 pt-4">
       {error && <AuthFeedback>{error}</AuthFeedback>}
       <p className="text-sm text-slate-600">Enter whole minutes (60 minutes = 1 hour; 1,440 minutes = 24 hours).</p>
       {['responseTimeMinutes', 'resolutionTimeMinutes'].map(field => <div key={field}><label className="text-sm font-medium" htmlFor={`${policy.id}-${field}`}>{field === 'responseTimeMinutes' ? 'Response' : 'Resolution'} target (minutes) *</label><input id={`${policy.id}-${field}`} type="number" min="1" max="4294967295" step="1" required disabled={saving} className="mt-1 block w-full min-w-0 rounded-lg border border-slate-300 p-3 focus-visible:outline-2 focus-visible:outline-teal-700 disabled:opacity-50" value={values[field]} aria-invalid={Boolean(errors[field])} aria-describedby={`${policy.id}-${field}-error`} onChange={event => { setValues(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [field]: null })) }} /><div id={`${policy.id}-${field}-error`}>{errors[field] && <p role="alert" className="mt-1 text-sm text-red-700">{errors[field]}</p>}</div></div>)}
-      <div className="flex flex-wrap gap-3"><button type="submit" className={button} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button><button type="button" className={button} disabled={saving} onClick={() => { setEditing(false); setValues({ responseTimeMinutes: String(policy.responseTimeMinutes), resolutionTimeMinutes: String(policy.resolutionTimeMinutes) }) }}>Cancel</button></div>
+      <div className="layout-actions"><button type="submit" className={button} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button><button type="button" className={button} disabled={saving} onClick={() => { setEditing(false); setValues({ responseTimeMinutes: String(policy.responseTimeMinutes), resolutionTimeMinutes: String(policy.resolutionTimeMinutes) }) }}>Cancel</button></div>
     </form>}
   </section>
 }

@@ -1,3 +1,4 @@
+import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -80,12 +81,8 @@ function UnassignedQueue() {
       if (mounted.current) setPendingIds([...pending.current])
     }
   }
-  return <div className="space-y-6">
-    <header className="flex flex-wrap items-start justify-between gap-4">
-      <div className="min-w-0"><h1 className="text-2xl font-semibold">Unassigned Ticket Queue</h1>
-        <p className="mt-2 text-slate-600">Tickets without a currently assigned technician.</p></div>
-      <button type="button" className={actionClass} disabled={!current} onClick={reload}>Refresh</button>
-    </header>
+  return <div className="layout-page">
+    <PageHeader title="Unassigned Ticket Queue" description="Tickets without a currently assigned technician." actions={<><button type="button" className={actionClass} disabled={!current} onClick={reload}>Refresh</button></>} />
     <QueueFilters query={request} search={search} setSearch={setSearch} onChange={changeFilters} onSearch={() => changeFilters({})} onReset={resetFilters} />
     {notice && <AuthFeedback variant={notice.error ? 'error' : 'success'}>{notice.text}</AuthFeedback>}
     {!current && <p role="status">{result ? 'Updating queue...' : 'Loading unassigned tickets...'}</p>}
@@ -114,11 +111,11 @@ export function SelfAssignAction({ ticket, pending, onAssign }) {
 
 export function UnassignedTicketsList({ tickets, totalRecords, filtered = false, onReset, renderAction }) {
   if (tickets.length) return <TechnicianTicketCards tickets={tickets} renderAction={renderAction} />
-  if (filtered) return <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
+  if (filtered) return <section className="layout-panel">
     <h2 className="text-lg font-semibold">No unassigned tickets match your current search or filters.</h2>
     <button type="button" onClick={onReset} className={`${actionClass} mt-4`}>Clear filters</button>
   </section>
-  return <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
+  return <section className="layout-panel">
     <h2 className="text-lg font-semibold">{totalRecords === 0 ? 'There are no unassigned tickets right now.' : 'No unassigned tickets on this page.'}</h2>
     <Link to="/technician/tickets/assigned" className={`${actionClass} mt-4`}>View My Assigned Tickets</Link>
   </section>
