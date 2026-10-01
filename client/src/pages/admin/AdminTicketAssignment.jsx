@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import LoadingState from '../../components/LoadingState'
 import { useEffect, useId, useRef, useState } from 'react'
@@ -135,7 +136,7 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
     </div> : <div className="flex flex-wrap items-start gap-3">
     {!eligible ? <p className="text-sm text-slate-600">Assignment cannot be changed on resolved or closed tickets.</p> : !open ? <button className={button} disabled={busy} onClick={() => { setOpen(true); setAttempt(value => value + 1); setSelected(''); setConfirm(false) }}>{assigned ? 'Reassign' : 'Assign technician'}</button> : <div className="w-full min-w-0 max-w-lg space-y-3">
       {!current && <div className="space-y-1" aria-busy="true"><p className="text-sm font-medium">Technician</p><div className="rounded-lg border border-slate-300 bg-slate-50 px-3"><LoadingState>Loading technicians...</LoadingState></div></div>}
-      {current?.error && <><AuthFeedback>Unable to load technicians.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></>}
+      {current?.error && <ErrorState compact title="Unable to load technicians"><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></ErrorState>}
       {current?.data && <>
         {!current.data.length ? <EmptyState compact title="No assignable technicians found." /> : <>
           <TechnicianCombobox technicians={current.data} counts={counts} selected={selected} currentId={ticket.assignedTo} disabled={busy || confirm} onSelect={value => { setSelected(value); setConfirm(false) }} />

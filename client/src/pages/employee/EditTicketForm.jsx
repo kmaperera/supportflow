@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import LoadingState from '../../components/LoadingState'
 import { useEffect, useRef, useState } from 'react'
 import { getTicketCategories, getTicketPriorities, updateTicket } from '../../api/ticketApi'
@@ -52,7 +53,7 @@ export default function EditTicketForm({ ticket, onCancel, onSaved, onIneligible
   return <section className="layout-panel" aria-labelledby="edit-ticket-heading">
     <h2 id="edit-ticket-heading" className="text-lg font-semibold">Edit Ticket</h2>
     {!options && !lookupError && <LoadingState className="mt-3 text-sm">Loading categories and priorities...</LoadingState>}
-    {lookupError && <div className="mt-3"><AuthFeedback>Unable to load categories and priorities.</AuthFeedback><button type="button" className="mt-2 rounded text-teal-800 underline focus-visible:outline-2" onClick={() => { setLookupError(false); setAttempt(value => value + 1) }}>Retry options</button></div>}
+    {lookupError && <ErrorState compact className="mt-4" title="Unable to load categories and priorities."><button type="button" className="mt-2 rounded text-teal-800 underline focus-visible:outline-2" onClick={() => { setLookupError(false); setAttempt(value => value + 1) }}>Retry options</button></ErrorState>}
     <form ref={form} onSubmit={submit} noValidate className="mt-5 space-y-4">
       {error && <AuthFeedback>{error}</AuthFeedback>}
       <fieldset disabled={saving} className="space-y-4">

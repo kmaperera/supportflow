@@ -1,10 +1,10 @@
+import ErrorState from '../../components/ErrorState'
 import LoadingState from '../../components/LoadingState'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { getKnowledgeBaseArticle } from '../../api/knowledgeBaseApi'
-import { getApiErrorMessage } from '../../api/apiError'
-import AuthFeedback from '../../auth/AuthFeedback'
+import { getResourceError } from '../../api/apiError'
 import { formatTicketDate } from './ticketFormatting'
 
 export default function KnowledgeBaseArticlePage() {
@@ -21,14 +21,14 @@ function Article({ articleId }) {
     // Share the GET during StrictMode effect replay: this endpoint increments views.
     if (!pending.current) pending.current = getKnowledgeBaseArticle(articleId)
     pending.current.then(article => { if (active) setResult({ article }) }).catch(error => {
-      if (active) setResult({ error: [400, 403, 404, 422].includes(error?.response?.status) ? 'This article is not available.' : getApiErrorMessage(error, 'Unable to load this article.') })
+      if (active) setResult(getResourceError(error, 'Article'))
     })
     return () => { active = false }
   }, [articleId, attempt])
   return <div className="layout-page">
     <Link to="/employee/knowledge-base" className="inline-block rounded text-sm font-semibold text-teal-800 underline focus-visible:outline-2">Back to Knowledge Base</Link>
     {!result && <LoadingState>Loading article...</LoadingState>}
-    {result?.error && <div className="space-y-3"><AuthFeedback>{result.error}</AuthFeedback><button type="button" onClick={() => { pending.current = null; setResult(null); setAttempt(value => value + 1) }} className="rounded-lg border border-teal-700 px-4 py-2 text-sm text-teal-800 focus-visible:outline-2">Retry</button></div>}
+    {result?.error && <ErrorState title={result.errorTitle} message={result.error}>{!result.unavailable && <button type="button" onClick={() => { pending.current = null; setResult(null); setAttempt(value => value + 1) }} className="rounded-lg border border-teal-700 px-4 py-2 text-sm text-teal-800 focus-visible:outline-2">Retry</button>}</ErrorState>}
     {result?.article && <article className="min-w-0 layout-panel">
       <h1 className="break-words text-2xl font-semibold">{result.article.title}</h1>
       <p className="mt-3 break-words text-sm text-slate-600">{result.article.categoryName}</p>

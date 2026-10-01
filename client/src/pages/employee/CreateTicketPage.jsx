@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import LoadingState from '../../components/LoadingState'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -98,10 +99,9 @@ export function CreateTicketForm({ categories = [], priorities = [], categorySta
               {options.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}
             </select>
             <p id={`${name}-error`} className="mt-1 text-sm text-red-800">{errors[name]}</p>
-            {optionState.failed && <div className="mt-2">
-              <AuthFeedback>Unable to load {plural}.</AuthFeedback>
+            {optionState.failed && <ErrorState compact title={`Unable to load ${plural}.`}>
               <button type="button" onClick={optionState.retry} className="mt-2 rounded text-sm font-semibold text-teal-800 underline focus-visible:outline-2 focus-visible:outline-offset-2">Retry {plural}</button>
-            </div>}
+            </ErrorState>}
           </div>)}
         </div>
       </fieldset>

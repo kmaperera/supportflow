@@ -1,9 +1,9 @@
+import ErrorState from '../../components/ErrorState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getTicketById } from '../../api/ticketApi'
-import { getApiErrorMessage } from '../../api/apiError'
-import AuthFeedback from '../../auth/AuthFeedback'
+import { getResourceError } from '../../api/apiError'
 import TicketStatusTimeline from '../employee/TicketStatusTimeline'
 import AdminTicketMetadata from './AdminTicketMetadata'
 import AdminTicketAssignment from './AdminTicketAssignment'
@@ -31,7 +31,7 @@ function TicketDetails({ ticketId }) {
       if (!controller.signal.aborted) setResult({ attempt, ticket })
     }).catch(error => {
       if (controller.signal.aborted) return
-      setResult({ attempt, error: [400, 403, 404, 422].includes(error?.response?.status) ? 'Ticket not found or you do not have access to it.' : getApiErrorMessage(error, 'Unable to load this ticket.') })
+      setResult({ attempt, ...getResourceError(error) })
     })
     return () => controller.abort()
   }, [ticketId, attempt])
@@ -43,9 +43,9 @@ function TicketDetails({ ticketId }) {
     <Link className={action} to="/admin/tickets">Back to tickets</Link>
     <h1 className="text-2xl font-semibold">Ticket Details</h1>
     {!current && <ContentSkeleton initial={!result && attempt === 0} variant="detail">Loading ticket...</ContentSkeleton>}
-    {current?.error && <div className="space-y-3"><AuthFeedback>{current.error}</AuthFeedback><button className={action} onClick={() => setAttempt(value => value + 1)}>Retry</button></div>}
+    {current?.error && <ErrorState title={current.errorTitle} message={current.error}>{!current.unavailable && <button className={action} onClick={() => setAttempt(value => value + 1)}>Retry</button>}</ErrorState>}
     {ticket && <>
-      {refreshError && <div><AuthFeedback>{refreshError}</AuthFeedback><button className={action} onClick={refresh}>Retry refresh</button></div>}
+      {refreshError && <ErrorState compact title="Unable to refresh ticket details" message={refreshError} onRetry={refresh} />}
       <section className="min-w-0 layout-panel"><p className="break-all text-sm font-semibold text-teal-800">{ticket.ticketNumber}</p><h2 className="mt-1 break-words text-xl font-semibold">{ticket.title}</h2><AdminTicketMetadata ticket={ticket} detail /><h3 className="mt-6 font-semibold">Description</h3><p className="mt-2 whitespace-pre-wrap break-words text-slate-700">{ticket.description}</p></section>
       {!refreshError && <AdminTicketAssignment ticket={ticket} refresh={refresh} />}
       <TicketStatusTimeline key={revision} ticketId={ticket.id} />

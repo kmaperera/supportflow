@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import LoadingState from '../../components/LoadingState'
 import { useEffect, useState } from 'react'
@@ -20,10 +21,9 @@ export default function TicketStatusTimeline({ ticketId, title = 'Status timelin
   return <section aria-labelledby="status-history-heading" className="min-w-0 layout-panel">
     <h2 id="status-history-heading" className="text-lg font-semibold">{title}</h2>
     {!current && <LoadingState className="mt-4 text-sm text-slate-600">Loading status history...</LoadingState>}
-    {current?.failed && <div className="mt-4">
-      <p role="alert" className="text-sm text-slate-600">Unable to load status history.</p>
+    {current?.failed && <ErrorState compact className="mt-4" title="Unable to load status history.">
       <button type="button" onClick={() => setAttempt(value => value + 1)} className="mt-3 rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2">Retry status history</button>
-    </div>}
+    </ErrorState>}
     {current && !current.failed && <StatusHistoryList history={current.history} />}
   </section>
 }

@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import { useEffect, useState } from 'react'
 import { getTicketCategories, getTicketPriorities } from '../../api/ticketApi'
 import { ticketStatuses, formatTicketPriority } from './ticketFormatting'
@@ -24,7 +25,7 @@ export function MetadataFilter({ label, value, onChange, fetchOptions }) {
         {state.options.map(option => <option key={option.id} value={option.id}>{label === 'Priority' ? formatTicketPriority(option.name) : option.name}</option>)}
       </select>
     </label>
-    {state.error && <div className="mt-1 text-sm"><p role="status">Unable to load {plural}.</p><button type="button" className="rounded text-teal-800 underline focus-visible:outline-2" onClick={() => { setState({ loading: true, options: [], error: false }); setAttempt(value => value + 1) }}>Retry {plural}</button></div>}
+    {state.error && <ErrorState compact className="mt-2" title={`Unable to load ${plural}.`}><button type="button" className="cursor-pointer rounded text-teal-800 underline focus-visible:outline-2" onClick={() => { setState({ loading: true, options: [], error: false }); setAttempt(value => value + 1) }}>Retry {plural}</button></ErrorState>}
   </div>
 }
 

@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
@@ -63,7 +64,7 @@ export default function CategoryManagementPage() {
       <button className="min-h-11 w-fit cursor-pointer self-end rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-50" disabled={!search && !status && sort === 'name'} onClick={() => { setSearch(''); setStatus(''); setSort('name') }}>Clear filters</button>
     </div>
     {!current && <ContentSkeleton initial={!result} variant="cards" columns="xl:grid-cols-2">Loading categories...</ContentSkeleton>}
-    {current?.error && <div className="space-y-3"><AuthFeedback>Unable to load categories.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></div>}
+    {current?.error && <ErrorState title="Unable to load categories."><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></ErrorState>}
     {current?.data && (!categories.length ? <EmptyState title={filtered ? 'No categories match your current filters.' : 'No ticket categories found.'} actions={filtered ? <button type="button" className={button} onClick={() => { setSearch(''); setStatus(''); setSort('name') }}>Clear filters</button> : <Link className={button} to="/admin/categories/new">Add Category</Link>} /> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{categories.map(category => <li key={category.id} className="min-w-0 space-y-4 layout-panel">
       <div><h2 className="break-words text-lg font-semibold">{category.name}</h2><p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-600">{category.description || 'No description provided.'}</p></div>
       <dl className="grid gap-3 text-sm sm:grid-cols-3">{[['Status', category.isActive ? 'Active' : 'Inactive'], ['Created', formatTicketDate(category.createdAt)], ['Updated', formatTicketDate(category.updatedAt)]].map(([label, value]) => <div key={label}><dt className="text-slate-500">{label}</dt><dd>{value}</dd></div>)}</dl>

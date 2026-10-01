@@ -1,10 +1,10 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { auditFilterFields, getAuditLogs } from '../../api/auditApi'
 import { getApiErrorMessage } from '../../api/apiError'
-import AuthFeedback from '../../auth/AuthFeedback'
 import { formatTicketDate } from '../employee/ticketFormatting'
 import { validateReportDates } from './reportValidation'
 
@@ -47,7 +47,7 @@ export default function AdminAuditLogsPage() {
     </form>
     {unapplied && <p className="text-sm text-slate-600">Apply filters to update the results.</p>}
     {!current && <ContentSkeleton initial={!result} variant="table" headers={["Time", "Actor", "Action", "Target", "Details"]}>Loading audit logs...</ContentSkeleton>}
-    {current?.error && <div className="space-y-3"><AuthFeedback>{current.error}</AuthFeedback><button className={button} onClick={() => setRequest(previous => ({ ...previous }))}>Retry</button></div>}
+    {current?.error && <ErrorState title="Unable to load audit logs" message={<>{current.error}</>}><button className={button} onClick={() => setRequest(previous => ({ ...previous }))}>Retry</button></ErrorState>}
     {current?.data && <section className="min-w-0 space-y-4 layout-panel" aria-label="Audit records">
       {!current.data.logs.length ? <EmptyState compact title={filtered ? 'No audit logs match your current filters.' : 'No audit logs found.'} actions={filtered && <button type="button" className={button} onClick={clear}>Clear filters</button>} /> : <div className="layout-table focus-visible:outline-2 focus-visible:outline-teal-700" tabIndex={0} aria-label="Scrollable audit table"><table className="w-full text-left text-sm"><caption className="sr-only">Audit logs, newest first</caption><thead><tr>{['Time', 'Actor', 'Action', 'Target', 'Details'].map(label => <th scope="col" className="p-3" key={label}>{label}</th>)}</tr></thead><tbody>{current.data.logs.map(log => <tr key={log.id} className="border-t border-slate-200">
         <td className="min-w-40 p-3 align-top"><time dateTime={log.createdAt} title={log.createdAt}>{formatTicketDate(log.createdAt)}</time></td>

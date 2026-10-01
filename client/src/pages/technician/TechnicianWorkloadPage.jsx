@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
@@ -5,7 +6,6 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { getTechnicianStatisticsSection } from '../../api/dashboardApi'
-import AuthFeedback from '../../auth/AuthFeedback'
 import { formatTicketStatus, formatTicketPriority } from '../employee/ticketFormatting'
 
 const buttonClass = 'inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2'
@@ -33,7 +33,7 @@ function StatisticsSection({ kind, title, initialView }) {
   const current = result?.attempt === attempt ? result : null
   return <section className="min-w-0 space-y-4 layout-panel">
     <h2 className="text-lg font-semibold">{title}</h2>
-    {!current ? <ContentSkeleton initial={initialView && !result && attempt === 0} variant="rows">Loading workload statistics...</ContentSkeleton> : current.error ? <><AuthFeedback>Unable to load workload statistics.</AuthFeedback><button type="button" className={buttonClass} onClick={() => setAttempt(value => value + 1)}>Retry</button></> : <StatisticsContent kind={kind} data={current.data} />}
+    {!current ? <ContentSkeleton initial={initialView && !result && attempt === 0} variant="rows">Loading workload statistics...</ContentSkeleton> : current.error ? <ErrorState compact title="Unable to load workload statistics"><button type="button" className={buttonClass} onClick={() => setAttempt(value => value + 1)}>Retry</button></ErrorState> : <StatisticsContent kind={kind} data={current.data} />}
   </section>
 }
 

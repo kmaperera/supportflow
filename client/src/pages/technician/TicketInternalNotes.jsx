@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import { useEffect, useRef, useState } from 'react'
@@ -50,7 +51,7 @@ export default function TicketInternalNotes({ ticket, userId, disabled, draft, o
   return <section aria-labelledby="internal-notes-heading" className="min-w-0 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:p-6">
     <h2 id="internal-notes-heading" className="text-lg font-semibold">Internal Notes</h2>
     <p className="mt-1 text-sm text-slate-600">Visible only to support staff.</p>
-    {!current ? <ContentSkeleton initial={!result && attempt === 0} variant="rows">Loading internal notes...</ContentSkeleton> : current.error ? <div className="mt-4 space-y-2"><AuthFeedback>Unable to load internal notes.</AuthFeedback><button type="button" onClick={() => setAttempt(value => value + 1)} className="cursor-pointer rounded text-teal-800 underline focus-visible:outline-2">Retry</button></div> : <InternalNoteList notes={current.notes} userId={userId} />}
+    {!current ? <ContentSkeleton initial={!result && attempt === 0} variant="rows">Loading internal notes...</ContentSkeleton> : current.error ? <ErrorState compact className="mt-4" title="Unable to load internal notes."><button type="button" onClick={() => setAttempt(value => value + 1)} className="cursor-pointer rounded text-teal-800 underline focus-visible:outline-2">Retry</button></ErrorState> : <InternalNoteList notes={current.notes} userId={userId} />}
     <div id="internal-note-feedback" className="mt-3">{error && <AuthFeedback>{error}</AuthFeedback>}</div>
     {added && <p role="status" className="mt-3 text-sm text-teal-800">Internal note added.</p>}
     {canAdd && <form onSubmit={submit} noValidate className="mt-4 space-y-3">

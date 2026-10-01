@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
@@ -119,7 +120,7 @@ function UserList({ currentAdminId }) {
       {(filtered || search || query.sort !== 'newest') && <div><button type="button" className={button} onClick={reset}>Clear filters</button></div>}
     </div>
     {!current && <ContentSkeleton initial={!result} variant="cards" columns="xl:grid-cols-2">Loading users...</ContentSkeleton>}
-    {current?.error && <div className="space-y-3"><AuthFeedback>Unable to load users.</AuthFeedback><button type="button" className={button} onClick={() => setQuery(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></div>}
+    {current?.error && <ErrorState title="Unable to load users."><button type="button" className={button} onClick={() => setQuery(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></ErrorState>}
     {current?.data && <>
       <p className="text-sm text-slate-600">{current.data.pagination.totalRecords} users</p>
       {!current.data.users.length ? <EmptyState title={filtered ? 'No users match your current search or filters.' : 'No users found.'} actions={filtered ? <button type="button" className={button} onClick={reset}>Clear filters</button> : <Link className={button} to="/admin/users/new">Create User</Link>} /> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{current.data.users.map(user => <li key={user.id} className="min-w-0 layout-panel">

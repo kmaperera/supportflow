@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import { useEffect, useRef, useState } from 'react'
@@ -70,10 +71,9 @@ export default function TicketConversation({ ticketId, status, assignedTo, disab
   }
   return <section aria-labelledby="conversation-heading" className="min-w-0 layout-panel">
     <h2 id="conversation-heading" className="text-lg font-semibold">Conversation</h2>
-    {conversation.loading ? <ContentSkeleton initial={attempt === 0 && !conversation.comments.length} variant="rows">Loading conversation...</ContentSkeleton> : conversation.error ? <div className="mt-4">
-      <AuthFeedback>Unable to load conversation.</AuthFeedback>
+    {conversation.loading ? <ContentSkeleton initial={attempt === 0 && !conversation.comments.length} variant="rows">Loading conversation...</ContentSkeleton> : conversation.error ? <ErrorState compact className="mt-4" title="Unable to load conversation.">
       <button type="button" className="mt-3 rounded text-sm font-semibold text-teal-800 underline focus-visible:outline-2" onClick={() => { setConversation(previous => ({ ...previous, loading: true, error: false })); setAttempt(value => value + 1) }}>Retry conversation</button>
-    </div> : <PublicCommentList comments={conversation.comments} userId={user?.id} />}
+    </ErrorState> : <PublicCommentList comments={conversation.comments} userId={user?.id} />}
     {canReply ? <form onSubmit={submit} noValidate className="mt-6 space-y-3">
       <label htmlFor="public-reply" className="block text-sm font-semibold">Add a reply</label>
       <textarea id="public-reply" value={content} onChange={event => { setContent(event.target.value); setError(null); setSent(false) }} required maxLength={5000} rows={4} placeholder="Write a public reply..." disabled={sending || disabled} aria-describedby="reply-feedback" aria-invalid={Boolean(error)} className="block w-full min-w-0 resize-y rounded-lg border border-slate-300 p-3 text-sm focus-visible:outline-2 focus-visible:outline-teal-700 disabled:opacity-60" />

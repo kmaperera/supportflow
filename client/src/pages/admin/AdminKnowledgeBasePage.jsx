@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import LoadingState from '../../components/LoadingState'
 import ContentSkeleton from '../../components/ContentSkeleton'
@@ -31,7 +32,7 @@ export default function AdminKnowledgeBasePage() {
   </div>
 }
 function CategoryLoadNotice({ resource, skeleton = false }) {
-  return resource.loading ? skeleton ? <ContentSkeleton initial={!resource.data} columns="xl:grid-cols-2">Loading categories...</ContentSkeleton> : <LoadingState>Loading categories...</LoadingState> : resource.error ? <div className="space-y-2"><AuthFeedback>Unable to load KB categories.</AuthFeedback><button className={button} onClick={resource.reload}>Retry categories</button></div> : null
+  return resource.loading ? skeleton ? <ContentSkeleton initial={!resource.data} columns="xl:grid-cols-2">Loading categories...</ContentSkeleton> : <LoadingState>Loading categories...</LoadingState> : resource.error ? <ErrorState title="Unable to load KB categories."><button className={button} onClick={resource.reload}>Retry categories</button></ErrorState> : null
 }
 function Articles({ categories }) {
   const [search, setSearch] = useState('')
@@ -74,7 +75,7 @@ function Articles({ categories }) {
     </div>
     {error && <AuthFeedback>{error}</AuthFeedback>}{message && <AuthFeedback variant="success">{message}</AuthFeedback>}
     {resource.loading && <ContentSkeleton initial={!resource.data}>{resource.data ? 'Updating articles...' : 'Loading articles...'}</ContentSkeleton>}
-    {resource.error && <div className="space-y-2"><AuthFeedback>Unable to load knowledge base articles.</AuthFeedback><button className={button} onClick={resource.reload}>Retry</button></div>}
+    {resource.error && <ErrorState title="Unable to load knowledge base articles."><button className={button} onClick={resource.reload}>Retry</button></ErrorState>}
     {resource.data && <div className="space-y-3" aria-busy={resource.loading}>
       {!resource.loading && !resource.error && !resource.data.articles.length && <EmptyState title={query.search || query.categoryId ? 'No articles match your current filters.' : 'No knowledge base articles found.'} actions={query.search || query.categoryId ? <button type="button" className={button} onClick={clear}>Clear filters</button> : <Link className={button} to="/admin/knowledge-base/articles/new">Add Article</Link>} />}
       {resource.data.articles.map(article => <article key={article.id} className={kbCard}>

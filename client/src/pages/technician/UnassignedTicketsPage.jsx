@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
@@ -88,9 +89,9 @@ function UnassignedQueue() {
     <QueueFilters query={request} search={search} setSearch={setSearch} onChange={changeFilters} onSearch={() => changeFilters({})} onReset={resetFilters} />
     {notice && <AuthFeedback variant={notice.error ? 'error' : 'success'}>{notice.text}</AuthFeedback>}
     {!current && <ContentSkeleton initial={!result} variant="cards">{result ? 'Updating queue...' : 'Loading unassigned tickets...'}</ContentSkeleton>}
-    {current?.error && <div className="space-y-3"><AuthFeedback>{current.error}</AuthFeedback>
+    {current?.error && <ErrorState title="Unable to load tickets" message={<>{current.error}</>}>
       <button type="button" className={actionClass} onClick={reload}>Retry</button>
-    </div>}
+    </ErrorState>}
     {current?.data && <>
       <p className="text-sm text-slate-600">{current.data.pagination.totalRecords} unassigned tickets</p>
       <UnassignedTicketsList tickets={current.data.tickets} totalRecords={current.data.pagination.totalRecords} filtered={filtered} onReset={resetFilters} renderAction={ticket => <SelfAssignAction ticket={ticket} pending={pendingIds.includes(String(ticket.id))} onAssign={assign} />} />

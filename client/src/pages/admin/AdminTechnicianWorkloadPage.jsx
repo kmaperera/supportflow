@@ -1,10 +1,10 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getTechnicianWorkloads } from '../../api/userApi'
-import AuthFeedback from '../../auth/AuthFeedback'
 
 const button = 'inline-flex min-h-11 w-fit cursor-pointer items-center rounded-lg border border-teal-700 px-3 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 const input = 'mt-1 block min-h-11 w-full min-w-0 rounded-lg border border-slate-300 bg-white p-3 focus-visible:outline-2 focus-visible:outline-teal-700'
@@ -41,7 +41,7 @@ export default function AdminTechnicianWorkloadPage() {
       <p id="workload-search-help" className="text-xs text-slate-500 sm:col-span-2 xl:col-span-4">Search first name, last name, email, or department.</p>
     </div>
     {!current && <ContentSkeleton initial={!result} variant="workload">Loading technician workload...</ContentSkeleton>}
-    {current?.error && <div className="space-y-3"><AuthFeedback>Unable to load technician workload.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></div>}
+    {current?.error && <ErrorState title="Unable to load technician workload."><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></ErrorState>}
     {current?.data && <>
       <p className="text-sm text-slate-600">{query || filter ? 'Summary for technicians matching the current search and workload filter.' : 'Summary across all active technicians.'} Inactive technicians are not included by this endpoint.</p>
       <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[['Active technicians', rows.length], ['With active tickets', rows.filter(person => person.workload.totalActive > 0).length], ['No active tickets', rows.filter(person => person.workload.totalActive === 0).length], ['Active assigned tickets', rows.reduce((sum, person) => sum + person.workload.totalActive, 0)]].map(([label, value]) => <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4"><dt className="text-sm text-slate-600">{label}</dt><dd className="mt-2 text-2xl font-semibold tabular-nums">{value}</dd></div>)}</dl>

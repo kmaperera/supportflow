@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import LoadingState from '../../components/LoadingState'
 import { useEffect, useState } from 'react'
 import { getTicketPriorities } from '../../api/ticketApi'
@@ -29,10 +30,9 @@ function PriorityForm({ ticket, pending, onUpdate }) {
   const options = current?.options || []
   const valid = options.some(option => String(option.id) === selected)
   if (!current) return <LoadingState className="mt-3 text-sm">Loading priority options...</LoadingState>
-  if (current.error) return <div className="mt-3 space-y-2">
-    <p role="alert" className="text-sm">Unable to load priority options.</p>
+  if (current.error) return <ErrorState compact className="mt-4" title="Unable to load priority options.">
     <button type="button" disabled={pending} onClick={() => setAttempt(value => value + 1)} className="cursor-pointer rounded text-sm text-teal-800 underline focus-visible:outline-2 disabled:cursor-not-allowed">Retry</button>
-  </div>
+  </ErrorState>
   return <form className="mt-4 flex flex-wrap items-end gap-3" onSubmit={event => {
     event.preventDefault()
     if (!pending && valid && selected !== currentId) onUpdate(selected)

@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
@@ -5,7 +6,6 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getPublishedArticles } from '../../api/knowledgeBaseApi'
 import { getApiErrorMessage } from '../../api/apiError'
-import AuthFeedback from '../../auth/AuthFeedback'
 import { formatTicketDate } from './ticketFormatting'
 
 const buttonClass = 'rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50'
@@ -33,7 +33,7 @@ export default function KnowledgeBasePage() {
       {(search || request.search) && <button type="button" className={buttonClass} onClick={reset}>Clear filters</button>}
     </form>
     {!current && <ContentSkeleton initial={!result} variant="cards">Loading articles...</ContentSkeleton>}
-    {current?.error && <div className="space-y-3"><AuthFeedback>{current.error}</AuthFeedback><button type="button" className={buttonClass} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></div>}
+    {current?.error && <ErrorState title="Unable to load articles" message={<>{current.error}</>}><button type="button" className={buttonClass} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></ErrorState>}
     {current?.data && <>
       {!current.data.articles.length ? <EmptyState title={request.search ? 'No articles match your search.' : 'No knowledge base articles are available yet.'} actions={request.search && <button type="button" className={buttonClass} onClick={reset}>Clear search</button>} /> : <ul className="grid gap-4 md:grid-cols-2">
         {current.data.articles.map(article => <li key={article.id} className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-6">

@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
@@ -6,7 +7,6 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { getAdminAnalyticsSection } from '../../api/dashboardApi'
-import AuthFeedback from '../../auth/AuthFeedback'
 import { formatTicketPriority, formatTicketStatus } from '../employee/ticketFormatting'
 import { formatAnalyticsMinutes } from './analyticsFormatting'
 
@@ -36,7 +36,7 @@ function AnalyticsSection({ kind, title, period, initialView }) {
   }, [kind, period, attempt])
   const current = result?.attempt === attempt ? result : null
   return <section className="min-w-0 space-y-4 layout-panel"><h2 className="text-lg font-semibold">{title}</h2>
-    {!current ? <ContentSkeleton initial={initialView && !result && attempt === 0} variant={kind === 'summary' ? 'summary' : ['trend', 'status'].includes(kind) ? 'chart' : 'rows'} count={4}>Loading analytics...</ContentSkeleton> : current.error ? <><AuthFeedback>Unable to load analytics.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry {title.toLowerCase()}</button></> : <AnalyticsContent kind={kind} data={current.data} period={period} />}
+    {!current ? <ContentSkeleton initial={initialView && !result && attempt === 0} variant={kind === 'summary' ? 'summary' : ['trend', 'status'].includes(kind) ? 'chart' : 'rows'} count={4}>Loading analytics...</ContentSkeleton> : current.error ? <ErrorState compact title="Unable to load analytics"><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry {title.toLowerCase()}</button></ErrorState> : <AnalyticsContent kind={kind} data={current.data} period={period} />}
   </section>
 }
 function Values({ rows }) {

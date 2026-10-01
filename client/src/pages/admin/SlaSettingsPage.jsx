@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
@@ -24,7 +25,7 @@ export default function SlaSettingsPage() {
     <p className="text-sm text-slate-600">Changes apply to new tickets and future SLA recalculations triggered by priority changes. Existing ticket deadlines are not automatically rewritten.</p>
     {success && <AuthFeedback variant="success">SLA policy updated successfully.</AuthFeedback>}
     {!current && <ContentSkeleton initial={!result} variant="cards" columns="xl:grid-cols-2">Loading SLA settings...</ContentSkeleton>}
-    {current?.error && <div className="space-y-3"><AuthFeedback>Unable to load SLA settings.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></div>}
+    {current?.error && <ErrorState title="Unable to load SLA settings."><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></ErrorState>}
     {current?.data && (!current.data.length ? <EmptyState compact title="No SLA policies found." /> : <div className="grid min-w-0 gap-4 xl:grid-cols-2">{current.data.map(policy => <PolicyCard key={policy.id} policy={policy} onSaved={() => { setSuccess(true); setAttempt(value => value + 1) }} />)}</div>)}
   </div>
 }

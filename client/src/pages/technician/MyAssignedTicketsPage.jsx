@@ -1,10 +1,10 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
-import AuthFeedback from '../../auth/AuthFeedback'
 import { getApiErrorMessage } from '../../api/apiError'
 import { getMyAssignedTickets } from '../../api/ticketApi'
 import TechnicianTicketCards from './TechnicianTicketCards'
@@ -32,9 +32,9 @@ function AssignedTickets() {
   return <div className="layout-page">
     <PageHeader title="My Assigned Tickets" description="Your active workload: Assigned, In Progress, Waiting for User, and Reopened tickets." />
     {!current && <ContentSkeleton initial={!result} variant="cards">Loading assigned tickets...</ContentSkeleton>}
-    {current?.error && <div className="space-y-3"><AuthFeedback>{current.error}</AuthFeedback>
+    {current?.error && <ErrorState title="Unable to load tickets" message={<>{current.error}</>}>
       <button type="button" className={actionClass} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button>
-    </div>}
+    </ErrorState>}
     {current?.data && <>
       <p className="text-sm text-slate-600">{current.data.pagination.totalRecords} assigned tickets</p>
       <AssignedTicketsList tickets={current.data.tickets} totalRecords={current.data.pagination.totalRecords} />

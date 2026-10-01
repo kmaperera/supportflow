@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import MetadataList from '../../layouts/MetadataList'
 import { useEffect, useRef, useState } from 'react'
@@ -11,7 +12,7 @@ import TicketPriorityControl from './TicketPriorityControl'
 import { canManagePriority } from './ticketPriorityEligibility'
 import TicketStatusActions from './TicketStatusActions'
 import TicketSlaTimers from './TicketSlaTimers'
-import { getApiErrorMessage } from '../../api/apiError'
+import { getApiErrorMessage, getResourceError } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
 import TicketStatusTimeline from '../employee/TicketStatusTimeline'
 import TicketConversation from '../employee/TicketConversation'
@@ -48,8 +49,7 @@ function TicketWorkspace({ ticketId, userId }) {
       if (!controller.signal.aborted) setResult({ attempt, ticket })
     }).catch(error => {
       if (controller.signal.aborted) return
-      const unavailable = [400, 403, 404, 422].includes(error?.response?.status)
-      setResult({ attempt, unavailable, error: unavailable ? 'Ticket not found or you do not have access to it.' : getApiErrorMessage(error, 'Unable to load this ticket.') })
+      setResult({ attempt, ...getResourceError(error) })
     })
     return () => controller.abort()
   }, [ticketId, attempt])
@@ -62,7 +62,7 @@ function TicketWorkspace({ ticketId, userId }) {
       if (mounted.current) setResult({ attempt, ticket })
     } catch (error) {
       if (!mounted.current) return
-      if ([403, 404].includes(error?.response?.status)) setResult({ attempt, unavailable: true, error: 'Ticket not found or you do not have access to it.' })
+      if ([403, 404].includes(error?.response?.status)) setResult({ attempt, ...getResourceError(error) })
       else setNotice({ error: true, text: 'Unable to refresh ticket details. Use Refresh to try again.' })
     }
   }
@@ -151,11 +151,9 @@ function TicketWorkspace({ ticketId, userId }) {
     </div>
     {notice && <AuthFeedback variant={notice.error ? 'error' : 'success'}>{notice.text}</AuthFeedback>}
     {!current && <ContentSkeleton initial={!result && attempt === 0} variant="detail">Loading ticket...</ContentSkeleton>}
-    {current?.error && <section className="space-y-3">
-      <h1 className="text-2xl font-semibold">{current.unavailable ? 'Ticket unavailable' : 'Unable to load ticket'}</h1>
-      <AuthFeedback>{current.error}</AuthFeedback>
+    {current?.error && <ErrorState title={current.errorTitle} message={current.error}>
       {!current.unavailable && <button type="button" className={actionClass} onClick={() => setAttempt(value => value + 1)}>Retry</button>}
-    </section>}
+    </ErrorState>}
     {current?.ticket && <>
       <TechnicianTicketDetailsContent ticket={current.ticket} userId={userId} />
       <TicketSlaTimers ticket={current.ticket} />

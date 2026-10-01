@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import LoadingState from '../../components/LoadingState'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -16,7 +17,7 @@ function ArticleForm({ id }) {
   const resource = useKbResource(loader)
   return <div className="layout-narrow layout-page">
     <h1 className="text-2xl font-semibold">{id ? 'Edit Article' : 'Add Article'}</h1>
-    {resource.loading ? <LoadingState>Loading article form...</LoadingState> : resource.error ? <div className="space-y-3"><AuthFeedback>Unable to load the article form.</AuthFeedback><button className={button} onClick={resource.reload}>Retry</button></div> : <ArticleEditor id={id} categories={resource.data[0]} article={resource.data[1]} onSaved={() => navigate('/admin/knowledge-base', { replace: true, state: { kbMessage: id ? 'Article updated successfully.' : 'Article created successfully.' } })} />}
+    {resource.loading ? <LoadingState>Loading article form...</LoadingState> : resource.error ? <ErrorState title="Unable to load the article form."><button className={button} onClick={resource.reload}>Retry</button></ErrorState> : <ArticleEditor id={id} categories={resource.data[0]} article={resource.data[1]} onSaved={() => navigate('/admin/knowledge-base', { replace: true, state: { kbMessage: id ? 'Article updated successfully.' : 'Article created successfully.' } })} />}
     <Link className={button} to="/admin/knowledge-base">Back to KB Articles</Link>
   </div>
 }

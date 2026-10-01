@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
@@ -5,7 +6,6 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getAdminTickets, getTicketPriorities } from '../../api/ticketApi'
 import { getCategories } from '../../api/categoryApi'
-import AuthFeedback from '../../auth/AuthFeedback'
 import { ticketStatuses, formatTicketPriority } from '../employee/ticketFormatting'
 import AdminTicketMetadata from './AdminTicketMetadata'
 
@@ -49,7 +49,7 @@ export default function AdminTicketsPage() {
       <button className={button} disabled={!search && !filtered && query.sort === 'default'} onClick={reset}>Clear filters</button>
     </div>
     {!current && <ContentSkeleton initial={!result} variant="cards">{result ? 'Updating tickets...' : 'Loading tickets...'}</ContentSkeleton>}
-    {current?.error && <div className="space-y-3"><AuthFeedback>Unable to load tickets.</AuthFeedback><button className={button} onClick={() => setQuery(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></div>}
+    {current?.error && <ErrorState title="Unable to load tickets."><button className={button} onClick={() => setQuery(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></ErrorState>}
     {current?.data && <>
       <p className="text-sm text-slate-600">{current.data.pagination.totalRecords} tickets</p>
       {!current.data.tickets.length ? <EmptyState title={filtered ? 'No tickets match your current filters.' : 'No tickets have been created yet.'} actions={filtered && <button type="button" className={button} onClick={reset}>Clear filters</button>} /> : <ul className="space-y-4">{current.data.tickets.map(ticket => <li key={ticket.id}><Link to={`/admin/tickets/${encodeURIComponent(ticket.id)}`} className="block min-w-0 rounded-2xl border border-slate-200 bg-white p-4 no-underline transition-colors hover:border-teal-700 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 sm:p-6"><p className="break-all text-sm font-semibold text-teal-800">{ticket.ticketNumber}</p><h2 className="mt-1 break-words text-lg font-semibold">{ticket.title}</h2><AdminTicketMetadata ticket={ticket} /></Link></li>)}</ul>}
@@ -66,5 +66,5 @@ function LookupFilter({ label, load, value, onChange }) {
     return () => controller.abort()
   }, [load, attempt])
   const current = result?.attempt === attempt ? result : null
-  return <div className="min-w-0"><label className="text-sm font-medium">{label}<select className={input} value={value} disabled={!current?.data} onChange={event => onChange(event.target.value)}><option value="">{!current ? `Loading ${label.toLowerCase()} options...` : `All ${label === 'Priority' ? 'priorities' : 'categories'}`}</option>{current?.data?.map(option => <option key={option.id} value={option.id}>{label === 'Priority' ? formatTicketPriority(option.name) : `${option.name}${option.isActive === false ? ' (Inactive)' : ''}`}</option>)}</select></label>{current?.error && <div className="mt-2 space-y-2"><p role="alert" className="text-sm">Unable to load {label.toLowerCase()} options.</p><button className={button} onClick={() => setAttempt(previous => previous + 1)}>Retry {label.toLowerCase()}</button></div>}</div>
+  return <div className="min-w-0"><label className="text-sm font-medium">{label}<select className={input} value={value} disabled={!current?.data} onChange={event => onChange(event.target.value)}><option value="">{!current ? `Loading ${label.toLowerCase()} options...` : `All ${label === 'Priority' ? 'priorities' : 'categories'}`}</option>{current?.data?.map(option => <option key={option.id} value={option.id}>{label === 'Priority' ? formatTicketPriority(option.name) : `${option.name}${option.isActive === false ? ' (Inactive)' : ''}`}</option>)}</select></label>{current?.error && <ErrorState compact className="mt-2" title={<>Unable to load {label.toLowerCase()} options.</>}><button className={button} onClick={() => setAttempt(previous => previous + 1)}>Retry {label.toLowerCase()}</button></ErrorState>}</div>
 }

@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ReportSkeleton from './ReportSkeleton'
 import PageHeader from '../../layouts/PageHeader'
@@ -7,7 +8,6 @@ import { getCategories } from '../../api/categoryApi'
 import { getTicketPriorities } from '../../api/ticketApi'
 import { getAdminDashboardSection } from '../../api/dashboardApi'
 import { getApiErrorMessage } from '../../api/apiError'
-import AuthFeedback from '../../auth/AuthFeedback'
 import { ticketStatuses, formatTicketPriority } from '../employee/ticketFormatting'
 import { validateReportDates } from './reportValidation'
 import ReportResults from './ReportResults'
@@ -75,7 +75,7 @@ function ReportForm({ type }) {
     </form>
     {!loading && !result && !error && <EmptyState title="Generate a report" message="Choose a report type and criteria, then generate a report." />}
     {loading && <ReportSkeleton type={type} initial={!result} />}
-    {error && <div className="space-y-3"><AuthFeedback>{error}</AuthFeedback>{lastRequest && <button className={button} disabled={loading} onClick={() => generate(lastRequest.criteria, lastRequest.page)}>Retry</button>}</div>}
+    {error && <ErrorState title="Unable to generate report" message={<>{error}</>}>{lastRequest && <button className={button} disabled={loading} onClick={() => generate(lastRequest.criteria, lastRequest.page)}>Retry</button>}</ErrorState>}
     {result && <section className="min-w-0 space-y-4 layout-panel" aria-busy={loading}>
       <h2 className="text-lg font-semibold">{reportTypes[type].label} results</h2>
       <ReportExportActions key={JSON.stringify(result.criteria)} type={type} criteria={result.criteria} disabled={loading || Boolean(changed) || Boolean(error) || Object.values(errors).some(Boolean)} />
@@ -94,5 +94,5 @@ function LookupSelect({ field, value, disabled, onChange }) {
     return () => controller.abort()
   }, [field, attempt])
   const current = result?.attempt === attempt ? result : null
-  return <><select id={`report-${field}`} className={input} disabled={disabled || !current || current.error} value={value} onChange={event => onChange(event.target.value)}><option value="">{!current ? 'Loading options...' : 'All'}</option>{current?.rows?.map(row => <option key={row.value} value={row.value}>{row.label}</option>)}</select>{current?.error && <div className="mt-2 space-y-2"><p role="alert" className="text-sm">Unable to load {labels[field].toLowerCase()} options.</p><button type="button" className={button} disabled={disabled} onClick={() => setAttempt(value => value + 1)}>Retry options</button></div>}</>
+  return <><select id={`report-${field}`} className={input} disabled={disabled || !current || current.error} value={value} onChange={event => onChange(event.target.value)}><option value="">{!current ? 'Loading options...' : 'All'}</option>{current?.rows?.map(row => <option key={row.value} value={row.value}>{row.label}</option>)}</select>{current?.error && <ErrorState compact className="mt-2" title={<>Unable to load {labels[field].toLowerCase()} options.</>}><button type="button" className={button} disabled={disabled} onClick={() => setAttempt(value => value + 1)}>Retry options</button></ErrorState>}</>
 }

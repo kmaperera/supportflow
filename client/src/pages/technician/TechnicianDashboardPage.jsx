@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import EmptyState from '../../components/EmptyState'
 import PageHeader from '../../layouts/PageHeader'
@@ -5,7 +6,6 @@ import SummaryCard from '../../layouts/SummaryCard'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
-import AuthFeedback from '../../auth/AuthFeedback'
 import { getApiErrorMessage } from '../../api/apiError'
 import { getTechnicianDashboard } from '../../api/dashboardApi'
 import { ticketStatuses, formatTicketStatus, formatTicketPriority, formatTicketDate } from '../employee/ticketFormatting'
@@ -37,12 +37,11 @@ function TechnicianDashboard({ user }) {
         <Link to="/technician/tickets/unassigned" className={actionClass}>View Unassigned Queue</Link>
       </>} />
     {state.loading && <ContentSkeleton initial={!state.data && attempt === 0} variant="dashboard">Loading dashboard...</ContentSkeleton>}
-    {state.error && <div className={panelClass}>
-      <AuthFeedback>{state.error}</AuthFeedback>
+    {state.error && <ErrorState title="Unable to load dashboard" message={<>{state.error}</>}>
       <button type="button" className={`${actionClass} mt-4`} onClick={() => {
         setState({ loading: true, data: null, error: null }); setAttempt(value => value + 1)
       }}>Retry</button>
-    </div>}
+    </ErrorState>}
     {state.data && <TechnicianDashboardContent data={state.data} />}
   </div>
 }

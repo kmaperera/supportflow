@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import MetadataList from '../../layouts/MetadataList'
 import { useEffect, useState } from 'react'
@@ -5,7 +6,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import NotificationReadNotice from '../shared/NotificationReadNotice'
 import { getTicketById } from '../../api/ticketApi'
-import { getApiErrorMessage } from '../../api/apiError'
+import { getResourceError } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
 import TicketStatusTimeline from './TicketStatusTimeline'
 import TicketConversation from './TicketConversation'
@@ -36,11 +37,7 @@ function TicketDetails({ ticketId }) {
       if (!controller.signal.aborted) setState({ loading: false, ticket, error: null })
     }).catch(error => {
       if (controller.signal.aborted) return
-      const status = error?.response?.status
-      const unavailable = [400, 403, 404, 422].includes(status)
-      setState({ loading: false, ticket: null, unavailable, error: unavailable
-        ? 'This ticket is not available. It may not exist or you may not have access.'
-        : getApiErrorMessage(error, 'Unable to load this ticket.') })
+      setState({ loading: false, ticket: null, ...getResourceError(error) })
     })
     return () => controller.abort()
   }, [ticketId, attempt])
@@ -67,11 +64,9 @@ function TicketDetails({ ticketId }) {
     {state.ticket && ['OPEN', 'ASSIGNED'].includes(state.ticket.status) && user?.id != null && String(state.ticket.createdBy) === String(user.id) && !editing && <div><button type="button" onClick={() => { setEditing(true); setNotice(null) }} className="rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2">Edit Ticket</button></div>}
     {editing && state.ticket && <EditTicketForm ticket={state.ticket} onCancel={() => setEditing(false)} onSaved={ticket => { setState({ loading: false, ticket, error: null }); setEditing(false); setNotice({ text: 'Ticket updated successfully.' }) }} onIneligible={() => { setEditing(false); setNotice({ error: true, text: 'This ticket can no longer be edited. Refreshing ticket details.' }); setState({ loading: true, ticket: null, error: null }); setAttempt(value => value + 1) }} />}
     {state.loading && <ContentSkeleton initial={!state.ticket && attempt === 0} variant="detail">Loading ticket...</ContentSkeleton>}
-    {state.error && <section className="space-y-3">
-      <h1 className="text-2xl font-semibold">{state.unavailable ? 'Ticket unavailable' : 'Unable to load ticket'}</h1>
-      <AuthFeedback>{state.error}</AuthFeedback>
+    {state.error && <ErrorState title={state.errorTitle} message={state.error}>
       {!state.unavailable && <button type="button" onClick={() => { setState({ loading: true, ticket: null, error: null }); setAttempt(value => value + 1) }} className="rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2">Retry</button>}
-    </section>}
+    </ErrorState>}
     {state.ticket && <><TicketDetailsContent ticket={state.ticket} /><TicketStatusTimeline key={`${ticketId}:${historyRevision}`} ticketId={ticketId} /><TicketConversation key={ticketId} ticketId={ticketId} status={state.ticket.status} /><TicketAttachments key={`attachments:${ticketId}`} ticketId={ticketId} status={state.ticket.status} /></>}
     {state.ticket?.status === 'CLOSED' && user?.id != null && String(state.ticket.createdBy) === String(user.id) && <TicketRating key={`rating:${ticketId}`} ticketId={ticketId} onConflict={() => {
       setNotice({ error: true, text: 'Feedback cannot be saved for this ticket in its current state. Refreshing ticket details.' })

@@ -1,3 +1,4 @@
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
@@ -56,10 +57,9 @@ function MyTickets() {
       <button type="button" onClick={() => setCreatedNumber(null)} className="mt-2 rounded text-sm text-teal-800 underline focus-visible:outline-2">Dismiss confirmation</button>
     </div>}
     {!current && <ContentSkeleton initial={!result} variant="cards">{result ? 'Updating tickets...' : 'Loading tickets...'}</ContentSkeleton>}
-    {current?.error && <div className="space-y-3">
-      <AuthFeedback>{current.error}</AuthFeedback>
+    {current?.error && <ErrorState title="Unable to load tickets" message={<>{current.error}</>}>
       <button type="button" className={actionClass} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button>
-    </div>}
+    </ErrorState>}
     {current?.data && <>
       {filtered && current.data.tickets.length === 0 ? <EmptyState title="No tickets match your current search or filters." actions={<button type="button" className={actionClass} onClick={resetFilters}>Clear filters</button>} /> : <MyTicketsList tickets={current.data.tickets} totalRecords={current.data.pagination.totalRecords} />}
       {(current.data.pagination.totalPages > 1 || request.page > 1) && <nav aria-label="Ticket pagination" className="flex flex-wrap items-center gap-4">
