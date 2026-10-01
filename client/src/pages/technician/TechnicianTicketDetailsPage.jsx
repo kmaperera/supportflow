@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState'
 import MetadataList from '../../layouts/MetadataList'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -149,7 +150,7 @@ function TicketWorkspace({ ticketId, userId }) {
       {current?.ticket && <button type="button" disabled={updating} className={actionClass} onClick={() => setAttempt(value => value + 1)}>Refresh</button>}
     </div>
     {notice && <AuthFeedback variant={notice.error ? 'error' : 'success'}>{notice.text}</AuthFeedback>}
-    {!current && <p role="status">Loading ticket...</p>}
+    {!current && <LoadingState>Loading ticket...</LoadingState>}
     {current?.error && <section className="space-y-3">
       <h1 className="text-2xl font-semibold">{current.unavailable ? 'Ticket unavailable' : 'Unable to load ticket'}</h1>
       <AuthFeedback>{current.error}</AuthFeedback>

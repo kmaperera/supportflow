@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState'
 import { useEffect, useId, useRef, useState } from 'react'
 import { assignTicket, unassignTicket } from '../../api/ticketApi'
 import { getAssignableTechnicians, getTechnicianWorkloads } from '../../api/userApi'
@@ -132,7 +133,7 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
       <div className="layout-actions"><button type="button" className={button} disabled={busy} onClick={() => setUnassignConfirmation(null)}>Cancel</button><button type="button" className={`${button} border-red-700 text-red-700 hover:bg-red-50`} disabled={busy} onClick={removeAssignment}>{busy ? 'Unassigning...' : 'Confirm Unassign'}</button></div>
     </div> : <div className="flex flex-wrap items-start gap-3">
     {!eligible ? <p className="text-sm text-slate-600">Assignment cannot be changed on resolved or closed tickets.</p> : !open ? <button className={button} disabled={busy} onClick={() => { setOpen(true); setAttempt(value => value + 1); setSelected(''); setConfirm(false) }}>{assigned ? 'Reassign' : 'Assign technician'}</button> : <div className="w-full min-w-0 max-w-lg space-y-3">
-      {!current && <p role="status">Loading technicians...</p>}
+      {!current && <div className="space-y-1" aria-busy="true"><p className="text-sm font-medium">Technician</p><div className="rounded-lg border border-slate-300 bg-slate-50 px-3"><LoadingState>Loading technicians...</LoadingState></div></div>}
       {current?.error && <><AuthFeedback>Unable to load technicians.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></>}
       {current?.data && <>
         {!current.data.length ? <p>No assignable technicians found.</p> : <>

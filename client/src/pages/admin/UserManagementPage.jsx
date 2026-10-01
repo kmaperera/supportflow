@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -116,7 +117,7 @@ function UserList({ currentAdminId }) {
       <label className="text-sm font-medium">Sort by<select className={input} value={query.sort} onChange={event => change({ sort: event.target.value })}><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="name">First name</option><option value="role">Role</option></select></label>
       {(filtered || search || query.sort !== 'newest') && <div><button type="button" className={button} onClick={reset}>Clear filters</button></div>}
     </div>
-    {!current && <p role="status">Loading users...</p>}
+    {!current && <LoadingState>Loading users...</LoadingState>}
     {current?.error && <div className="space-y-3"><AuthFeedback>Unable to load users.</AuthFeedback><button type="button" className={button} onClick={() => setQuery(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></div>}
     {current?.data && <>
       <p className="text-sm text-slate-600">{current.data.pagination.totalRecords} users</p>

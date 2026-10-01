@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState'
 import PageHeader from '../../layouts/PageHeader'
 import SummaryCard from '../../layouts/SummaryCard'
 import { useEffect, useState } from 'react'
@@ -78,7 +79,7 @@ function EmployeeDashboard({ user }) {
         <Link to="/employee/tickets/new" className={actionClass}>Create Ticket</Link>
         <Link to="/employee/tickets" className={actionClass}>View My Tickets</Link>
       </>} />
-    {state.loading && <p role="status" className={panelClass}>Loading dashboard...</p>}
+    {state.loading && <LoadingState className={panelClass}>Loading dashboard...</LoadingState>}
     {state.error && <div className={panelClass}>
       <AuthFeedback>{state.error}</AuthFeedback>
       <button type="button" className={`${actionClass} mt-4`} onClick={() => {

@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState'
 import { useEffect, useState } from 'react'
 import { getTicketPriorities } from '../../api/ticketApi'
 import { formatTicketPriority } from '../employee/ticketFormatting'
@@ -27,7 +28,7 @@ function PriorityForm({ ticket, pending, onUpdate }) {
   const currentId = String(ticket.priority?.id ?? '')
   const options = current?.options || []
   const valid = options.some(option => String(option.id) === selected)
-  if (!current) return <p role="status" className="mt-3 text-sm">Loading priority options...</p>
+  if (!current) return <LoadingState className="mt-3 text-sm">Loading priority options...</LoadingState>
   if (current.error) return <div className="mt-3 space-y-2">
     <p role="alert" className="text-sm">Unable to load priority options.</p>
     <button type="button" disabled={pending} onClick={() => setAttempt(value => value + 1)} className="cursor-pointer rounded text-sm text-teal-800 underline focus-visible:outline-2 disabled:cursor-not-allowed">Retry</button>
@@ -42,7 +43,7 @@ function PriorityForm({ ticket, pending, onUpdate }) {
         {options.map(option => <option key={option.id} value={option.id}>{formatTicketPriority(option.name)}</option>)}
       </select>
     </label>
-    <button type="submit" disabled={pending || !valid || selected === currentId} className="min-h-11 cursor-pointer rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-50">{pending ? 'Updating...' : 'Update Priority'}</button>
+    <button type="submit" disabled={pending || !valid || selected === currentId} className="min-h-11 cursor-pointer rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-50">{pending ? 'Updating priority...' : 'Update Priority'}</button>
     {!options.length && <p className="basis-full text-sm text-slate-600">No priority options are available.</p>}
   </form>
 }

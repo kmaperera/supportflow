@@ -1,3 +1,4 @@
+import LoadingState from '../components/LoadingState'
 import AdminAuditLogsPage from '../pages/admin/AdminAuditLogsPage'
 import AdminReportsPage from '../pages/admin/AdminReportsPage'
 import { lazy, Suspense } from 'react'
@@ -99,7 +100,7 @@ function AppRoutes() {
             <Route index element={<AdminDashboardPage />} />
             <Route path="audit-logs" element={<AdminAuditLogsPage />} />
             <Route path="reports" element={<AdminReportsPage />} />
-            <Route path="analytics" element={<Suspense fallback={<p role="status">Loading analytics...</p>}><AdminAnalyticsPage /></Suspense>} />
+            <Route path="analytics" element={<Suspense fallback={<LoadingState>Loading analytics...</LoadingState>}><AdminAnalyticsPage /></Suspense>} />
             <Route path="notifications" element={<SharedNotificationsPage />} />
             <Route path="knowledge-base" element={<AdminKnowledgeBasePage />} />
             <Route path="knowledge-base/articles/new" element={<KbArticleFormPage />} />

@@ -51,7 +51,7 @@ export default function TicketRating({ ticketId, onConflict }) {
         <p className="text-xs text-slate-500">Maximum 1,000 characters.</p>
       </fieldset>
       <div className="layout-actions">
-        <button type="submit" disabled={submitting} className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50">{submitting ? 'Submitting...' : saved ? 'Update Rating' : 'Submit Rating'}</button>
+        <button type="submit" disabled={submitting} className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">{submitting ? 'Submitting...' : saved ? 'Update Rating' : 'Submit Rating'}</button>
         {saved && <button type="button" disabled={submitting} onClick={() => { setRating(String(saved.rating)); setComment(saved.comment || ''); setError(null); setEditing(false) }} className="rounded px-3 py-2 text-sm underline focus-visible:outline-2">Cancel</button>}
       </div>
       <p role="status" className="sr-only">{submitting ? 'Submitting rating...' : ''}</p>

@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthFeedback from '../../auth/AuthFeedback'
@@ -105,9 +106,9 @@ export function CreateTicketForm({ categories = [], priorities = [], categorySta
         </div>
       </fieldset>
       <SuggestedArticles title={values.title} description={values.description} />
-      {!optionsAvailable && <p id="selection-notice" role="status" className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">{categoryState.loading || priorityState.loading ? 'Loading ticket options...' : 'Categories and priorities must be available before you can submit a ticket.'}</p>}
+      {!optionsAvailable && (categoryState.loading || priorityState.loading ? <LoadingState id="selection-notice" className="rounded-lg bg-slate-50 p-3">Loading ticket options...</LoadingState> : <p id="selection-notice" role="status" className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">Categories and priorities must be available before you can submit a ticket.</p>)}
       <div className="flex flex-wrap items-center gap-4">
-        <button type="submit" disabled={creating || !optionsAvailable} className="rounded-lg bg-teal-800 px-5 py-3 text-sm font-semibold text-white hover:bg-teal-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-50">{creating ? 'Creating ticket...' : 'Create Ticket'}</button>
+        <button type="submit" disabled={creating || !optionsAvailable} className="rounded-lg bg-teal-800 px-5 py-3 text-sm font-semibold text-white hover:bg-teal-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-50 disabled:cursor-not-allowed">{creating ? 'Creating ticket...' : 'Create Ticket'}</button>
         {!creating && <Link to="/employee" className="rounded text-sm font-semibold text-slate-700 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700">Cancel</Link>}
         <span role="status" className="sr-only">{creating ? 'Creating ticket...' : ''}</span>
       </div>

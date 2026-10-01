@@ -23,7 +23,7 @@ export default function ReopenTicketButton({ ticketId, onReopened, onConflict, d
     } finally { pending.current = false; onPendingChange?.(false); setReopening(false) }
   }
   return <div className="space-y-3">
-    <button type="button" disabled={reopening || disabled} onClick={handleReopen} className="rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50">{reopening ? 'Reopening...' : 'Reopen Ticket'}</button>
+    <button type="button" disabled={reopening || disabled} onClick={handleReopen} className="rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">{reopening ? 'Reopening...' : 'Reopen Ticket'}</button>
     <p role="status" className="sr-only">{reopening ? 'Reopening ticket...' : ''}</p>
     {error && <AuthFeedback>{error}</AuthFeedback>}
   </div>

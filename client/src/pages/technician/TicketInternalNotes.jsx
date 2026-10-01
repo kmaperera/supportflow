@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState'
 import { useEffect, useRef, useState } from 'react'
 import { getTicketInternalNotes, addTicketInternalNote } from '../../api/ticketApi'
 import { getApiErrorMessage } from '../../api/apiError'
@@ -48,13 +49,13 @@ export default function TicketInternalNotes({ ticket, userId, disabled, draft, o
   return <section aria-labelledby="internal-notes-heading" className="min-w-0 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:p-6">
     <h2 id="internal-notes-heading" className="text-lg font-semibold">Internal Notes</h2>
     <p className="mt-1 text-sm text-slate-600">Visible only to support staff.</p>
-    {!current ? <p role="status" className="mt-4 text-sm">Loading internal notes...</p> : current.error ? <div className="mt-4 space-y-2"><AuthFeedback>Unable to load internal notes.</AuthFeedback><button type="button" onClick={() => setAttempt(value => value + 1)} className="cursor-pointer rounded text-teal-800 underline focus-visible:outline-2">Retry</button></div> : <InternalNoteList notes={current.notes} userId={userId} />}
+    {!current ? <LoadingState className="mt-4 text-sm">Loading internal notes...</LoadingState> : current.error ? <div className="mt-4 space-y-2"><AuthFeedback>Unable to load internal notes.</AuthFeedback><button type="button" onClick={() => setAttempt(value => value + 1)} className="cursor-pointer rounded text-teal-800 underline focus-visible:outline-2">Retry</button></div> : <InternalNoteList notes={current.notes} userId={userId} />}
     <div id="internal-note-feedback" className="mt-3">{error && <AuthFeedback>{error}</AuthFeedback>}</div>
     {added && <p role="status" className="mt-3 text-sm text-teal-800">Internal note added.</p>}
     {canAdd && <form onSubmit={submit} noValidate className="mt-4 space-y-3">
       <label htmlFor="internal-note" className="block text-sm font-semibold">Add an internal note</label>
       <textarea id="internal-note" placeholder="Add an internal note..." value={draft} onChange={event => { onDraftChange(event.target.value); setError(null); setAdded(false) }} rows={4} required disabled={adding || disabled} aria-describedby="internal-note-feedback" aria-invalid={Boolean(error)} className="block w-full min-w-0 resize-y rounded-lg border border-slate-300 bg-white p-3 text-base focus-visible:outline-2 focus-visible:outline-teal-700 disabled:opacity-60 sm:text-sm" />
-      <button type="submit" disabled={adding || disabled} className="cursor-pointer rounded-lg border border-teal-700 bg-white px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50">{adding ? 'Adding...' : 'Add Note'}</button>
+      <button type="submit" disabled={adding || disabled} className="cursor-pointer rounded-lg border border-teal-700 bg-white px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50">{adding ? 'Sending...' : 'Add Note'}</button>
     </form>}
   </section>
 }

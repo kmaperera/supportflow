@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -30,7 +31,7 @@ export default function KnowledgeBasePage() {
       <button type="submit" className={buttonClass}>Search</button>
       {(search || request.search) && <button type="button" className={buttonClass} onClick={reset}>Clear filters</button>}
     </form>
-    {!current && <p role="status">Loading articles...</p>}
+    {!current && <LoadingState>Loading articles...</LoadingState>}
     {current?.error && <div className="space-y-3"><AuthFeedback>{current.error}</AuthFeedback><button type="button" className={buttonClass} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></div>}
     {current?.data && <>
       {!current.data.articles.length ? <p className="rounded-xl border border-slate-200 bg-white p-6">{request.search ? 'No articles match your search.' : 'No Knowledge Base articles are available yet.'}</p> : <ul className="grid gap-4 md:grid-cols-2">

@@ -28,7 +28,7 @@ export default function SessionActions() {
   return <div aria-busy={isLoggingOutAll || isLoggingOut}>
     <p role="status" aria-live="polite" className="sr-only">{isLoggingOutAll ? 'Logging out all sessions...' : ''}</p>
     <LogoutButton disabled={isLoggingOutAll} />
-    <button type="button" onClick={handleLogoutAll} disabled={isLoggingOut || isLoggingOutAll} className="mt-4 ml-3 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-60">{isLoggingOutAll ? 'Logging out all sessions...' : 'Log out all sessions'}</button>
+    <button type="button" onClick={handleLogoutAll} disabled={isLoggingOut || isLoggingOutAll} className="mt-4 ml-3 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-60 disabled:cursor-not-allowed">{isLoggingOutAll ? 'Logging out all sessions...' : 'Log out all sessions'}</button>
     {error && <AuthFeedback>{error}</AuthFeedback>}
   </div>
 }

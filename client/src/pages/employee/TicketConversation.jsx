@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState'
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { getTicketComments, addTicketComment } from '../../api/ticketApi'
@@ -68,7 +69,7 @@ export default function TicketConversation({ ticketId, status, assignedTo, disab
   }
   return <section aria-labelledby="conversation-heading" className="min-w-0 layout-panel">
     <h2 id="conversation-heading" className="text-lg font-semibold">Conversation</h2>
-    {conversation.loading ? <p role="status" className="mt-4 text-sm text-slate-600">Loading conversation...</p> : conversation.error ? <div className="mt-4">
+    {conversation.loading ? <LoadingState className="mt-4 text-sm text-slate-600">Loading conversation...</LoadingState> : conversation.error ? <div className="mt-4">
       <AuthFeedback>Unable to load conversation.</AuthFeedback>
       <button type="button" className="mt-3 rounded text-sm font-semibold text-teal-800 underline focus-visible:outline-2" onClick={() => { setConversation(previous => ({ ...previous, loading: true, error: false })); setAttempt(value => value + 1) }}>Retry conversation</button>
     </div> : <PublicCommentList comments={conversation.comments} userId={user?.id} />}

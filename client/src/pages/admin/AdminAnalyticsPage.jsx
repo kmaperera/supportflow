@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState'
 import PageHeader from '../../layouts/PageHeader'
 import SummaryCard from '../../layouts/SummaryCard'
 import { useEffect, useState } from 'react'
@@ -33,7 +34,7 @@ function AnalyticsSection({ kind, title, period }) {
   }, [kind, period, attempt])
   const current = result?.attempt === attempt ? result : null
   return <section className="min-w-0 space-y-4 layout-panel"><h2 className="text-lg font-semibold">{title}</h2>
-    {!current ? <p role="status">Loading analytics...</p> : current.error ? <><AuthFeedback>Unable to load analytics.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry {title.toLowerCase()}</button></> : <AnalyticsContent kind={kind} data={current.data} period={period} />}
+    {!current ? <LoadingState>Loading analytics...</LoadingState> : current.error ? <><AuthFeedback>Unable to load analytics.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry {title.toLowerCase()}</button></> : <AnalyticsContent kind={kind} data={current.data} period={period} />}
   </section>
 }
 function Values({ rows }) {

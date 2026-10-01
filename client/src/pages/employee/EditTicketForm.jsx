@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState'
 import { useEffect, useRef, useState } from 'react'
 import { getTicketCategories, getTicketPriorities, updateTicket } from '../../api/ticketApi'
 import { getApiErrorMessage } from '../../api/apiError'
@@ -50,7 +51,7 @@ export default function EditTicketForm({ ticket, onCancel, onSaved, onIneligible
   const inputClass = 'mt-2 block w-full min-w-0 rounded-lg border border-slate-300 bg-white p-3 text-sm focus-visible:outline-2 focus-visible:outline-teal-700'
   return <section className="layout-panel" aria-labelledby="edit-ticket-heading">
     <h2 id="edit-ticket-heading" className="text-lg font-semibold">Edit Ticket</h2>
-    {!options && !lookupError && <p role="status" className="mt-3 text-sm">Loading categories and priorities...</p>}
+    {!options && !lookupError && <LoadingState className="mt-3 text-sm">Loading categories and priorities...</LoadingState>}
     {lookupError && <div className="mt-3"><AuthFeedback>Unable to load categories and priorities.</AuthFeedback><button type="button" className="mt-2 rounded text-teal-800 underline focus-visible:outline-2" onClick={() => { setLookupError(false); setAttempt(value => value + 1) }}>Retry options</button></div>}
     <form ref={form} onSubmit={submit} noValidate className="mt-5 space-y-4">
       {error && <AuthFeedback>{error}</AuthFeedback>}
@@ -73,8 +74,8 @@ export default function EditTicketForm({ ticket, onCancel, onSaved, onIneligible
         </div>
       </fieldset>
       <div className="layout-actions">
-        <button type="submit" disabled={saving || !options} className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50">{saving ? 'Saving...' : 'Save Changes'}</button>
-        <button type="button" disabled={saving} onClick={onCancel} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 disabled:opacity-50">Cancel</button>
+        <button type="submit" disabled={saving || !options} className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">{saving ? 'Saving...' : 'Save Changes'}</button>
+        <button type="button" disabled={saving} onClick={onCancel} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 disabled:opacity-50 disabled:cursor-not-allowed">Cancel</button>
       </div>
       <p role="status" className="sr-only">{saving ? 'Saving changes...' : ''}</p>
     </form>

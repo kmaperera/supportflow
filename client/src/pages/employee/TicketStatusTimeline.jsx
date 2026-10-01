@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState'
 import { useEffect, useState } from 'react'
 import { getTicketStatusHistory } from '../../api/ticketApi'
 import { formatTicketDate, formatTicketStatus } from './ticketFormatting'
@@ -17,7 +18,7 @@ export default function TicketStatusTimeline({ ticketId, title = 'Status timelin
   const current = result?.ticketId === ticketId && result?.attempt === attempt ? result : null
   return <section aria-labelledby="status-history-heading" className="min-w-0 layout-panel">
     <h2 id="status-history-heading" className="text-lg font-semibold">{title}</h2>
-    {!current && <p role="status" className="mt-4 text-sm text-slate-600">Loading status history...</p>}
+    {!current && <LoadingState className="mt-4 text-sm text-slate-600">Loading status history...</LoadingState>}
     {current?.failed && <div className="mt-4">
       <p role="alert" className="text-sm text-slate-600">Unable to load status history.</p>
       <button type="button" onClick={() => setAttempt(value => value + 1)} className="mt-3 rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2">Retry status history</button>

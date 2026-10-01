@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -49,7 +50,7 @@ export default function TechnicianManagementPage() {
       {current?.data && <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-sm font-medium text-slate-600">{filtered ? 'Matching technicians' : 'Total technicians'}</p><p className="mt-2 text-2xl font-semibold tabular-nums">{current.data.pagination.totalRecords}</p></div>}
       {counts?.data && <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-sm font-medium text-slate-600">Active tickets assigned to active technicians</p><p className="mt-2 text-2xl font-semibold tabular-nums">{counts.data.reduce((total, user) => total + user.workload.totalActive, 0)}</p><p className="mt-1 text-xs text-slate-500">Across all active technicians, independent of list filters.</p></div>}
     </section>
-    {!counts && <p role="status">Loading workload counts...</p>}
+    {!counts && <LoadingState>Loading workload counts...</LoadingState>}
     {counts?.error && <div className="space-y-2"><AuthFeedback>Unable to load workload counts. Technician accounts are still available.</AuthFeedback><button className={button} onClick={() => setWorkloadAttempt(value => value + 1)}>Retry workload</button></div>}
     <div className="grid gap-4 layout-panel sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
       <label className="min-w-0 text-sm font-medium sm:col-span-2 lg:col-span-1">Search<input className={input} type="search" aria-describedby="technician-search-help" placeholder="Search technicians..." value={search} onChange={event => setSearch(event.target.value)} /></label>
@@ -58,12 +59,12 @@ export default function TechnicianManagementPage() {
       <button type="button" className="min-h-11 w-fit cursor-pointer self-end justify-self-start whitespace-nowrap rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-50" disabled={!search && !query.search && !query.isActive && query.sort === defaults.sort} onClick={reset}>Clear filters</button>
       <p id="technician-search-help" className="text-xs text-slate-500 sm:col-span-2 lg:col-span-4">Search by first name, last name, or email.</p>
     </div>
-    {!current && <p role="status">Loading technicians...</p>}
+    {!current && <LoadingState>Loading technicians...</LoadingState>}
     {current?.error && <div className="space-y-3"><AuthFeedback>Unable to load technicians.</AuthFeedback><button className={button} onClick={() => setQuery(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></div>}
     {current?.data && <>
       {!current.data.users.length ? <p className="text-sm font-medium text-slate-600">{filtered ? 'No technicians match your current filters.' : 'No technicians found.'}</p> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{current.data.users.map(user => <li key={user.id} className="min-w-0 layout-panel">
         <h2 className="break-words text-lg font-semibold">{[user.firstName, user.lastName].filter(Boolean).join(' ') || 'Name unavailable'}</h2>
-        <dl className="mt-3 grid min-w-0 gap-4 text-sm sm:grid-cols-2">{[['Email', user.email], ['Status', user.isActive ? 'Active' : 'Inactive'], ['Department', user.department || 'Not provided'], ['Active tickets', !user.isActive ? 'Unavailable for inactive technicians' : byId.has(String(user.id)) ? byId.get(String(user.id)) : counts ? 'Unavailable' : 'Loading...']].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-slate-500">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
+        <dl className="mt-3 grid min-w-0 gap-4 text-sm sm:grid-cols-2">{[['Email', user.email], ['Status', user.isActive ? 'Active' : 'Inactive'], ['Department', user.department || 'Not provided'], ['Active tickets', !user.isActive ? 'Unavailable for inactive technicians' : byId.has(String(user.id)) ? byId.get(String(user.id)) : counts ? 'Unavailable' : 'Loading workload...']].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-slate-500">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
       </li>)}</ul>}
       {current.data.pagination.totalPages > 1 && <nav aria-label="Technician pagination" className="flex flex-wrap items-center gap-3"><button className={button} disabled={!current.data.pagination.hasPrevious} onClick={() => setQuery(previous => ({ ...previous, page: previous.page - 1 }))}>Previous</button><p>Page {current.data.pagination.currentPage} of {current.data.pagination.totalPages}</p><button className={button} disabled={!current.data.pagination.hasNext} onClick={() => setQuery(previous => ({ ...previous, page: previous.page + 1 }))}>Next</button></nav>}
     </>}

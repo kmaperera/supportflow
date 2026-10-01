@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -31,7 +32,7 @@ function StatisticsSection({ kind, title }) {
   const current = result?.attempt === attempt ? result : null
   return <section className="min-w-0 space-y-4 layout-panel">
     <h2 className="text-lg font-semibold">{title}</h2>
-    {!current ? <p role="status">Loading workload statistics...</p> : current.error ? <><AuthFeedback>Unable to load workload statistics.</AuthFeedback><button type="button" className={buttonClass} onClick={() => setAttempt(value => value + 1)}>Retry</button></> : <StatisticsContent kind={kind} data={current.data} />}
+    {!current ? <LoadingState>Loading workload statistics...</LoadingState> : current.error ? <><AuthFeedback>Unable to load workload statistics.</AuthFeedback><button type="button" className={buttonClass} onClick={() => setAttempt(value => value + 1)}>Retry</button></> : <StatisticsContent kind={kind} data={current.data} />}
   </section>
 }
 

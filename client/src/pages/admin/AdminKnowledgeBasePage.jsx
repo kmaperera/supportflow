@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState'
 import PageHeader from '../../layouts/PageHeader'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -28,7 +29,7 @@ export default function AdminKnowledgeBasePage() {
   </div>
 }
 function CategoryLoadNotice({ resource }) {
-  return resource.loading ? <p role="status">Loading categories...</p> : resource.error ? <div className="space-y-2"><AuthFeedback>Unable to load KB categories.</AuthFeedback><button className={button} onClick={resource.reload}>Retry categories</button></div> : null
+  return resource.loading ? <LoadingState>Loading categories...</LoadingState> : resource.error ? <div className="space-y-2"><AuthFeedback>Unable to load KB categories.</AuthFeedback><button className={button} onClick={resource.reload}>Retry categories</button></div> : null
 }
 function Articles({ categories }) {
   const [search, setSearch] = useState('')
@@ -70,7 +71,7 @@ function Articles({ categories }) {
       <CategoryLoadNotice resource={categories} />
     </div>
     {error && <AuthFeedback>{error}</AuthFeedback>}{message && <AuthFeedback variant="success">{message}</AuthFeedback>}
-    {resource.loading && <p role="status">{resource.data ? 'Updating articles...' : 'Loading articles...'}</p>}
+    {resource.loading && <LoadingState>{resource.data ? 'Updating articles...' : 'Loading articles...'}</LoadingState>}
     {resource.error && <div className="space-y-2"><AuthFeedback>Unable to load knowledge base articles.</AuthFeedback><button className={button} onClick={resource.reload}>Retry</button></div>}
     {resource.data && <div className="space-y-3" aria-busy={resource.loading}>
       {!resource.loading && !resource.error && !resource.data.articles.length && <div className={kbCard}><p>{query.search || query.categoryId ? 'No articles match your current filters.' : 'No knowledge base articles found.'}</p>{(query.search || query.categoryId) && <button className={button} onClick={clear}>Clear filters</button>}</div>}

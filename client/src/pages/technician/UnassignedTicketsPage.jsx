@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -85,7 +86,7 @@ function UnassignedQueue() {
     <PageHeader title="Unassigned Ticket Queue" description="Tickets without a currently assigned technician." actions={<><button type="button" className={actionClass} disabled={!current} onClick={reload}>Refresh</button></>} />
     <QueueFilters query={request} search={search} setSearch={setSearch} onChange={changeFilters} onSearch={() => changeFilters({})} onReset={resetFilters} />
     {notice && <AuthFeedback variant={notice.error ? 'error' : 'success'}>{notice.text}</AuthFeedback>}
-    {!current && <p role="status">{result ? 'Updating queue...' : 'Loading unassigned tickets...'}</p>}
+    {!current && <LoadingState>{result ? 'Updating queue...' : 'Loading unassigned tickets...'}</LoadingState>}
     {current?.error && <div className="space-y-3"><AuthFeedback>{current.error}</AuthFeedback>
       <button type="button" className={actionClass} onClick={reload}>Retry</button>
     </div>}

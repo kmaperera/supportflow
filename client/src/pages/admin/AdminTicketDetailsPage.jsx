@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getTicketById } from '../../api/ticketApi'
@@ -41,7 +42,7 @@ function TicketDetails({ ticketId }) {
     <NotificationReadNotice />
     <Link className={action} to="/admin/tickets">Back to tickets</Link>
     <h1 className="text-2xl font-semibold">Ticket Details</h1>
-    {!current && <p role="status">Loading ticket...</p>}
+    {!current && <LoadingState>Loading ticket...</LoadingState>}
     {current?.error && <div className="space-y-3"><AuthFeedback>{current.error}</AuthFeedback><button className={action} onClick={() => setAttempt(value => value + 1)}>Retry</button></div>}
     {ticket && <>
       {refreshError && <div><AuthFeedback>{refreshError}</AuthFeedback><button className={action} onClick={refresh}>Retry refresh</button></div>}
