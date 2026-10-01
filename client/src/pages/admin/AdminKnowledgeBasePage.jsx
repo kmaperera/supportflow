@@ -1,4 +1,5 @@
 import LoadingState from '../../components/LoadingState'
+import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -28,8 +29,8 @@ export default function AdminKnowledgeBasePage() {
     {tab === 'articles' ? <Articles categories={categories} /> : <Categories resource={categories} />}
   </div>
 }
-function CategoryLoadNotice({ resource }) {
-  return resource.loading ? <LoadingState>Loading categories...</LoadingState> : resource.error ? <div className="space-y-2"><AuthFeedback>Unable to load KB categories.</AuthFeedback><button className={button} onClick={resource.reload}>Retry categories</button></div> : null
+function CategoryLoadNotice({ resource, skeleton = false }) {
+  return resource.loading ? skeleton ? <ContentSkeleton initial={!resource.data} columns="xl:grid-cols-2">Loading categories...</ContentSkeleton> : <LoadingState>Loading categories...</LoadingState> : resource.error ? <div className="space-y-2"><AuthFeedback>Unable to load KB categories.</AuthFeedback><button className={button} onClick={resource.reload}>Retry categories</button></div> : null
 }
 function Articles({ categories }) {
   const [search, setSearch] = useState('')
@@ -71,7 +72,7 @@ function Articles({ categories }) {
       <CategoryLoadNotice resource={categories} />
     </div>
     {error && <AuthFeedback>{error}</AuthFeedback>}{message && <AuthFeedback variant="success">{message}</AuthFeedback>}
-    {resource.loading && <LoadingState>{resource.data ? 'Updating articles...' : 'Loading articles...'}</LoadingState>}
+    {resource.loading && <ContentSkeleton initial={!resource.data}>{resource.data ? 'Updating articles...' : 'Loading articles...'}</ContentSkeleton>}
     {resource.error && <div className="space-y-2"><AuthFeedback>Unable to load knowledge base articles.</AuthFeedback><button className={button} onClick={resource.reload}>Retry</button></div>}
     {resource.data && <div className="space-y-3" aria-busy={resource.loading}>
       {!resource.loading && !resource.error && !resource.data.articles.length && <div className={kbCard}><p>{query.search || query.categoryId ? 'No articles match your current filters.' : 'No knowledge base articles found.'}</p>{(query.search || query.categoryId) && <button className={button} onClick={clear}>Clear filters</button>}</div>}
@@ -113,7 +114,7 @@ function Categories({ resource }) {
     <p className="text-sm text-slate-600">Inactive categories remain here for management. Their articles are hidden from employees and technicians until the category is active again.</p>
     {message && <AuthFeedback variant="success">{message}</AuthFeedback>}{error && <AuthFeedback>{error}</AuthFeedback>}
     {editor && <KbCategoryEditor key={editor.category?.id || 'new'} category={editor.category} onCancel={() => setEditor(null)} onSaved={() => { setMessage(editor.category ? 'KB category updated successfully.' : 'KB category created successfully.'); setEditor(null); resource.reload() }} />}
-    <CategoryLoadNotice resource={resource} />
+    <CategoryLoadNotice resource={resource} skeleton />
     {!resource.loading && !resource.error && !resource.data?.length && <p>No KB categories found.</p>}
     <div className="grid gap-4 xl:grid-cols-2">{resource.data?.map(category => <article key={category.id} className={kbCard}>
       <div><h3 className="text-lg font-semibold">{category.name}</h3><p className="mt-1 text-sm font-medium">{category.isActive ? 'Active' : 'Inactive'}</p></div>

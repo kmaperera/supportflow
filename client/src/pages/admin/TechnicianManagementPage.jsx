@@ -1,3 +1,4 @@
+import ContentSkeleton from '../../components/ContentSkeleton'
 import LoadingState from '../../components/LoadingState'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
@@ -59,7 +60,7 @@ export default function TechnicianManagementPage() {
       <button type="button" className="min-h-11 w-fit cursor-pointer self-end justify-self-start whitespace-nowrap rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-50" disabled={!search && !query.search && !query.isActive && query.sort === defaults.sort} onClick={reset}>Clear filters</button>
       <p id="technician-search-help" className="text-xs text-slate-500 sm:col-span-2 lg:col-span-4">Search by first name, last name, or email.</p>
     </div>
-    {!current && <LoadingState>Loading technicians...</LoadingState>}
+    {!current && <ContentSkeleton initial={!result} variant="cards" columns="xl:grid-cols-2">Loading technicians...</ContentSkeleton>}
     {current?.error && <div className="space-y-3"><AuthFeedback>Unable to load technicians.</AuthFeedback><button className={button} onClick={() => setQuery(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></div>}
     {current?.data && <>
       {!current.data.users.length ? <p className="text-sm font-medium text-slate-600">{filtered ? 'No technicians match your current filters.' : 'No technicians found.'}</p> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{current.data.users.map(user => <li key={user.id} className="min-w-0 layout-panel">

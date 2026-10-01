@@ -1,4 +1,4 @@
-import LoadingState from '../../components/LoadingState'
+import ReportSkeleton from './ReportSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useRef, useState } from 'react'
 import { getReport, reportTypes } from '../../api/reportApi'
@@ -72,7 +72,7 @@ function ReportForm({ type }) {
       {type === 'tickets' && <p className="text-sm text-slate-500">Search ticket number, title, requester or technician name/email.</p>}
       <div className="layout-actions"><button type="submit" className={button} disabled={loading}>{loading ? 'Generating report...' : 'Generate Report'}</button><button type="button" className={button} disabled={loading} onClick={() => { setValues(initial()); setErrors({}) }}>Clear filters</button></div>
     </form>
-    {loading && <LoadingState>Generating report...</LoadingState>}
+    {loading && <ReportSkeleton type={type} initial={!result} />}
     {error && <div className="space-y-3"><AuthFeedback>{error}</AuthFeedback>{lastRequest && <button className={button} disabled={loading} onClick={() => generate(lastRequest.criteria, lastRequest.page)}>Retry</button>}</div>}
     {result && <section className="min-w-0 space-y-4 layout-panel" aria-busy={loading}>
       <h2 className="text-lg font-semibold">{reportTypes[type].label} results</h2>

@@ -1,4 +1,4 @@
-import LoadingState from '../../components/LoadingState'
+import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -15,11 +15,11 @@ export default function TechnicianWorkloadPage() {
   const [revision, setRevision] = useState(0)
   return <div className="layout-page">
     <PageHeader title="My Workload &amp; Statistics" description="Statistics for tickets currently assigned to you, across all dates. Reassigned tickets are not included." actions={<><Link className={buttonClass} to="/technician/tickets/assigned">View My Assigned Tickets</Link><button type="button" className={buttonClass} onClick={() => setRevision(value => value + 1)}>Refresh</button></>} />
-    <div className="grid min-w-0 gap-6 lg:grid-cols-2">{sections.map(([kind, title]) => <StatisticsSection key={`${user?.id}:${kind}:${revision}`} kind={kind} title={title} />)}</div>
+    <div className="grid min-w-0 gap-6 lg:grid-cols-2">{sections.map(([kind, title]) => <StatisticsSection initialView={revision === 0} key={`${user?.id}:${kind}:${revision}`} kind={kind} title={title} />)}</div>
   </div>
 }
 
-function StatisticsSection({ kind, title }) {
+function StatisticsSection({ kind, title, initialView }) {
   const [attempt, setAttempt] = useState(0)
   const [result, setResult] = useState(null)
   useEffect(() => {
@@ -32,7 +32,7 @@ function StatisticsSection({ kind, title }) {
   const current = result?.attempt === attempt ? result : null
   return <section className="min-w-0 space-y-4 layout-panel">
     <h2 className="text-lg font-semibold">{title}</h2>
-    {!current ? <LoadingState>Loading workload statistics...</LoadingState> : current.error ? <><AuthFeedback>Unable to load workload statistics.</AuthFeedback><button type="button" className={buttonClass} onClick={() => setAttempt(value => value + 1)}>Retry</button></> : <StatisticsContent kind={kind} data={current.data} />}
+    {!current ? <ContentSkeleton initial={initialView && !result && attempt === 0} variant="rows">Loading workload statistics...</ContentSkeleton> : current.error ? <><AuthFeedback>Unable to load workload statistics.</AuthFeedback><button type="button" className={buttonClass} onClick={() => setAttempt(value => value + 1)}>Retry</button></> : <StatisticsContent kind={kind} data={current.data} />}
   </section>
 }
 

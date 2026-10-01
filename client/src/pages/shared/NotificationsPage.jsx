@@ -1,4 +1,4 @@
-import LoadingState from '../../components/LoadingState'
+import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -98,7 +98,7 @@ function Notifications({ role, accessToken }) {
     <PageHeader title="Notifications" />
     <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-slate-600">{admin ? 'Support activity notifications sent to your admin account.' : technician ? 'Updates about your support work and ticket activity.' : 'Updates about your support requests.'}</p><button type="button" className={buttonClass} disabled={!current || markingAll || pendingIds.length > 0} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Refresh</button></div>
     {error && <AuthFeedback>{error}</AuthFeedback>}
-    {!current && <LoadingState>Loading notifications...</LoadingState>}
+    {!current && <ContentSkeleton initial={!result} variant="cards">Loading notifications...</ContentSkeleton>}
     {current?.error && <div className="space-y-3"><AuthFeedback>{current.error}</AuthFeedback><button type="button" className={buttonClass} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></div>}
     {current?.data && <>
       <div className="flex flex-wrap items-center gap-3"><p className="text-sm">{current.data.unreadCount} unread</p>{current.data.unreadCount > 0 && <button type="button" className={buttonClass} disabled={markingAll || pendingIds.length > 0} onClick={markAll}>{markingAll ? 'Marking as read...' : 'Mark all as read'}</button>}</div>

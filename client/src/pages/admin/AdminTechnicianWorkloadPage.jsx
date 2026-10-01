@@ -1,4 +1,4 @@
-import LoadingState from '../../components/LoadingState'
+import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -39,7 +39,7 @@ export default function AdminTechnicianWorkloadPage() {
       <button className={button} disabled={!search && !query && !filter && sort === 'ascending'} onClick={reset}>Clear filters</button>
       <p id="workload-search-help" className="text-xs text-slate-500 sm:col-span-2 xl:col-span-4">Search first name, last name, email, or department.</p>
     </div>
-    {!current && <LoadingState>Loading technician workload...</LoadingState>}
+    {!current && <ContentSkeleton initial={!result} variant="workload">Loading technician workload...</ContentSkeleton>}
     {current?.error && <div className="space-y-3"><AuthFeedback>Unable to load technician workload.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></div>}
     {current?.data && <>
       <p className="text-sm text-slate-600">{query || filter ? 'Summary for technicians matching the current search and workload filter.' : 'Summary across all active technicians.'} Inactive technicians are not included by this endpoint.</p>

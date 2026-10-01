@@ -1,4 +1,4 @@
-import LoadingState from '../../components/LoadingState'
+import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import SummaryCard from '../../layouts/SummaryCard'
 import { useEffect, useState } from 'react'
@@ -13,16 +13,17 @@ const button = 'inline-flex min-h-11 cursor-pointer items-center rounded-lg bord
 export default function AdminAnalyticsPage() {
   const [revision, setRevision] = useState(0)
   const [period, setPeriod] = useState('monthly')
+  const [initialView, setInitialView] = useState(true)
   return <div className="layout-page">
-    <PageHeader title="Analytics Dashboard" description="Organization-wide support metrics across all dates, except the created-ticket trend's selected period." actions={<><button className={button} onClick={() => setRevision(value => value + 1)}>Refresh analytics</button></>} />
-    <AnalyticsSection key={`summary:${revision}`} kind="summary" title="Ticket overview" />
-    <section className="space-y-3"><label htmlFor="analytics-period" className="block text-sm font-semibold">Created-ticket trend period</label><select id="analytics-period" className="min-h-11 w-full max-w-sm rounded-lg border border-slate-300 bg-white p-3 focus-visible:outline-2 focus-visible:outline-teal-700" value={period} onChange={event => setPeriod(event.target.value)}><option value="monthly">Last 12 months (UTC)</option><option value="daily">Last 30 days (UTC)</option></select><AnalyticsSection key={`trend:${period}:${revision}`} kind="trend" title="Created-ticket trend" period={period} /></section>
-    <div className="grid min-w-0 gap-6 xl:grid-cols-2">{[['status', 'Ticket status distribution'], ['priority', 'Ticket priority distribution'], ['category', 'Tickets by category'], ['response', 'Average first-response time'], ['resolution', 'Average resolution time'], ['satisfaction', 'Support satisfaction']].map(([kind, title]) => <AnalyticsSection key={`${kind}:${revision}`} kind={kind} title={title} />)}</div>
-    <AnalyticsSection key={`sla:${revision}`} kind="sla" title="SLA compliance" />
-    <AnalyticsSection key={`workload:${revision}`} kind="workload" title="Technician workload" />
+    <PageHeader title="Analytics Dashboard" description="Organization-wide support metrics across all dates, except the created-ticket trend's selected period." actions={<><button className={button} onClick={() => { setInitialView(false); setRevision(value => value + 1) }}>Refresh analytics</button></>} />
+    <AnalyticsSection initialView={initialView} key={`summary:${revision}`} kind="summary" title="Ticket overview" />
+    <section className="space-y-3"><label htmlFor="analytics-period" className="block text-sm font-semibold">Created-ticket trend period</label><select id="analytics-period" className="min-h-11 w-full max-w-sm rounded-lg border border-slate-300 bg-white p-3 focus-visible:outline-2 focus-visible:outline-teal-700" value={period} onChange={event => { setInitialView(false); setPeriod(event.target.value) }}><option value="monthly">Last 12 months (UTC)</option><option value="daily">Last 30 days (UTC)</option></select><AnalyticsSection initialView={initialView} key={`trend:${period}:${revision}`} kind="trend" title="Created-ticket trend" period={period} /></section>
+    <div className="grid min-w-0 gap-6 xl:grid-cols-2">{[['status', 'Ticket status distribution'], ['priority', 'Ticket priority distribution'], ['category', 'Tickets by category'], ['response', 'Average first-response time'], ['resolution', 'Average resolution time'], ['satisfaction', 'Support satisfaction']].map(([kind, title]) => <AnalyticsSection initialView={initialView} key={`${kind}:${revision}`} kind={kind} title={title} />)}</div>
+    <AnalyticsSection initialView={initialView} key={`sla:${revision}`} kind="sla" title="SLA compliance" />
+    <AnalyticsSection initialView={initialView} key={`workload:${revision}`} kind="workload" title="Technician workload" />
   </div>
 }
-function AnalyticsSection({ kind, title, period }) {
+function AnalyticsSection({ kind, title, period, initialView }) {
   const [attempt, setAttempt] = useState(0)
   const [result, setResult] = useState(null)
   useEffect(() => {
@@ -34,7 +35,7 @@ function AnalyticsSection({ kind, title, period }) {
   }, [kind, period, attempt])
   const current = result?.attempt === attempt ? result : null
   return <section className="min-w-0 space-y-4 layout-panel"><h2 className="text-lg font-semibold">{title}</h2>
-    {!current ? <LoadingState>Loading analytics...</LoadingState> : current.error ? <><AuthFeedback>Unable to load analytics.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry {title.toLowerCase()}</button></> : <AnalyticsContent kind={kind} data={current.data} period={period} />}
+    {!current ? <ContentSkeleton initial={initialView && !result && attempt === 0} variant={kind === 'summary' ? 'summary' : ['trend', 'status'].includes(kind) ? 'chart' : 'rows'} count={4}>Loading analytics...</ContentSkeleton> : current.error ? <><AuthFeedback>Unable to load analytics.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry {title.toLowerCase()}</button></> : <AnalyticsContent kind={kind} data={current.data} period={period} />}
   </section>
 }
 function Values({ rows }) {

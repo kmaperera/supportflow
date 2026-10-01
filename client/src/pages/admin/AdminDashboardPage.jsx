@@ -1,4 +1,4 @@
-import LoadingState from '../../components/LoadingState'
+import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import SummaryCard from '../../layouts/SummaryCard'
 import { useEffect, useState } from 'react'
@@ -35,7 +35,7 @@ function DashboardSection({ kind, title }) {
   const current = result?.attempt === attempt ? result : null
   return <section className="min-w-0 space-y-4 layout-panel">
     <h2 className="text-lg font-semibold">{title}</h2>
-    {!current ? <LoadingState>Loading dashboard...</LoadingState> : current.error ? <><AuthFeedback>Unable to load the admin dashboard.</AuthFeedback><button type="button" className={action} onClick={() => setAttempt(value => value + 1)}>Retry</button></> : <AdminDashboardSectionContent kind={kind} data={current.data} />}
+    {!current ? <ContentSkeleton initial={!result && attempt === 0} variant={kind === 'summary' ? 'summary' : 'rows'} count={kind === 'summary' ? 5 : 3} columns={kind === 'summary' ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5' : undefined}>Loading dashboard...</ContentSkeleton> : current.error ? <><AuthFeedback>Unable to load the admin dashboard.</AuthFeedback><button type="button" className={action} onClick={() => setAttempt(value => value + 1)}>Retry</button></> : <AdminDashboardSectionContent kind={kind} data={current.data} />}
   </section>
 }
 

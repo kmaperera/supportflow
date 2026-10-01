@@ -1,4 +1,4 @@
-import LoadingState from '../../components/LoadingState'
+import ContentSkeleton from '../../components/ContentSkeleton'
 import MetadataList from '../../layouts/MetadataList'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -66,7 +66,7 @@ function TicketDetails({ ticketId }) {
     }} /></div>}
     {state.ticket && ['OPEN', 'ASSIGNED'].includes(state.ticket.status) && user?.id != null && String(state.ticket.createdBy) === String(user.id) && !editing && <div><button type="button" onClick={() => { setEditing(true); setNotice(null) }} className="rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2">Edit Ticket</button></div>}
     {editing && state.ticket && <EditTicketForm ticket={state.ticket} onCancel={() => setEditing(false)} onSaved={ticket => { setState({ loading: false, ticket, error: null }); setEditing(false); setNotice({ text: 'Ticket updated successfully.' }) }} onIneligible={() => { setEditing(false); setNotice({ error: true, text: 'This ticket can no longer be edited. Refreshing ticket details.' }); setState({ loading: true, ticket: null, error: null }); setAttempt(value => value + 1) }} />}
-    {state.loading && <LoadingState>Loading ticket...</LoadingState>}
+    {state.loading && <ContentSkeleton initial={!state.ticket && attempt === 0} variant="detail">Loading ticket...</ContentSkeleton>}
     {state.error && <section className="space-y-3">
       <h1 className="text-2xl font-semibold">{state.unavailable ? 'Ticket unavailable' : 'Unable to load ticket'}</h1>
       <AuthFeedback>{state.error}</AuthFeedback>

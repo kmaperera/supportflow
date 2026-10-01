@@ -1,4 +1,4 @@
-import LoadingState from '../../components/LoadingState'
+import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -61,7 +61,7 @@ export default function CategoryManagementPage() {
       <label className="text-sm font-medium">Sort by<select className={input} value={sort} onChange={event => setSort(event.target.value)}><option value="name">Name</option><option value="newest">Newest</option><option value="oldest">Oldest</option></select></label>
       <button className="min-h-11 w-fit cursor-pointer self-end rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-50" disabled={!search && !status && sort === 'name'} onClick={() => { setSearch(''); setStatus(''); setSort('name') }}>Clear filters</button>
     </div>
-    {!current && <LoadingState>Loading categories...</LoadingState>}
+    {!current && <ContentSkeleton initial={!result} variant="cards" columns="xl:grid-cols-2">Loading categories...</ContentSkeleton>}
     {current?.error && <div className="space-y-3"><AuthFeedback>Unable to load categories.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></div>}
     {current?.data && (!categories.length ? <p>{filtered ? 'No categories match your current filters.' : 'No categories found.'}</p> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{categories.map(category => <li key={category.id} className="min-w-0 space-y-4 layout-panel">
       <div><h2 className="break-words text-lg font-semibold">{category.name}</h2><p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-600">{category.description || 'No description provided.'}</p></div>

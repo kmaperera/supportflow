@@ -1,4 +1,4 @@
-import LoadingState from '../../components/LoadingState'
+import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -30,7 +30,7 @@ function AssignedTickets() {
   const current = result?.request === request ? result : null
   return <div className="layout-page">
     <PageHeader title="My Assigned Tickets" description="Your active workload: Assigned, In Progress, Waiting for User, and Reopened tickets." />
-    {!current && <LoadingState>Loading assigned tickets...</LoadingState>}
+    {!current && <ContentSkeleton initial={!result} variant="cards">Loading assigned tickets...</ContentSkeleton>}
     {current?.error && <div className="space-y-3"><AuthFeedback>{current.error}</AuthFeedback>
       <button type="button" className={actionClass} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button>
     </div>}

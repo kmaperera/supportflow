@@ -1,4 +1,4 @@
-import LoadingState from '../../components/LoadingState'
+import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -54,7 +54,7 @@ function MyTickets() {
       <AuthFeedback variant="success">Ticket {createdNumber} created successfully.</AuthFeedback>
       <button type="button" onClick={() => setCreatedNumber(null)} className="mt-2 rounded text-sm text-teal-800 underline focus-visible:outline-2">Dismiss confirmation</button>
     </div>}
-    {!current && <LoadingState className="text-sm text-slate-600">{result ? 'Updating tickets...' : 'Loading tickets...'}</LoadingState>}
+    {!current && <ContentSkeleton initial={!result} variant="cards">{result ? 'Updating tickets...' : 'Loading tickets...'}</ContentSkeleton>}
     {current?.error && <div className="space-y-3">
       <AuthFeedback>{current.error}</AuthFeedback>
       <button type="button" className={actionClass} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button>

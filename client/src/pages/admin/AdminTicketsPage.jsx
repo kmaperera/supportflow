@@ -1,4 +1,4 @@
-import LoadingState from '../../components/LoadingState'
+import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -47,7 +47,7 @@ export default function AdminTicketsPage() {
       <label className="text-sm font-medium">Sort by<select className={input} value={query.sort} onChange={event => change({ sort: event.target.value })}><option value="default">Priority, then oldest (default)</option><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="priority">Highest priority</option><option value="status">Status</option></select></label>
       <button className={button} disabled={!search && !filtered && query.sort === 'default'} onClick={reset}>Clear filters</button>
     </div>
-    {!current && <LoadingState>{result ? 'Updating tickets...' : 'Loading tickets...'}</LoadingState>}
+    {!current && <ContentSkeleton initial={!result} variant="cards">{result ? 'Updating tickets...' : 'Loading tickets...'}</ContentSkeleton>}
     {current?.error && <div className="space-y-3"><AuthFeedback>Unable to load tickets.</AuthFeedback><button className={button} onClick={() => setQuery(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></div>}
     {current?.data && <>
       <p className="text-sm text-slate-600">{current.data.pagination.totalRecords} tickets</p>

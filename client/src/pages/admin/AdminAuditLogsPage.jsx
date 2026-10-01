@@ -1,4 +1,4 @@
-import LoadingState from '../../components/LoadingState'
+import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
 import { auditFilterFields, getAuditLogs } from '../../api/auditApi'
@@ -45,7 +45,7 @@ export default function AdminAuditLogsPage() {
       <div className="layout-actions"><button type="submit" className={button} disabled={!current}>Apply filters</button><button type="button" className={button} onClick={clear} disabled={!Object.values(draft).some(Boolean) && !filtered}>Clear filters</button></div>
     </form>
     {unapplied && <p className="text-sm text-slate-600">Apply filters to update the results.</p>}
-    {!current && <LoadingState>Loading audit logs...</LoadingState>}
+    {!current && <ContentSkeleton initial={!result} variant="table" headers={["Time", "Actor", "Action", "Target", "Details"]}>Loading audit logs...</ContentSkeleton>}
     {current?.error && <div className="space-y-3"><AuthFeedback>{current.error}</AuthFeedback><button className={button} onClick={() => setRequest(previous => ({ ...previous }))}>Retry</button></div>}
     {current?.data && <section className="min-w-0 space-y-4 layout-panel" aria-label="Audit records">
       {!current.data.logs.length ? <p>{filtered ? 'No audit logs match your current filters.' : 'No audit logs found.'}</p> : <div className="layout-table focus-visible:outline-2 focus-visible:outline-teal-700" tabIndex={0} aria-label="Scrollable audit table"><table className="w-full text-left text-sm"><caption className="sr-only">Audit logs, newest first</caption><thead><tr>{['Time', 'Actor', 'Action', 'Target', 'Details'].map(label => <th scope="col" className="p-3" key={label}>{label}</th>)}</tr></thead><tbody>{current.data.logs.map(log => <tr key={log.id} className="border-t border-slate-200">
