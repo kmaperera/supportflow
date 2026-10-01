@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Controlled field errors only: untouched required controls stay neutral. */
+:is(input, select, textarea)[aria-invalid="true"] {
+  border-color: var(--color-red-700);
+  outline-color: var(--color-red-700);
+}
+
 /* Structural primitives retain each page's semantic element and event handlers. */
 @utility layout-page {
   @apply w-full min-w-0 space-y-6;

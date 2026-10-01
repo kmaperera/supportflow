@@ -13,7 +13,8 @@ export default function TicketResolveControl({ ticket, userId, summary, onSummar
     if (pending || resolving) return
     const validation = validateResolutionSummary(summary)
     setError(validation)
-    if (!validation) onResolve()
+    if (validation) document.getElementById('resolution-summary')?.focus()
+    else onResolve()
   }
   return <section aria-labelledby="resolve-heading" className="min-w-0 rounded-2xl border border-teal-200 bg-white p-4 sm:p-6">
     <h2 id="resolve-heading" className="text-lg font-semibold">Resolve Ticket</h2>

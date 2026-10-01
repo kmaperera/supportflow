@@ -36,7 +36,7 @@ export default function TicketAttachments({ ticketId, status, canUpload = true, 
     event.preventDefault()
     if (pending.current || disabled || !allowed) return
     const validation = validateAttachment(file)
-    if (validation) { setError(validation); return }
+    if (validation) { setError(validation); input.current?.focus(); return }
     pending.current = true
     setUploading(true)
     onUploadingChange?.(true)
@@ -62,8 +62,8 @@ export default function TicketAttachments({ ticketId, status, canUpload = true, 
     <h2 id="attachments-heading" className="text-lg font-semibold">Attachments</h2>
     {list.loading ? <ContentSkeleton initial={attempt === 0 && !list.attachments.length} variant="rows">Loading attachments...</ContentSkeleton> : list.error ? <ErrorState compact className="mt-4" title="Unable to load attachments."><button type="button" onClick={reload} className="mt-2 rounded text-teal-800 underline focus-visible:outline-2">Retry attachments</button></ErrorState> : !list.attachments.length ? <EmptyState compact title="No attachments yet." /> : <ul className="mt-4 space-y-3">{list.attachments.map(attachment => <AttachmentRow key={attachment.id} attachment={attachment} ticketId={ticketId} />)}</ul>}
     {allowed ? <form onSubmit={submit} noValidate className="mt-6 space-y-3">
-      <label htmlFor="ticket-attachment" className="block text-sm font-semibold">Add attachment</label>
-      <input ref={input} id="ticket-attachment" type="file" accept={Object.keys(attachmentTypes).join(',')} disabled={uploading || disabled} onChange={event => { setFile(event.target.files?.[0] || null); setError(null); setSuccess(false) }} aria-describedby="attachment-help attachment-error" className="block w-full min-w-0 text-sm focus-visible:outline-2 file:mr-3 file:cursor-pointer file:rounded-lg file:border file:border-slate-300 file:px-3 file:py-2" />
+      <label htmlFor="ticket-attachment" className="block text-sm font-semibold">Add attachment *</label>
+      <input ref={input} id="ticket-attachment" type="file" required aria-invalid={Boolean(error)} accept={Object.keys(attachmentTypes).join(',')} disabled={uploading || disabled} onChange={event => { setFile(event.target.files?.[0] || null); setError(null); setSuccess(false) }} aria-describedby="attachment-help attachment-error" className="block w-full min-w-0 text-sm focus-visible:outline-2 file:mr-3 file:cursor-pointer file:rounded-lg file:border file:border-slate-300 file:px-3 file:py-2" />
       <p id="attachment-help" className="text-xs text-slate-500">One file, maximum 10 MB. JPG/JPEG, PNG, WEBP, PDF, TXT, CSV, DOC/DOCX, XLS/XLSX.</p>
       <div id="attachment-error">{error && <AuthFeedback>{error}</AuthFeedback>}</div>
       <button type="submit" disabled={uploading || disabled} className="cursor-pointer rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60">{uploading ? 'Uploading...' : 'Upload Attachment'}</button>

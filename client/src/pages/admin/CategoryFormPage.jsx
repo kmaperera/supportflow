@@ -1,3 +1,5 @@
+import FieldError from '../../components/FieldError'
+import { focusFirstError } from '../../components/formValidation'
 import ErrorState from '../../components/ErrorState'
 import LoadingState from '../../components/LoadingState'
 import { useEffect, useRef, useState } from 'react'
@@ -35,7 +37,7 @@ function CategoryForm({ id }) {
     if (pending.current || !loaded) return
     const next = validateCategory(values)
     setErrors(next); setError(null)
-    if (Object.keys(next).length) return
+    if (Object.keys(next).length) { focusFirstError(next, field => `category-${field}`); return }
     pending.current = true; setSaving(true)
     try {
       if (id) await updateCategory(id, values); else await createCategory(values)
@@ -55,7 +57,7 @@ function CategoryForm({ id }) {
     <h1 className="text-2xl font-semibold">{id ? 'Edit Category' : 'Add Category'}</h1>
     {!loaded ? loadError ? <ErrorState title="Unable to load category."><button className={button} onClick={() => { setLoadError(false); setAttempt(value => value + 1) }}>Retry</button><button className={`${button} ml-3`} onClick={() => navigate('/admin/categories')}>Cancel</button></ErrorState> : <LoadingState>Loading category...</LoadingState> : <form onSubmit={submit} noValidate className="space-y-4 layout-panel">
       {error && <AuthFeedback>{error}</AuthFeedback>}
-      {['name', 'description'].map(field => <div key={field}><label htmlFor={`category-${field}`} className="text-sm font-semibold">{field === 'name' ? 'Name *' : 'Description (optional)'}</label>{field === 'name' ? <input id="category-name" required className={input} value={values.name} disabled={saving} aria-invalid={Boolean(errors.name)} aria-describedby="category-name-error" onChange={event => { setValues(previous => ({ ...previous, name: event.target.value })); setErrors(previous => ({ ...previous, name: null })) }} /> : <textarea id="category-description" rows={3} className={input} disabled={saving} value={values.description} aria-invalid={Boolean(errors.description)} aria-describedby="category-description-error" onChange={event => { setValues(previous => ({ ...previous, description: event.target.value })); setErrors(previous => ({ ...previous, description: null })) }} />}<div id={`category-${field}-error`}>{errors[field] && <p role="alert" className="mt-1 text-sm text-red-700">{errors[field]}</p>}</div></div>)}
+      {['name', 'description'].map(field => <div key={field}><label htmlFor={`category-${field}`} className="text-sm font-semibold">{field === 'name' ? 'Name *' : 'Description (optional)'}</label>{field === 'name' ? <input id="category-name" required className={input} value={values.name} disabled={saving} aria-invalid={Boolean(errors.name)} aria-describedby="category-name-error" onChange={event => { setValues(previous => ({ ...previous, name: event.target.value })); setErrors(previous => ({ ...previous, name: null })) }} /> : <textarea id="category-description" rows={3} className={input} disabled={saving} value={values.description} aria-invalid={Boolean(errors.description)} aria-describedby="category-description-error" onChange={event => { setValues(previous => ({ ...previous, description: event.target.value })); setErrors(previous => ({ ...previous, description: null })) }} />}<div id={`category-${field}-error`}>{errors[field] && <FieldError>{errors[field]}</FieldError>}</div></div>)}
       <div className="layout-actions"><button className={button} type="submit" disabled={saving}>{saving ? id ? 'Saving...' : 'Creating...' : id ? 'Save Category' : 'Create Category'}</button><button className={button} type="button" disabled={saving} onClick={() => navigate('/admin/categories')}>Cancel</button></div>
     </form>}
   </div>

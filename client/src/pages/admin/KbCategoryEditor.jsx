@@ -1,3 +1,5 @@
+import FieldError from '../../components/FieldError'
+import { focusFirstError } from '../../components/formValidation'
 import { useEffect, useRef, useState } from 'react'
 import { saveKbCategory } from '../../api/adminKnowledgeBaseApi'
 import AuthFeedback from '../../auth/AuthFeedback'
@@ -16,7 +18,7 @@ export default function KbCategoryEditor({ category, onSaved, onCancel }) {
     if (pending.current) return
     const next = validateKb(values)
     setErrors(next); setError('')
-    if (Object.keys(next).length) return
+    if (Object.keys(next).length) { focusFirstError(next, field => `kb-category-${field}`); return }
     pending.current = true; setSaving(true)
     try { await saveKbCategory(category?.id, values); if (mounted.current) onSaved() }
     catch (cause) {
@@ -30,8 +32,8 @@ export default function KbCategoryEditor({ category, onSaved, onCancel }) {
     <h2 className="text-lg font-semibold">{category ? 'Edit KB Category' : 'Add KB Category'}</h2>
     {error && <AuthFeedback>{error}</AuthFeedback>}
     {['name', 'description'].map(field => <div key={field}><label className="text-sm font-semibold" htmlFor={`kb-category-${field}`}>{field === 'name' ? 'Name *' : 'Description (optional)'}</label>
-      {field === 'name' ? <input id={`kb-category-${field}`} required className={input} disabled={saving} value={values[field]} onChange={event => { setValues(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [field]: null })) }} aria-invalid={Boolean(errors[field])} aria-describedby={`kb-category-${field}-error`} /> : <textarea id={`kb-category-${field}`} rows={3} className={input} disabled={saving} value={values[field]} onChange={event => { setValues(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [field]: null })) }} aria-invalid={Boolean(errors[field])} aria-describedby={`kb-category-${field}-error`} />}
-      <p id={`kb-category-${field}-error`} role={errors[field] ? 'alert' : undefined} className="mt-1 text-sm text-red-700">{errors[field]}</p>
+      {field === 'name' ? <input id={`kb-category-${field}`} maxLength={100} required className={input} disabled={saving} value={values[field]} onChange={event => { setValues(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [field]: null })) }} aria-invalid={Boolean(errors[field])} aria-describedby={`kb-category-${field}-error`} /> : <textarea id={`kb-category-${field}`} maxLength={255} rows={3} className={input} disabled={saving} value={values[field]} onChange={event => { setValues(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [field]: null })) }} aria-invalid={Boolean(errors[field])} aria-describedby={`kb-category-${field}-error`} />}
+      <FieldError id={`kb-category-${field}-error`}>{errors[field]}</FieldError>
     </div>)}
     <div className="layout-actions"><button className={button} disabled={saving}>{saving ? category ? 'Saving...' : 'Creating...' : category ? 'Save KB Category' : 'Create KB Category'}</button><button type="button" className={button} disabled={saving} onClick={onCancel}>Cancel</button></div>
   </form>

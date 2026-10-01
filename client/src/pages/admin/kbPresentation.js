@@ -1,3 +1,4 @@
+import { mapFieldErrors } from '../../components/formValidation'
 import { getApiErrorMessage } from '../../api/apiError'
 
 export const kbButton = 'inline-flex min-h-11 w-fit max-w-full cursor-pointer items-center justify-center rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-50'
@@ -29,7 +30,6 @@ export function validateKb(values, article = false) {
   return errors
 }
 export function kbFieldErrors(error, fields) {
-  if (error?.response?.status !== 422 || !Array.isArray(error.response.data?.errors)) return {}
-  const labels = { title: 'title', content: 'content', categoryId: 'KB category', name: 'name', description: 'description' }
-  return Object.fromEntries(error.response.data.errors.filter(item => fields.includes(item.field)).map(item => [item.field, `Please check the ${labels[item.field]}.`]))
+  const labels = { title: 'the title', content: 'the content', categoryId: 'the KB category', name: 'the name', description: 'the description' }
+  return mapFieldErrors(error, Object.fromEntries(fields.filter(field => Object.hasOwn(labels, field)).map(field => [field, labels[field]])))
 }

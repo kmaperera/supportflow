@@ -1,3 +1,4 @@
+import FieldError from '../../components/FieldError'
 import ErrorState from '../../components/ErrorState'
 import LoadingState from '../../components/LoadingState'
 import { useEffect, useRef, useState } from 'react'
@@ -89,7 +90,7 @@ export function CreateTicketForm({ categories = [], priorities = [], categorySta
           {field.name === 'description' ? <textarea id={field.name} name={field.name} value={values[field.name]} onChange={update} required minLength={field.min} maxLength={field.max} rows={7} className={`${inputClass} resize-y`} aria-invalid={Boolean(errors[field.name])} aria-describedby={`${field.name}-hint ${field.name}-error`} /> :
             <input id={field.name} name={field.name} value={values[field.name]} onChange={update} required minLength={field.min} maxLength={field.max} className={inputClass} aria-invalid={Boolean(errors[field.name])} aria-describedby={`${field.name}-hint ${field.name}-error`} />}
           <p id={`${field.name}-hint`} className="mt-2 text-sm text-slate-500">{field.hint}</p>
-          <p id={`${field.name}-error`} className="mt-1 text-sm text-red-800">{errors[field.name]}</p>
+          <FieldError id={`${field.name}-error`}>{errors[field.name]}</FieldError>
         </div>)}
         <div className="grid gap-6 sm:grid-cols-2">
           {[['categoryId', 'Category', categories, categoryState, 'categories'], ['priorityId', 'Priority', priorities, priorityState, 'priorities']].map(([name, label, options, optionState, plural]) => <div key={name}>
@@ -98,7 +99,7 @@ export function CreateTicketForm({ categories = [], priorities = [], categorySta
               <option value="">{optionState.loading ? `Loading ${plural}...` : optionState.failed ? `Unable to load ${plural}.` : options.length ? `Select a ${label.toLowerCase()}` : `No ${plural} available`}</option>
               {options.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}
             </select>
-            <p id={`${name}-error`} className="mt-1 text-sm text-red-800">{errors[name]}</p>
+            <FieldError id={`${name}-error`}>{errors[name]}</FieldError>
             {optionState.failed && <ErrorState compact title={`Unable to load ${plural}.`}>
               <button type="button" onClick={optionState.retry} className="mt-2 rounded text-sm font-semibold text-teal-800 underline focus-visible:outline-2 focus-visible:outline-offset-2">Retry {plural}</button>
             </ErrorState>}

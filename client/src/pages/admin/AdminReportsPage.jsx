@@ -1,3 +1,5 @@
+import { focusFirstError } from '../../components/formValidation'
+import FieldError from '../../components/FieldError'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ReportSkeleton from './ReportSkeleton'
@@ -43,7 +45,7 @@ function ReportForm({ type }) {
     if (pending.current) return
     const next = validateReportDates(type, criteria)
     setErrors(next); setError('')
-    if (Object.keys(next).length) return
+    if (Object.keys(next).length) { focusFirstError(next, field => `report-${field}`); return }
     pending.current = true; setLoading(true)
     const abort = new AbortController()
     controller.current = abort
@@ -61,17 +63,18 @@ function ReportForm({ type }) {
     sortBy: [['createdAt', 'Created date'], ['ticketNumber', 'Ticket number'], ['title', 'Title'], ['status', 'Status'], ['category', 'Category'], ['priority', 'Priority name'], ['requester', 'Requester first name'], ['technician', 'Technician first name']].map(([value, label]) => ({ value, label })),
     sortOrder: [{ value: 'desc', label: 'Descending' }, { value: 'asc', label: 'Ascending' }],
   }
-  function change(field, value) { setValues(previous => ({ ...previous, [field]: value })); setErrors(previous => ({ ...previous, [field]: null })) }
+  function change(field, value) { const next = { ...values, [field]: value }; setValues(next); setErrors(previous => previous.startDate || previous.endDate ? validateReportDates(type, next) : { ...previous, [field]: null }) }
   return <>
     <form noValidate onSubmit={event => { event.preventDefault(); generate({ ...values }) }} className="space-y-4 layout-panel">
       <p className="text-sm text-slate-600">Dates select tickets created on inclusive UTC calendar days. {type === 'date-range' ? 'Both dates are required.' : 'Leave dates blank for all dates; either boundary may be used alone.'} Displayed ticket timestamps use your local timezone.</p>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{reportTypes[type].fields.map(field => <div key={field} className="min-w-0">
         <label className="text-sm font-semibold" htmlFor={`report-${field}`}>{labels[field]}{type === 'date-range' ? ' *' : ''}</label>
-        {lookups[field] ? <LookupSelect field={field} value={values[field]} disabled={loading} onChange={value => change(field, value)} /> : options[field] ? <select id={`report-${field}`} className={input} disabled={loading} value={values[field]} onChange={event => change(field, event.target.value)}>{field === 'status' && <option value="">All statuses</option>}{options[field].map(row => <option key={row.value} value={row.value}>{row.label}</option>)}</select> : <input id={`report-${field}`} className={input} type={field === 'search' ? 'search' : 'date'} maxLength={field === 'search' ? 100 : undefined} min={field === 'search' ? undefined : '1000-01-01'} max={field === 'endDate' ? '9999-12-30' : field === 'startDate' ? '9999-12-31' : undefined} required={type === 'date-range'} value={values[field]} disabled={loading} onChange={event => change(field, event.target.value)} aria-invalid={Boolean(errors[field])} aria-describedby={`report-${field}-error`} />}
-        <p id={`report-${field}-error`} className="mt-1 text-sm text-red-700" role={errors[field] ? 'alert' : undefined}>{errors[field]}</p>
+        {lookups[field] ? <LookupSelect field={field} value={values[field]} disabled={loading} onChange={value => change(field, value)} /> : options[field] ? <select id={`report-${field}`} className={input} disabled={loading} value={values[field]} onChange={event => change(field, event.target.value)}>{field === 'status' && <option value="">All statuses</option>}{options[field].map(row => <option key={row.value} value={row.value}>{row.label}</option>)}</select> : <input id={`report-${field}`} className={input} type={field === 'search' ? 'search' : 'date'} maxLength={field === 'search' ? 100 : undefined} min={field === 'search' ? undefined : '1000-01-01'} max={field === 'endDate' ? '9999-12-30' : field === 'startDate' ? '9999-12-31' : undefined} required={type === 'date-range'} value={values[field]} disabled={loading} onChange={event => change(field, event.target.value)} onBlur={() => { if (field.endsWith('Date')) setErrors(validateReportDates(type, values)) }} aria-invalid={Boolean(errors[field])} aria-describedby={`report-${field}-error`} />}
+        <FieldError id={`report-${field}-error`}>{errors[field]}</FieldError>
       </div>)}</div>
       {type === 'tickets' && <p className="text-sm text-slate-500">Search ticket number, title, requester or technician name/email.</p>}
-      <div className="layout-actions"><button type="submit" className={button} disabled={loading}>{loading ? 'Generating report...' : 'Generate Report'}</button><button type="button" className={button} disabled={loading} onClick={() => { setValues(initial()); setErrors({}) }}>Clear filters</button></div>
+      {Object.keys(validateReportDates(type, values)).length > 0 && <p className="text-sm text-slate-600">Enter valid report dates, with the end date on or after the start date, to generate a report.</p>}
+      <div className="layout-actions"><button type="submit" className={button} disabled={loading || Object.keys(validateReportDates(type, values)).length > 0}>{loading ? 'Generating report...' : 'Generate Report'}</button><button type="button" className={button} disabled={loading} onClick={() => { setValues(initial()); setErrors({}) }}>Clear filters</button></div>
     </form>
     {!loading && !result && !error && <EmptyState title="Generate a report" message="Choose a report type and criteria, then generate a report." />}
     {loading && <ReportSkeleton type={type} initial={!result} />}

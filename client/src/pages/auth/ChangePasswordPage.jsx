@@ -1,3 +1,4 @@
+import FieldError from '../../components/FieldError'
 import AuthFeedback from '../../auth/AuthFeedback'
 import { getAuthFieldErrors } from '../../api/apiError'
 import LogoutButton from '../../auth/LogoutButton'
@@ -63,7 +64,7 @@ export default function ChangePasswordPage() {
                 <input ref={element => { inputs.current[key] = element }} id={key} name={key} type={visible[key] ? 'text' : 'password'} autoComplete={autoComplete} required disabled={isSubmitting} value={values[key]} onChange={event => { setValues(current => ({ ...current, [key]: event.target.value })); setErrors({}); setServerError(null) }} aria-invalid={Boolean(errors[key])} aria-describedby={`${key === 'newPassword' ? 'password-guidance ' : ''}${errors[key] ? `${key}-error` : ''}`.trim() || undefined} className={`w-full rounded-lg border bg-white py-3 pr-20 pl-3.5 text-slate-900 outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20 ${errors[key] ? 'border-red-600' : 'border-slate-300'}`} />
                 <button type="button" aria-label={`${visible[key] ? 'Hide' : 'Show'} ${label.toLowerCase()}`} aria-pressed={Boolean(visible[key])} aria-controls={key} onClick={() => setVisible(current => ({ ...current, [key]: !current[key] }))} className="absolute inset-y-1 right-1 rounded-md px-3 text-sm font-medium text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700">{visible[key] ? 'Hide' : 'Show'}</button>
               </div>
-              {errors[key] && <p id={`${key}-error`} role="alert" className="mt-2 text-sm text-red-700">{errors[key]}</p>}
+              {errors[key] && <FieldError id={`${key}-error`}>{errors[key]}</FieldError>}
             </div>
           ))}
           {serverError && <AuthFeedback>{serverError}</AuthFeedback>}

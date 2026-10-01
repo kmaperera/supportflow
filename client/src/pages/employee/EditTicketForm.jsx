@@ -1,3 +1,4 @@
+import FieldError from '../../components/FieldError'
 import ErrorState from '../../components/ErrorState'
 import LoadingState from '../../components/LoadingState'
 import { useEffect, useRef, useState } from 'react'
@@ -61,7 +62,7 @@ export default function EditTicketForm({ ticket, onCancel, onSaved, onIneligible
         {[['title', 'Title', 5, 200], ['description', 'Description', 10, 5000]].map(([name, label, min, max]) => <div key={name}>
           <label htmlFor={`edit-${name}`} className="text-sm font-semibold">{label}</label>
           {name === 'description' ? <textarea id={`edit-${name}`} name={name} value={values[name]} onChange={change} required minLength={min} maxLength={max} rows={7} aria-invalid={Boolean(errors[name])} aria-describedby={`edit-${name}-error`} className={inputClass} /> : <input id={`edit-${name}`} name={name} value={values[name]} onChange={change} required minLength={min} maxLength={max} aria-invalid={Boolean(errors[name])} aria-describedby={`edit-${name}-error`} className={inputClass} />}
-          <p id={`edit-${name}-error`} className="mt-1 text-sm text-red-800">{errors[name]}</p>
+          <FieldError id={`edit-${name}-error`}>{errors[name]}</FieldError>
         </div>)}
         <div className="grid gap-4 sm:grid-cols-2">
           {[['categoryId', 'Category', ticket.category], ['priorityId', 'Priority', ticket.priority]].map(([name, label, original]) => <div key={name}>
@@ -70,7 +71,7 @@ export default function EditTicketForm({ ticket, onCancel, onSaved, onIneligible
               {!(options?.[name] || []).some(option => String(option.id) === String(original.id)) && <option value={original.id}>{original.name} (current)</option>}
               {(options?.[name] || []).map(option => <option key={option.id} value={option.id}>{option.name}</option>)}
             </select>
-            <p id={`edit-${name}-error`} className="mt-1 text-sm text-red-800">{errors[name]}</p>
+            <FieldError id={`edit-${name}-error`}>{errors[name]}</FieldError>
           </div>)}
         </div>
       </fieldset>

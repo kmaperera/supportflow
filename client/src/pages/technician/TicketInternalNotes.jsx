@@ -29,7 +29,7 @@ export default function TicketInternalNotes({ ticket, userId, disabled, draft, o
     event.preventDefault()
     if (pending.current || disabled || !canAdd) return
     const length = Array.from(draft.trim()).length
-    if (length < 1 || length > 5000) { setError('Enter a note between 1 and 5,000 characters.'); return }
+    if (length < 1 || length > 5000) { setError(length === 0 ? 'Internal note is required.' : 'Internal note must not exceed 5,000 characters.'); document.getElementById('internal-note')?.focus(); return }
     pending.current = true; setAdding(true); onPendingChange(true); setError(null); setAdded(false)
     try {
       await addTicketInternalNote(ticket.id, { content: draft })
@@ -55,8 +55,8 @@ export default function TicketInternalNotes({ ticket, userId, disabled, draft, o
     <div id="internal-note-feedback" className="mt-3">{error && <AuthFeedback>{error}</AuthFeedback>}</div>
     {added && <AuthFeedback variant="success">Internal note added.</AuthFeedback>}
     {canAdd && <form onSubmit={submit} noValidate className="mt-4 space-y-3">
-      <label htmlFor="internal-note" className="block text-sm font-semibold">Add an internal note</label>
-      <textarea id="internal-note" placeholder="Add an internal note..." value={draft} onChange={event => { onDraftChange(event.target.value); setError(null); setAdded(false) }} rows={4} required disabled={adding || disabled} aria-describedby="internal-note-feedback" aria-invalid={Boolean(error)} className="block w-full min-w-0 resize-y rounded-lg border border-slate-300 bg-white p-3 text-base focus-visible:outline-2 focus-visible:outline-teal-700 disabled:opacity-60 sm:text-sm" />
+      <label htmlFor="internal-note" className="block text-sm font-semibold">Add an internal note *</label>
+      <textarea id="internal-note" placeholder="Add an internal note..." value={draft} onChange={event => { onDraftChange(event.target.value); setError(null); setAdded(false) }} rows={4} maxLength={5000} required disabled={adding || disabled} aria-describedby="internal-note-feedback" aria-invalid={Boolean(error)} className="block w-full min-w-0 resize-y rounded-lg border border-slate-300 bg-white p-3 text-base focus-visible:outline-2 focus-visible:outline-teal-700 disabled:opacity-60 sm:text-sm" />
       <button type="submit" disabled={adding || disabled} className="cursor-pointer rounded-lg border border-teal-700 bg-white px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50">{adding ? 'Sending...' : 'Add Note'}</button>
     </form>}
   </section>

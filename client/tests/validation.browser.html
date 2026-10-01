@@ -1,0 +1,26 @@
+<!doctype html><html><body><div id="root"></div><pre id="result">RUNNING</pre>
+<script type="module">
+import React from 'react'
+import {createRoot} from 'react-dom/client'
+import {MemoryRouter} from 'react-router-dom'
+import CreateUser from '/src/pages/admin/CreateUserPage.jsx'
+import '/src/index.css'
+const wait=()=>new Promise(resolve=>setTimeout(resolve,100))
+const check=(ok,message)=>{if(!ok)throw new Error(message)}
+try {
+ createRoot(document.querySelector('#root')).render(React.createElement(MemoryRouter,null,React.createElement(CreateUser)))
+ await wait()
+ check(!document.querySelector('[aria-invalid="true"]'),'untouched form neutral')
+ document.querySelector('button[type="submit"]').click();await wait()
+ const first=document.querySelector('#create-user-firstName')
+ check(document.activeElement===first,'first invalid field focused')
+ check(first.getAttribute('aria-invalid')==='true','field marked invalid')
+ check(document.getElementById(first.getAttribute('aria-describedby')).textContent,'linked field error')
+ Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(first,'  Test  ')
+ first.dispatchEvent(new Event('input',{bubbles:true}));await wait()
+ check(first.value==='  Test  ' && first.getAttribute('aria-invalid')==='false','editing preserves input and clears stale error')
+ document.querySelector('button[type="submit"]').click();await wait()
+ check(first.value==='  Test  ' && document.activeElement.id==='create-user-lastName','invalid submit preserves other entered values')
+ document.querySelector('#result').textContent='PASS: untouched neutral, failed-submit focus, associated inline errors, correction, draft preservation'
+}catch(error){document.querySelector('#result').textContent='FAIL: '+error.message}
+</script></body></html>

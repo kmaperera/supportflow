@@ -45,7 +45,7 @@ function TechnicianCombobox({ technicians, counts, selected, currentId, disabled
     if (event.key === 'Enter' && isOpen) { event.preventDefault(); if (options[active]) select(options[active]) }
   }
   return <div className="relative min-w-0" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) { setExpanded(false); setActive(-1) } }}>
-    <label htmlFor={id} className="block text-sm font-medium">Technician</label>
+    <label htmlFor={id} className="block text-sm font-medium">Technician *</label>
     <input id={id} role="combobox" aria-autocomplete="list" aria-expanded={isOpen} aria-controls={`${id}-list`} aria-activedescendant={isOpen && options[active] ? `${id}-option-${active}` : undefined} autoComplete="off" className={input} disabled={disabled} placeholder="Search or select a technician..." value={isOpen ? query : chosen ? name(chosen) : ''} onFocus={open} onClick={open} onKeyDown={keyDown} onChange={event => { setQuery(event.target.value); setExpanded(true); setActive(-1); onSelect('') }} />
     {isOpen && <div className="absolute inset-x-0 top-full z-20 mt-1 max-h-[min(16rem,45dvh)] overflow-y-auto rounded-lg border border-slate-300 bg-white shadow-lg">
       <ul id={`${id}-list`} role="listbox" aria-label="Assignable technicians" ref={list}>{options.map((person, index) => {
@@ -140,6 +140,7 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
       {current?.data && <>
         {!current.data.length ? <EmptyState compact title="No assignable technicians found." /> : <>
           <TechnicianCombobox technicians={current.data} counts={counts} selected={selected} currentId={ticket.assignedTo} disabled={busy || confirm} onSelect={value => { setSelected(value); setConfirm(false) }} />
+          {!chosen && <p className="text-sm text-slate-600">Select an available technician to continue. Reassignment requires a different technician.</p>}
           {workload?.error && <p className="text-sm text-slate-600">Workload counts are unavailable. You can still choose a technician.</p>}
           <ConfirmDialog open={Boolean(confirm && chosen)} title={assigned ? "Reassign ticket?" : "Assign technician?"} description={assigned ? `Current technician: ${name(ticket.assignee)}. New technician: ${chosen ? name(chosen) : ""}.` : `Assign this ticket to ${chosen ? name(chosen) : "the selected technician"}?`} confirmLabel={assigned ? "Reassign Ticket" : "Assign Technician"} pending={busy} pendingLabel={assigned ? "Reassigning..." : "Assigning..."} onConfirm={save} onCancel={() => setConfirm(false)}>{notice && !notice.success && <AuthFeedback>{notice.text}</AuthFeedback>}</ConfirmDialog>
         </>}

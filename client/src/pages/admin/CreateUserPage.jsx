@@ -1,3 +1,5 @@
+import FieldError from '../../components/FieldError'
+import { focusFirstError, mapFieldErrors } from '../../components/formValidation'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -25,7 +27,7 @@ export default function CreateUserPage() {
     if (pending.current) return
     const next = validateCreateUser(values)
     setErrors(next); setError(null)
-    if (Object.keys(next).length) return
+    if (Object.keys(next).length) { focusFirstError(next, field => `create-user-${field}`); return }
     pending.current = true; setCreating(true)
     try {
       await createUser(values)
@@ -36,12 +38,9 @@ export default function CreateUserPage() {
       if (!active.current) return
       if (cause?.response?.status === 409) {
         setErrors({ email: 'A user with this email already exists.' })
-        setError('A user with this email already exists.')
+        setError(null)
       } else {
-        const fields = {}
-        if (cause?.response?.status === 422 && Array.isArray(cause.response.data?.errors)) {
-          for (const item of cause.response.data.errors) if (Object.hasOwn(labels, item.field)) fields[item.field] = `Please check ${labels[item.field].toLowerCase()}.`
-        }
+        const fields = mapFieldErrors(cause, Object.fromEntries(Object.entries(labels).map(([field, label]) => [field, label.toLowerCase()])))
         setErrors(fields)
         setError(getApiErrorMessage(cause, 'Unable to create user. Please check the form and try again.'))
       }
@@ -54,9 +53,9 @@ export default function CreateUserPage() {
       <div className="grid min-w-0 gap-5 sm:grid-cols-2">{Object.entries(labels).map(([field, label]) => {
         const optional = ['phone', 'department'].includes(field)
         return <div key={field} className="min-w-0"><label htmlFor={`create-user-${field}`} className="text-sm font-semibold">{label}{optional ? ' (optional)' : ' *'}</label>
-          {field === 'role' ? <select id={`create-user-${field}`} className={control} required disabled={creating} value={values.role} aria-invalid={Boolean(errors.role)} aria-describedby={`create-user-${field}-error`} onChange={event => { setValues(previous => ({ ...previous, role: event.target.value })); setErrors(previous => ({ ...previous, role: null })) }}>{[['EMPLOYEE', 'Employee'], ['TECHNICIAN', 'Technician'], ['ADMIN', 'Admin']].map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select> : <input id={`create-user-${field}`} className={control} type={field.toLowerCase().includes('password') ? 'password' : field === 'email' ? 'email' : field === 'phone' ? 'tel' : 'text'} autoComplete={field.toLowerCase().includes('password') ? 'new-password' : 'off'} required={!optional} disabled={creating} value={values[field]} aria-invalid={Boolean(errors[field])} aria-describedby={`create-user-${field}-error${field === 'password' ? ' password-help' : ''}`} onChange={event => { setValues(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [field]: null })) }} />}
+          {field === 'role' ? <select id={`create-user-${field}`} className={control} required disabled={creating} value={values.role} aria-invalid={Boolean(errors.role)} aria-describedby={`create-user-${field}-error`} onChange={event => { setValues(previous => ({ ...previous, role: event.target.value })); setErrors(previous => ({ ...previous, role: null })) }}>{[['EMPLOYEE', 'Employee'], ['TECHNICIAN', 'Technician'], ['ADMIN', 'Admin']].map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select> : <input id={`create-user-${field}`} className={control} type={field.toLowerCase().includes('password') ? 'password' : field === 'email' ? 'email' : field === 'phone' ? 'tel' : 'text'} autoComplete={field.toLowerCase().includes('password') ? 'new-password' : 'off'} required={!optional} maxLength={({ firstName: 100, lastName: 100, email: 255, phone: 30, department: 150 })[field]} disabled={creating} value={values[field]} aria-invalid={Boolean(errors[field])} aria-describedby={`create-user-${field}-error${field === 'password' ? ' password-help' : ''}`} onChange={event => { setValues(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [field]: null })) }} />}
           {field === 'password' && <p id="password-help" className="mt-1 text-xs text-slate-600">At least 8 characters, including uppercase, lowercase, and a number.</p>}
-          <div id={`create-user-${field}-error`}>{errors[field] && <p role="alert" className="mt-1 text-sm text-red-700">{errors[field]}</p>}</div>
+          <div id={`create-user-${field}-error`}>{errors[field] && <FieldError>{errors[field]}</FieldError>}</div>
         </div>
       })}</div>
       <div className="layout-actions"><button type="submit" className={button} disabled={creating}>{creating ? 'Creating user...' : 'Create User'}</button><button type="button" className={button} disabled={creating} onClick={() => navigate('/admin/users')}>Cancel</button></div>

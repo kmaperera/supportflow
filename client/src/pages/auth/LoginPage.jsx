@@ -1,3 +1,4 @@
+import FieldError from '../../components/FieldError'
 import AuthFeedback from '../../auth/AuthFeedback'
 import { getAuthFieldErrors } from '../../api/apiError'
 import { useEffect, useRef, useState } from 'react'
@@ -99,7 +100,7 @@ function LoginPage() {
             <div>
               <label htmlFor="login-email" className="text-sm font-medium">Email address</label>
               <input ref={emailInput} id="login-email" name="email" disabled={isSubmitting || isInitializing || isLoggingOut} type="email" autoComplete="email" required value={email} onChange={event => { clearAuthError(); setLoginSucceeded(false); setEmail(event.target.value); setErrors(current => ({ ...current, email: undefined })) }} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'login-email-error' : undefined} className={`${inputClass} ${errors.email ? 'border-red-600' : 'border-slate-300'}`} placeholder="you@company.com" />
-              {errors.email && <p id="login-email-error" role="alert" className="mt-2 text-sm text-red-700">{errors.email}</p>}
+              {errors.email && <FieldError id="login-email-error">{errors.email}</FieldError>}
             </div>
             <div>
               <label htmlFor="login-password" className="text-sm font-medium">Password</label>
@@ -107,7 +108,7 @@ function LoginPage() {
                 <input ref={passwordInput} id="login-password" name="password" disabled={isSubmitting || isInitializing || isLoggingOut} type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={event => { clearAuthError(); setLoginSucceeded(false); setPassword(event.target.value); setErrors(current => ({ ...current, password: undefined })) }} aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? 'login-password-error' : undefined} className={`${inputClass} pr-20 ${errors.password ? 'border-red-600' : 'border-slate-300'}`} />
                 <button type="button" onClick={() => setShowPassword(current => !current)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} aria-controls="login-password" className="absolute inset-y-1 right-1 rounded-md px-3 text-sm font-medium text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700">{showPassword ? 'Hide' : 'Show'}</button>
               </div>
-              {errors.password && <p id="login-password-error" role="alert" className="mt-2 text-sm text-red-700">{errors.password}</p>}
+              {errors.password && <FieldError id="login-password-error">{errors.password}</FieldError>}
             </div>
             {passwordChanged && <AuthFeedback variant="success">Password changed successfully. Please sign in with your new password.</AuthFeedback>}
             {authError && <AuthFeedback>{authError}</AuthFeedback>}

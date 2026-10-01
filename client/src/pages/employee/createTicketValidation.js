@@ -4,7 +4,8 @@ export function validateCreateTicket(values) {
   const errors = {}
   for (const [field, label, min, max] of [['title', 'Title', 5, 200], ['description', 'Description', 10, 5000]]) {
     const length = Array.from(values[field].trim()).length
-    if (length < min || length > max) errors[field] = `${label} must be ${min} to ${max} characters.`
+    if (!length) errors[field] = `${label} is required.`
+    else if (length < min || length > max) errors[field] = `${label} must be ${min} to ${max} characters.`
   }
   for (const [field, label] of [['categoryId', 'category'], ['priorityId', 'priority']]) {
     const id = String(values[field])

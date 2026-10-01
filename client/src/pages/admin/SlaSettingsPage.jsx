@@ -1,3 +1,5 @@
+import FieldError from '../../components/FieldError'
+import { focusFirstError } from '../../components/formValidation'
 import { useToast } from '../../components/toastContext'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
@@ -44,7 +46,7 @@ function PolicyCard({ policy, onSaved }) {
     if (pending.current) return
     const validation = validateSlaDurations(values)
     setErrors(validation); setError(null)
-    if (Object.keys(validation).length) return
+    if (Object.keys(validation).length) { focusFirstError(validation, field => `${policy.id}-${field}`); return }
     pending.current = true; setSaving(true)
     try {
       await updateSlaPolicy(policy.id, { responseTimeMinutes: Number(values.responseTimeMinutes), resolutionTimeMinutes: Number(values.resolutionTimeMinutes) })
@@ -65,7 +67,7 @@ function PolicyCard({ policy, onSaved }) {
     {!editing ? <button className={button} onClick={() => { setEditing(true); setError(null); setErrors({}) }}>Edit</button> : <form onSubmit={submit} noValidate className="space-y-4 border-t border-slate-200 pt-4">
       {error && <AuthFeedback>{error}</AuthFeedback>}
       <p className="text-sm text-slate-600">Enter whole minutes (60 minutes = 1 hour; 1,440 minutes = 24 hours).</p>
-      {['responseTimeMinutes', 'resolutionTimeMinutes'].map(field => <div key={field}><label className="text-sm font-medium" htmlFor={`${policy.id}-${field}`}>{field === 'responseTimeMinutes' ? 'Response' : 'Resolution'} target (minutes) *</label><input id={`${policy.id}-${field}`} type="number" min="1" max="4294967295" step="1" required disabled={saving} className="mt-1 block w-full min-w-0 rounded-lg border border-slate-300 p-3 focus-visible:outline-2 focus-visible:outline-teal-700 disabled:opacity-50" value={values[field]} aria-invalid={Boolean(errors[field])} aria-describedby={`${policy.id}-${field}-error`} onChange={event => { setValues(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [field]: null })) }} /><div id={`${policy.id}-${field}-error`}>{errors[field] && <p role="alert" className="mt-1 text-sm text-red-700">{errors[field]}</p>}</div></div>)}
+      {['responseTimeMinutes', 'resolutionTimeMinutes'].map(field => <div key={field}><label className="text-sm font-medium" htmlFor={`${policy.id}-${field}`}>{field === 'responseTimeMinutes' ? 'Response' : 'Resolution'} target (minutes) *</label><input id={`${policy.id}-${field}`} type="number" min="1" max="4294967295" step="1" required disabled={saving} className="mt-1 block w-full min-w-0 rounded-lg border border-slate-300 p-3 focus-visible:outline-2 focus-visible:outline-teal-700 disabled:opacity-50" value={values[field]} aria-invalid={Boolean(errors[field])} aria-describedby={`${policy.id}-${field}-error`} onChange={event => { setValues(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [field]: null })) }} /><div id={`${policy.id}-${field}-error`}>{errors[field] && <FieldError>{errors[field]}</FieldError>}</div></div>)}
       <div className="layout-actions"><button type="submit" className={button} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button><button type="button" className={button} disabled={saving} onClick={() => { setEditing(false); setValues({ responseTimeMinutes: String(policy.responseTimeMinutes), resolutionTimeMinutes: String(policy.resolutionTimeMinutes) }) }}>Cancel</button></div>
     </form>}
   </section>
