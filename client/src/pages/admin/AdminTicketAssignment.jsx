@@ -1,3 +1,4 @@
+import EmptyState from '../../components/EmptyState'
 import LoadingState from '../../components/LoadingState'
 import { useEffect, useId, useRef, useState } from 'react'
 import { assignTicket, unassignTicket } from '../../api/ticketApi'
@@ -136,7 +137,7 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
       {!current && <div className="space-y-1" aria-busy="true"><p className="text-sm font-medium">Technician</p><div className="rounded-lg border border-slate-300 bg-slate-50 px-3"><LoadingState>Loading technicians...</LoadingState></div></div>}
       {current?.error && <><AuthFeedback>Unable to load technicians.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></>}
       {current?.data && <>
-        {!current.data.length ? <p>No assignable technicians found.</p> : <>
+        {!current.data.length ? <EmptyState compact title="No assignable technicians found." /> : <>
           <TechnicianCombobox technicians={current.data} counts={counts} selected={selected} currentId={ticket.assignedTo} disabled={busy || confirm} onSelect={value => { setSelected(value); setConfirm(false) }} />
           {workload?.error && <p className="text-sm text-slate-600">Workload counts are unavailable. You can still choose a technician.</p>}
           {confirm && chosen && <p>{assigned ? `Reassign this ticket from ${name(ticket.assignee)} to ${name(chosen)}?` : `Assign this ticket to ${name(chosen)}?`}</p>}

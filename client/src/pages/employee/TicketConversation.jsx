@@ -1,3 +1,4 @@
+import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../auth/useAuth'
@@ -85,7 +86,7 @@ export default function TicketConversation({ ticketId, status, assignedTo, disab
 
 export function PublicCommentList({ comments, userId }) {
   const visible = comments.filter(comment => comment?.commentType === 'PUBLIC')
-  if (!visible.length) return <p className="mt-4 text-sm text-slate-600">No public replies yet.</p>
+  if (!visible.length) return <EmptyState compact title="No public replies yet." />
   return <ol className="mt-4 space-y-4">
     {visible.map(comment => {
       const name = [comment.author?.firstName, comment.author?.lastName].filter(value => typeof value === 'string' && value.trim()).map(value => value.trim()).join(' ')

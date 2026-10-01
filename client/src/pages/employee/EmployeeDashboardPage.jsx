@@ -1,3 +1,4 @@
+import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import SummaryCard from '../../layouts/SummaryCard'
@@ -21,15 +22,11 @@ export function EmployeeDashboardContent({ data }) {
         ['Resolved Tickets', summary.resolvedTickets], ['Closed Tickets', summary.closedTickets],
       ].map(([label, count]) => <SummaryCard key={label} label={label} value={count} />)}
     </dl>
-    {summary.totalTickets === 0 ? <section className={panelClass} aria-labelledby="empty-tickets-heading">
-      <h2 id="empty-tickets-heading" className="text-lg font-semibold">You haven't created any support tickets yet.</h2>
-      <p className="mt-2 text-sm text-slate-600">Create your first ticket when you need help.</p>
-      <Link to="/employee/tickets/new" className={`${actionClass} mt-4`}>Create your first ticket</Link>
-    </section> : <>
+    {summary.totalTickets === 0 ? <EmptyState titleId="empty-tickets-heading" title="You haven't created any support tickets yet." message="Create your first support ticket to get help." actions={<Link to="/employee/tickets/new" className={actionClass}>Create your first ticket</Link>} /> : <>
       <section className={panelClass} aria-labelledby="recent-tickets-heading">
         <h2 id="recent-tickets-heading" className="text-lg font-semibold">Recent Tickets</h2>
         <p className="mt-1 text-sm text-slate-500">Your latest support requests, newest first.</p>
-        {tickets.length === 0 ? <p className="mt-5 text-sm text-slate-600">No recent tickets available.</p> :
+        {tickets.length === 0 ? <EmptyState compact title="No recent tickets available." /> :
           <ul className="mt-4 divide-y divide-slate-200">
             {tickets.map(ticket => <li key={ticket.id} className="py-4 first:pt-0 last:pb-0">
               <p className="break-all text-xs font-semibold text-teal-800">{ticket.ticketNumber}</p>

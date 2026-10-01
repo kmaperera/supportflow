@@ -1,3 +1,4 @@
+import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import LoadingState from '../../components/LoadingState'
 import PageHeader from '../../layouts/PageHeader'
@@ -63,7 +64,7 @@ export default function TechnicianManagementPage() {
     {!current && <ContentSkeleton initial={!result} variant="cards" columns="xl:grid-cols-2">Loading technicians...</ContentSkeleton>}
     {current?.error && <div className="space-y-3"><AuthFeedback>Unable to load technicians.</AuthFeedback><button className={button} onClick={() => setQuery(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></div>}
     {current?.data && <>
-      {!current.data.users.length ? <p className="text-sm font-medium text-slate-600">{filtered ? 'No technicians match your current filters.' : 'No technicians found.'}</p> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{current.data.users.map(user => <li key={user.id} className="min-w-0 layout-panel">
+      {!current.data.users.length ? <EmptyState title={filtered ? 'No technicians match your current filters.' : 'No technicians found.'} actions={filtered ? <button type="button" className={button} onClick={reset}>Clear filters</button> : <Link className={button} to="/admin/users">Manage User Accounts</Link>} /> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{current.data.users.map(user => <li key={user.id} className="min-w-0 layout-panel">
         <h2 className="break-words text-lg font-semibold">{[user.firstName, user.lastName].filter(Boolean).join(' ') || 'Name unavailable'}</h2>
         <dl className="mt-3 grid min-w-0 gap-4 text-sm sm:grid-cols-2">{[['Email', user.email], ['Status', user.isActive ? 'Active' : 'Inactive'], ['Department', user.department || 'Not provided'], ['Active tickets', !user.isActive ? 'Unavailable for inactive technicians' : byId.has(String(user.id)) ? byId.get(String(user.id)) : counts ? 'Unavailable' : 'Loading workload...']].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-slate-500">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
       </li>)}</ul>}

@@ -1,3 +1,4 @@
+import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
@@ -60,7 +61,7 @@ function MyTickets() {
       <button type="button" className={actionClass} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button>
     </div>}
     {current?.data && <>
-      {filtered && current.data.tickets.length === 0 ? <section className="rounded-xl border border-slate-200 bg-white p-6"><h2 className="text-lg font-semibold">No tickets match your current search or filters.</h2><button type="button" className={`${actionClass} mt-3`} onClick={resetFilters}>Clear filters</button></section> : <MyTicketsList tickets={current.data.tickets} totalRecords={current.data.pagination.totalRecords} />}
+      {filtered && current.data.tickets.length === 0 ? <EmptyState title="No tickets match your current search or filters." actions={<button type="button" className={actionClass} onClick={resetFilters}>Clear filters</button>} /> : <MyTicketsList tickets={current.data.tickets} totalRecords={current.data.pagination.totalRecords} />}
       {(current.data.pagination.totalPages > 1 || request.page > 1) && <nav aria-label="Ticket pagination" className="flex flex-wrap items-center gap-4">
         <button type="button" className={actionClass} disabled={!current.data.pagination.hasPrevious} onClick={() => setRequest({ ...request, page: request.page - 1, attempt: 0 })}>Previous</button>
         <p className="text-sm text-slate-600">Page {current.data.pagination.currentPage} of {Math.max(1, current.data.pagination.totalPages)} · {current.data.pagination.totalRecords} tickets</p>
@@ -71,10 +72,7 @@ function MyTickets() {
 }
 
 export function MyTicketsList({ tickets, totalRecords }) {
-  if (!tickets.length) return <section className="rounded-2xl border border-slate-200 bg-white p-6">
-    <h2 className="text-lg font-semibold">{totalRecords === 0 ? "You don't have any support tickets yet." : 'No tickets on this page.'}</h2>
-    <Link to="/employee/tickets/new" className={`${actionClass} mt-4`}>Create Ticket</Link>
-  </section>
+  if (!tickets.length) return <EmptyState title={totalRecords === 0 ? "You don't have any support tickets yet." : 'No tickets on this page.'} actions={<Link to="/employee/tickets/new" className={actionClass}>Create Ticket</Link>} />
   return <ul className="space-y-4">
     {tickets.map(ticket => <li key={ticket.id} className="min-w-0">
       <Link to={`/employee/tickets/${encodeURIComponent(ticket.id)}`} aria-labelledby={`ticket-number-${ticket.id} ticket-title-${ticket.id}`} className="block rounded-2xl border border-slate-200 bg-white p-4 transition-colors hover:border-teal-700 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 sm:p-6">

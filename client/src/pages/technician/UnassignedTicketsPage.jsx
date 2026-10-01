@@ -1,3 +1,4 @@
+import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useRef, useState } from 'react'
@@ -112,12 +113,6 @@ export function SelfAssignAction({ ticket, pending, onAssign }) {
 
 export function UnassignedTicketsList({ tickets, totalRecords, filtered = false, onReset, renderAction }) {
   if (tickets.length) return <TechnicianTicketCards tickets={tickets} renderAction={renderAction} />
-  if (filtered) return <section className="layout-panel">
-    <h2 className="text-lg font-semibold">No unassigned tickets match your current search or filters.</h2>
-    <button type="button" onClick={onReset} className={`${actionClass} mt-4`}>Clear filters</button>
-  </section>
-  return <section className="layout-panel">
-    <h2 className="text-lg font-semibold">{totalRecords === 0 ? 'There are no unassigned tickets right now.' : 'No unassigned tickets on this page.'}</h2>
-    <Link to="/technician/tickets/assigned" className={`${actionClass} mt-4`}>View My Assigned Tickets</Link>
-  </section>
+  if (filtered) return <EmptyState title="No unassigned tickets match your current search or filters." actions={<button type="button" onClick={onReset} className={actionClass}>Clear filters</button>} />
+  return <EmptyState title={totalRecords === 0 ? 'There are no unassigned tickets right now.' : 'No unassigned tickets on this page.'} actions={<Link to="/technician/tickets/assigned" className={actionClass}>View My Assigned Tickets</Link>} />
 }

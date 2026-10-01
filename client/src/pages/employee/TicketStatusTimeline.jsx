@@ -1,3 +1,4 @@
+import EmptyState from '../../components/EmptyState'
 import LoadingState from '../../components/LoadingState'
 import { useEffect, useState } from 'react'
 import { getTicketStatusHistory } from '../../api/ticketApi'
@@ -28,7 +29,7 @@ export default function TicketStatusTimeline({ ticketId, title = 'Status timelin
 }
 
 export function StatusHistoryList({ history }) {
-  if (!history.length) return <p className="mt-4 text-sm text-slate-600">No status history is available yet.</p>
+  if (!history.length) return <EmptyState compact title="No status history is available yet." />
   // The endpoint orders records by changed_at ASC, id ASC; preserve that order.
   return <ol className="mt-5 space-y-5 border-l-2 border-teal-100 pl-4 sm:pl-6">
     {history.map(entry => {

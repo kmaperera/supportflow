@@ -1,3 +1,4 @@
+import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
@@ -39,7 +40,7 @@ function StatisticsSection({ kind, title, initialView }) {
 function StatisticsContent({ kind, data }) {
   if (kind === 'status' || kind === 'priority') {
     const total = data.reduce((sum, row) => sum + row.count, 0)
-    if (!total) return <p>No workload statistics are available yet.</p>
+    if (!total) return <EmptyState compact title="No workload statistics are available yet." />
     const active = kind === 'status' ? data.filter(row => ['ASSIGNED', 'IN_PROGRESS', 'WAITING_FOR_USER', 'REOPENED'].includes(row.status)).reduce((sum, row) => sum + row.count, 0) : null
     return <>
       {kind === 'status' && <dl className="grid gap-4 sm:grid-cols-2"><div><dt>Total assigned (all statuses)</dt><dd className="text-2xl font-semibold">{total}</dd></div><div><dt>Active</dt><dd className="text-2xl font-semibold">{active}</dd></div></dl>}
@@ -49,7 +50,8 @@ function StatisticsContent({ kind, data }) {
   if (kind === 'response' || kind === 'resolution') {
     const minutes = kind === 'response' ? data.averageFirstResponseMinutes : data.averageResolutionMinutes
     const count = kind === 'response' ? data.respondedTickets : data.resolvedTickets
-    return <><p className="text-2xl font-semibold">{minutes === null ? 'No workload statistics are available yet.' : `${minutes.toLocaleString(undefined, { maximumFractionDigits: 2 })} minutes`}</p><p className="text-sm text-slate-600">Average elapsed time from ticket creation. Based on {count} {kind === 'response' ? 'responded' : 'resolved'} tickets.</p></>
+    if (minutes === null) return <EmptyState compact title="No workload statistics are available yet." message="Completed ticket samples will appear here when available." />
+    return <><p className="text-2xl font-semibold">{`${minutes.toLocaleString(undefined, { maximumFractionDigits: 2 })} minutes`}</p><p className="text-sm text-slate-600">Average elapsed time from ticket creation. Based on {count} {kind === 'response' ? 'responded' : 'resolved'} tickets.</p></>
   }
-  return <><p className="text-sm text-slate-600">Compliance covers completed milestones only. Pending milestones may already be overdue.</p><div className="grid gap-6 sm:grid-cols-2">{['response', 'resolution'].map(target => <div key={target}><h3 className="font-semibold">{target === 'response' ? 'First response' : 'Resolution'}</h3>{data[target].trackedTickets === 0 ? <p className="mt-2 text-sm">No SLA statistics are available yet.</p> : <dl className="mt-3 space-y-2">{[['Tracked', 'trackedTickets'], ['Met', 'metTickets'], ['Missed', 'missedTickets'], ['Pending', 'pendingTickets'], ['Completed', 'completedTickets']].map(([label, field]) => <div key={field} className="flex justify-between gap-3"><dt>{label}</dt><dd className="font-semibold">{data[target][field]}</dd></div>)}<div className="flex flex-wrap justify-between gap-3"><dt>Compliance</dt><dd className="font-semibold">{data[target].compliancePercentage === null ? 'Not available' : `${data[target].compliancePercentage}%`}</dd></div></dl>}</div>)}</div></>
+  return <><p className="text-sm text-slate-600">Compliance covers completed milestones only. Pending milestones may already be overdue.</p><div className="grid gap-6 sm:grid-cols-2">{['response', 'resolution'].map(target => <div key={target}><h3 className="font-semibold">{target === 'response' ? 'First response' : 'Resolution'}</h3>{data[target].trackedTickets === 0 ? <EmptyState compact title="No SLA statistics are available yet." /> : <dl className="mt-3 space-y-2">{[['Tracked', 'trackedTickets'], ['Met', 'metTickets'], ['Missed', 'missedTickets'], ['Pending', 'pendingTickets'], ['Completed', 'completedTickets']].map(([label, field]) => <div key={field} className="flex justify-between gap-3"><dt>{label}</dt><dd className="font-semibold">{data[target][field]}</dd></div>)}<div className="flex flex-wrap justify-between gap-3"><dt>Compliance</dt><dd className="font-semibold">{data[target].compliancePercentage === null ? 'Not available' : `${data[target].compliancePercentage}%`}</dd></div></dl>}</div>)}</div></>
 }

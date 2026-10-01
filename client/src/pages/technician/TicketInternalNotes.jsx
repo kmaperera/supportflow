@@ -1,3 +1,4 @@
+import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import { useEffect, useRef, useState } from 'react'
 import { getTicketInternalNotes, addTicketInternalNote } from '../../api/ticketApi'
@@ -62,7 +63,7 @@ export default function TicketInternalNotes({ ticket, userId, disabled, draft, o
 
 export function InternalNoteList({ notes, userId }) {
   const visible = notes.filter(note => note?.commentType === 'INTERNAL')
-  if (!visible.length) return <p className="mt-4 text-sm">No internal notes yet.</p>
+  if (!visible.length) return <EmptyState compact title="No internal notes yet." />
   return <ol className="mt-4 space-y-4">{visible.map(note => {
     const name = [note.author?.firstName, note.author?.lastName].filter(value => typeof value === 'string' && value.trim()).map(value => value.trim()).join(' ')
     const role = { TECHNICIAN: 'Technician', ADMIN: 'Admin' }[note.author?.role]

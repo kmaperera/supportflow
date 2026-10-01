@@ -1,3 +1,4 @@
+import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import { useEffect, useRef, useState } from 'react'
 import { getTicketAttachments, uploadTicketAttachment, downloadTicketAttachment } from '../../api/attachmentApi'
@@ -58,7 +59,7 @@ export default function TicketAttachments({ ticketId, status, canUpload = true, 
   }
   return <section aria-labelledby="attachments-heading" className="min-w-0 layout-panel">
     <h2 id="attachments-heading" className="text-lg font-semibold">Attachments</h2>
-    {list.loading ? <ContentSkeleton initial={attempt === 0 && !list.attachments.length} variant="rows">Loading attachments...</ContentSkeleton> : list.error ? <div className="mt-4"><AuthFeedback>Unable to load attachments.</AuthFeedback><button type="button" onClick={reload} className="mt-2 rounded text-teal-800 underline focus-visible:outline-2">Retry attachments</button></div> : !list.attachments.length ? <p className="mt-4 text-sm text-slate-600">No attachments yet.</p> : <ul className="mt-4 space-y-3">{list.attachments.map(attachment => <AttachmentRow key={attachment.id} attachment={attachment} ticketId={ticketId} />)}</ul>}
+    {list.loading ? <ContentSkeleton initial={attempt === 0 && !list.attachments.length} variant="rows">Loading attachments...</ContentSkeleton> : list.error ? <div className="mt-4"><AuthFeedback>Unable to load attachments.</AuthFeedback><button type="button" onClick={reload} className="mt-2 rounded text-teal-800 underline focus-visible:outline-2">Retry attachments</button></div> : !list.attachments.length ? <EmptyState compact title="No attachments yet." /> : <ul className="mt-4 space-y-3">{list.attachments.map(attachment => <AttachmentRow key={attachment.id} attachment={attachment} ticketId={ticketId} />)}</ul>}
     {allowed ? <form onSubmit={submit} noValidate className="mt-6 space-y-3">
       <label htmlFor="ticket-attachment" className="block text-sm font-semibold">Add attachment</label>
       <input ref={input} id="ticket-attachment" type="file" accept={Object.keys(attachmentTypes).join(',')} disabled={uploading || disabled} onChange={event => { setFile(event.target.files?.[0] || null); setError(null); setSuccess(false) }} aria-describedby="attachment-help attachment-error" className="block w-full min-w-0 text-sm focus-visible:outline-2 file:mr-3 file:cursor-pointer file:rounded-lg file:border file:border-slate-300 file:px-3 file:py-2" />

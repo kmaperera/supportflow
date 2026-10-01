@@ -1,3 +1,4 @@
+import EmptyState from '../../components/EmptyState'
 import LoadingState from '../../components/LoadingState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
@@ -75,7 +76,7 @@ function Articles({ categories }) {
     {resource.loading && <ContentSkeleton initial={!resource.data}>{resource.data ? 'Updating articles...' : 'Loading articles...'}</ContentSkeleton>}
     {resource.error && <div className="space-y-2"><AuthFeedback>Unable to load knowledge base articles.</AuthFeedback><button className={button} onClick={resource.reload}>Retry</button></div>}
     {resource.data && <div className="space-y-3" aria-busy={resource.loading}>
-      {!resource.loading && !resource.error && !resource.data.articles.length && <div className={kbCard}><p>{query.search || query.categoryId ? 'No articles match your current filters.' : 'No knowledge base articles found.'}</p>{(query.search || query.categoryId) && <button className={button} onClick={clear}>Clear filters</button>}</div>}
+      {!resource.loading && !resource.error && !resource.data.articles.length && <EmptyState title={query.search || query.categoryId ? 'No articles match your current filters.' : 'No knowledge base articles found.'} actions={query.search || query.categoryId ? <button type="button" className={button} onClick={clear}>Clear filters</button> : <Link className={button} to="/admin/knowledge-base/articles/new">Add Article</Link>} />}
       {resource.data.articles.map(article => <article key={article.id} className={kbCard}>
         <div><h3 className="text-lg font-semibold break-words">{article.title}</h3><p className="mt-1 text-sm text-slate-600">{article.categoryName} · {publicationLabel(article.status)} · {article.viewCount} views</p></div>
         <p className="text-sm text-slate-500">Created {formatTicketDate(article.createdAt)} · Updated {formatTicketDate(article.updatedAt)}</p>
@@ -115,7 +116,7 @@ function Categories({ resource }) {
     {message && <AuthFeedback variant="success">{message}</AuthFeedback>}{error && <AuthFeedback>{error}</AuthFeedback>}
     {editor && <KbCategoryEditor key={editor.category?.id || 'new'} category={editor.category} onCancel={() => setEditor(null)} onSaved={() => { setMessage(editor.category ? 'KB category updated successfully.' : 'KB category created successfully.'); setEditor(null); resource.reload() }} />}
     <CategoryLoadNotice resource={resource} skeleton />
-    {!resource.loading && !resource.error && !resource.data?.length && <p>No KB categories found.</p>}
+    {!resource.loading && !resource.error && !resource.data?.length && <EmptyState compact title="No knowledge base categories found." />}
     <div className="grid gap-4 xl:grid-cols-2">{resource.data?.map(category => <article key={category.id} className={kbCard}>
       <div><h3 className="text-lg font-semibold">{category.name}</h3><p className="mt-1 text-sm font-medium">{category.isActive ? 'Active' : 'Inactive'}</p></div>
       {category.description && <p className="whitespace-pre-wrap text-sm text-slate-600">{category.description}</p>}

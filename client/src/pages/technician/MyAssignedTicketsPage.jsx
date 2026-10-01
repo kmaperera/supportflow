@@ -1,3 +1,4 @@
+import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
@@ -47,9 +48,6 @@ function AssignedTickets() {
 }
 
 export function AssignedTicketsList({ tickets, totalRecords }) {
-  if (!tickets.length) return <section className="layout-panel">
-    <h2 className="text-lg font-semibold">{totalRecords === 0 ? "You don't have any assigned tickets right now." : 'No assigned tickets on this page.'}</h2>
-    <Link to="/technician/tickets/unassigned" className={`${actionClass} mt-4`}>View Unassigned Queue</Link>
-  </section>
+  if (!tickets.length) return <EmptyState title={totalRecords === 0 ? "You don't have any assigned tickets right now." : 'No assigned tickets on this page.'} actions={<Link to="/technician/tickets/unassigned" className={actionClass}>View Unassigned Queue</Link>} />
   return <TechnicianTicketCards tickets={tickets} />
 }

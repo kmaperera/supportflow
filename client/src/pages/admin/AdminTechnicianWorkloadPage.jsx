@@ -1,3 +1,4 @@
+import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
@@ -44,7 +45,7 @@ export default function AdminTechnicianWorkloadPage() {
     {current?.data && <>
       <p className="text-sm text-slate-600">{query || filter ? 'Summary for technicians matching the current search and workload filter.' : 'Summary across all active technicians.'} Inactive technicians are not included by this endpoint.</p>
       <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[['Active technicians', rows.length], ['With active tickets', rows.filter(person => person.workload.totalActive > 0).length], ['No active tickets', rows.filter(person => person.workload.totalActive === 0).length], ['Active assigned tickets', rows.reduce((sum, person) => sum + person.workload.totalActive, 0)]].map(([label, value]) => <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4"><dt className="text-sm text-slate-600">{label}</dt><dd className="mt-2 text-2xl font-semibold tabular-nums">{value}</dd></div>)}</dl>
-      {!rows.length ? <p>{query || filter ? 'No technicians match your current filters.' : 'No technicians found.'}</p> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{rows.map(person => <li key={person.id} className="min-w-0 layout-panel"><h2 className="break-words text-lg font-semibold">{personName(person)}</h2><p className="mt-1 break-all text-sm text-slate-600">{person.email}</p><p className="mt-1 text-sm">Active</p><dl className="mt-4 grid gap-4 text-sm sm:grid-cols-3">{fields.map(([label, key]) => <div key={key}><dt className="text-slate-500">{label}</dt><dd className="mt-1 font-semibold tabular-nums">{person.workload[key]}</dd></div>)}</dl></li>)}</ul>}
+      {!rows.length ? <EmptyState title={query || filter ? 'No technicians match your current filters.' : 'No technician workload data is available.'} actions={(query || filter) && <button type="button" className={button} onClick={reset}>Clear filters</button>} /> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{rows.map(person => <li key={person.id} className="min-w-0 layout-panel"><h2 className="break-words text-lg font-semibold">{personName(person)}</h2><p className="mt-1 break-all text-sm text-slate-600">{person.email}</p><p className="mt-1 text-sm">Active</p><dl className="mt-4 grid gap-4 text-sm sm:grid-cols-3">{fields.map(([label, key]) => <div key={key}><dt className="text-slate-500">{label}</dt><dd className="mt-1 font-semibold tabular-nums">{person.workload[key]}</dd></div>)}</dl></li>)}</ul>}
     </>}
   </div>
 }

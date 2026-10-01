@@ -1,4 +1,5 @@
 import ContentSkeleton from '../../components/ContentSkeleton'
+import EmptyState from '../../components/EmptyState'
 import PageHeader from '../../layouts/PageHeader'
 import SummaryCard from '../../layouts/SummaryCard'
 import { useEffect, useState } from 'react'
@@ -57,10 +58,7 @@ export function TechnicianDashboardContent({ data: { summary, tickets, sla } }) 
     <section className={panelClass} aria-labelledby="recent-assigned-heading">
       <h2 id="recent-assigned-heading" className="text-lg font-semibold">Recent Assigned Tickets</h2>
       <p className="mt-1 text-sm text-slate-500">Tickets currently assigned to you, newest created first.</p>
-      {!tickets.length ? <div className="mt-4">
-        <p>You don't have any assigned tickets right now.</p>
-        <Link to="/technician/tickets/unassigned" className={`${actionClass} mt-4`}>View Unassigned Queue</Link>
-      </div> : <ul className="mt-4 divide-y divide-slate-200">
+      {!tickets.length ? <EmptyState compact title="You don't have any assigned tickets right now." actions={<Link to="/technician/tickets/unassigned" className={actionClass}>View Unassigned Queue</Link>} /> : <ul className="mt-4 divide-y divide-slate-200">
         {tickets.map(ticket => <li key={ticket.id} className="min-w-0 py-4 first:pt-0 last:pb-0">
           <p className="text-sm font-semibold text-teal-800">{ticket.ticketNumber}</p>
           <h3 className="mt-1 font-medium">{ticket.title}</h3>

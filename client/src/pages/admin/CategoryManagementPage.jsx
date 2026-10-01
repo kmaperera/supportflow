@@ -1,3 +1,4 @@
+import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useRef, useState } from 'react'
@@ -63,7 +64,7 @@ export default function CategoryManagementPage() {
     </div>
     {!current && <ContentSkeleton initial={!result} variant="cards" columns="xl:grid-cols-2">Loading categories...</ContentSkeleton>}
     {current?.error && <div className="space-y-3"><AuthFeedback>Unable to load categories.</AuthFeedback><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></div>}
-    {current?.data && (!categories.length ? <p>{filtered ? 'No categories match your current filters.' : 'No categories found.'}</p> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{categories.map(category => <li key={category.id} className="min-w-0 space-y-4 layout-panel">
+    {current?.data && (!categories.length ? <EmptyState title={filtered ? 'No categories match your current filters.' : 'No ticket categories found.'} actions={filtered ? <button type="button" className={button} onClick={() => { setSearch(''); setStatus(''); setSort('name') }}>Clear filters</button> : <Link className={button} to="/admin/categories/new">Add Category</Link>} /> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{categories.map(category => <li key={category.id} className="min-w-0 space-y-4 layout-panel">
       <div><h2 className="break-words text-lg font-semibold">{category.name}</h2><p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-600">{category.description || 'No description provided.'}</p></div>
       <dl className="grid gap-3 text-sm sm:grid-cols-3">{[['Status', category.isActive ? 'Active' : 'Inactive'], ['Created', formatTicketDate(category.createdAt)], ['Updated', formatTicketDate(category.updatedAt)]].map(([label, value]) => <div key={label}><dt className="text-slate-500">{label}</dt><dd>{value}</dd></div>)}</dl>
       <div className="layout-actions">{!pending[category.id] && <Link className={button} to={`/admin/categories/${category.id}/edit`}>Edit</Link>}{confirming !== String(category.id) && <button className={button} disabled={pending[category.id]} onClick={() => category.isActive ? setConfirming(String(category.id)) : changeStatus(category)}>{pending[category.id] ? category.isActive ? 'Deactivating...' : 'Activating...' : category.isActive ? 'Deactivate' : 'Activate'}</button>}</div>

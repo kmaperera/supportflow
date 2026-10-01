@@ -1,3 +1,4 @@
+import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useState } from 'react'
@@ -34,7 +35,7 @@ export default function KnowledgeBasePage() {
     {!current && <ContentSkeleton initial={!result} variant="cards">Loading articles...</ContentSkeleton>}
     {current?.error && <div className="space-y-3"><AuthFeedback>{current.error}</AuthFeedback><button type="button" className={buttonClass} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></div>}
     {current?.data && <>
-      {!current.data.articles.length ? <p className="rounded-xl border border-slate-200 bg-white p-6">{request.search ? 'No articles match your search.' : 'No Knowledge Base articles are available yet.'}</p> : <ul className="grid gap-4 md:grid-cols-2">
+      {!current.data.articles.length ? <EmptyState title={request.search ? 'No articles match your search.' : 'No knowledge base articles are available yet.'} actions={request.search && <button type="button" className={buttonClass} onClick={reset}>Clear search</button>} /> : <ul className="grid gap-4 md:grid-cols-2">
         {current.data.articles.map(article => <li key={article.id} className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
           <h2 className="break-words text-lg font-semibold"><Link to={`/employee/knowledge-base/${encodeURIComponent(article.id)}`} className="rounded text-teal-800 underline underline-offset-4 focus-visible:outline-2">{article.title}</Link></h2>
           <p className="mt-3 break-words text-sm text-slate-600">{article.categoryName}</p>
