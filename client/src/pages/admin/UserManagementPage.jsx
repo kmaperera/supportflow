@@ -1,3 +1,4 @@
+import Pagination from '../../components/Pagination'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
@@ -122,7 +123,6 @@ function UserList({ currentAdminId }) {
     {!current && <ContentSkeleton initial={!result} variant="cards" columns="xl:grid-cols-2">Loading users...</ContentSkeleton>}
     {current?.error && <ErrorState title="Unable to load users."><button type="button" className={button} onClick={() => setQuery(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></ErrorState>}
     {current?.data && <>
-      <p className="text-sm text-slate-600">{current.data.pagination.totalRecords} users</p>
       {!current.data.users.length ? <EmptyState title={filtered ? 'No users match your current search or filters.' : 'No users found.'} actions={filtered ? <button type="button" className={button} onClick={reset}>Clear filters</button> : <Link className={button} to="/admin/users/new">Create User</Link>} /> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{current.data.users.map(user => <li key={user.id} className="min-w-0 layout-panel">
         <h2 className="break-words text-lg font-semibold">{[user.firstName, user.lastName].filter(value => typeof value === 'string' && value.trim()).join(' ') || 'Name unavailable'}</h2>
         <dl className="mt-3 grid min-w-0 gap-4 text-sm sm:grid-cols-2">{[['Email', user.email], ['Role', roles[user.role] || 'Unknown role'], ['Status', user.isActive ? 'Active' : 'Inactive'], ['Created', formatTicketDate(user.createdAt)]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-slate-500">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
@@ -137,7 +137,7 @@ function UserList({ currentAdminId }) {
           <ConfirmDialog open={confirming === String(user.id)} title="Deactivate user?" description={`${user.email} will no longer be able to sign in until reactivated.`} variant="destructive" confirmLabel="Deactivate User" pending={Boolean(pending[user.id])} pendingLabel="Deactivating..." onConfirm={() => changeStatus(user)} onCancel={() => setConfirming(null)}>{feedback && !feedback.success && <AuthFeedback>{feedback.message}</AuthFeedback>}</ConfirmDialog>
         </div>
       </li>)}</ul>}
-      {current.data.pagination.totalPages > 1 && <nav aria-label="User pagination" className="flex flex-wrap items-center gap-3"><button type="button" className={button} disabled={!current.data.pagination.hasPrevious} onClick={() => setQuery(previous => ({ ...previous, page: previous.page - 1 }))}>Previous</button><p>Page {current.data.pagination.currentPage} of {current.data.pagination.totalPages}</p><button type="button" className={button} disabled={!current.data.pagination.hasNext} onClick={() => setQuery(previous => ({ ...previous, page: previous.page + 1 }))}>Next</button></nav>}
+      <Pagination metadata={current.data.pagination} noun="users" label="users" disabled={Object.values(pending).some(Boolean)} onPageChange={page => setQuery(previous => ({ ...previous, page }))} />
     </>}
   </div>
 }

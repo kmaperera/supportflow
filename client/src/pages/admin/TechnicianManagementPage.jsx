@@ -1,3 +1,4 @@
+import Pagination from '../../components/Pagination'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
@@ -68,7 +69,7 @@ export default function TechnicianManagementPage() {
         <h2 className="break-words text-lg font-semibold">{[user.firstName, user.lastName].filter(Boolean).join(' ') || 'Name unavailable'}</h2>
         <dl className="mt-3 grid min-w-0 gap-4 text-sm sm:grid-cols-2">{[['Email', user.email], ['Status', user.isActive ? 'Active' : 'Inactive'], ['Department', user.department || 'Not provided'], ['Active tickets', !user.isActive ? 'Unavailable for inactive technicians' : byId.has(String(user.id)) ? byId.get(String(user.id)) : counts ? 'Unavailable' : 'Loading workload...']].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-slate-500">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
       </li>)}</ul>}
-      {current.data.pagination.totalPages > 1 && <nav aria-label="Technician pagination" className="flex flex-wrap items-center gap-3"><button className={button} disabled={!current.data.pagination.hasPrevious} onClick={() => setQuery(previous => ({ ...previous, page: previous.page - 1 }))}>Previous</button><p>Page {current.data.pagination.currentPage} of {current.data.pagination.totalPages}</p><button className={button} disabled={!current.data.pagination.hasNext} onClick={() => setQuery(previous => ({ ...previous, page: previous.page + 1 }))}>Next</button></nav>}
+      <Pagination metadata={current.data.pagination} noun="technicians" label="technicians" disabled={false} onPageChange={page => setQuery(previous => ({ ...previous, page }))} />
     </>}
   </div>
 }

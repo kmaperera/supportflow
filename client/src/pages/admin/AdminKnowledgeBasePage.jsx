@@ -1,3 +1,4 @@
+import Pagination from '../../components/Pagination'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
@@ -38,7 +39,12 @@ function CategoryLoadNotice({ resource, skeleton = false }) {
 function Articles({ categories }) {
   const [search, setSearch] = useState('')
   const [query, setQuery] = useState({ page: 1, search: '', categoryId: '' })
-  const loader = useCallback(signal => getAdminArticles({ ...query, signal }), [query])
+  const loader = useCallback(async signal => {
+    const data = await getAdminArticles({ ...query, signal })
+    const lastPage = Math.max(1, data.pagination.totalPages)
+    if (!signal.aborted && query.page > lastPage) setQuery(previous => previous === query ? { ...previous, page: lastPage } : previous)
+    return data
+  }, [query])
   const resource = useKbResource(loader)
   const [busy, setBusy] = useState(null)
   const [error, setError] = useState('')
@@ -91,7 +97,7 @@ function Articles({ categories }) {
         </div>
         <ConfirmDialog open={archive === article.id} title="Archive article?" description={`Archive “${article.title}”? It will no longer be an active knowledge-base article. Archived articles cannot be published again.`} variant="warning" confirmLabel="Archive Article" pending={Boolean(busy)} pendingLabel="Archiving..." onConfirm={() => publication(article, "archive")} onCancel={() => setArchive(null)}>{error && <AuthFeedback>{error}</AuthFeedback>}</ConfirmDialog>
       </article>)}
-      <div className="flex flex-wrap items-center gap-3"><p className="text-sm">{pagination.totalRecords} articles · Page {pagination.currentPage} of {Math.max(1, pagination.totalPages)}</p><button className={button} disabled={resource.loading || resource.error || !pagination.hasPrevious} onClick={() => setQuery(previous => ({ ...previous, page: previous.page - 1 }))}>Previous</button><button className={button} disabled={resource.loading || resource.error || !pagination.hasNext} onClick={() => setQuery(previous => ({ ...previous, page: previous.page + 1 }))}>Next</button></div>
+      <Pagination metadata={pagination} noun="articles" label="KB articles" isLoading={resource.loading} disabled={resource.error || Boolean(busy)} onPageChange={page => setQuery(previous => ({ ...previous, page }))} />
     </div>}
   </section>
 }

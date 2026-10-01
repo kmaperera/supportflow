@@ -1,3 +1,4 @@
+import Pagination from '../../components/Pagination'
 import { focusFirstError } from '../../components/formValidation'
 import FieldError from '../../components/FieldError'
 import ErrorState from '../../components/ErrorState'
@@ -51,7 +52,12 @@ function ReportForm({ type }) {
     controller.current = abort
     setLastRequest({ criteria, page })
     try {
-      const report = await getReport(type, criteria, { page, signal: abort.signal })
+      let report = await getReport(type, criteria, { page, signal: abort.signal })
+      while (!abort.signal.aborted && type === 'tickets' && page > Math.max(1, report.pagination.totalPages)) {
+        page = Math.max(1, report.pagination.totalPages)
+        setLastRequest({ criteria, page })
+        report = await getReport(type, criteria, { page, signal: abort.signal })
+      }
       if (!abort.signal.aborted) setResult({ report, criteria })
     } catch (cause) {
       if (!abort.signal.aborted) setError(getApiErrorMessage(cause, cause?.response?.status === 422 ? 'Please check the selected report criteria and date range.' : 'Unable to generate report.'))
@@ -84,7 +90,7 @@ function ReportForm({ type }) {
       <ReportExportActions key={JSON.stringify(result.criteria)} type={type} criteria={result.criteria} disabled={loading || Boolean(changed) || Boolean(error) || Object.values(errors).some(Boolean)} />
       {(changed || error) && <p role="status" className="text-sm text-amber-800">Showing the last successful report. Generate again to apply the current criteria.</p>}
       <ReportResults type={type} report={result.report} />
-      {type === 'tickets' && <nav aria-label="Report pages" className="flex flex-wrap items-center gap-3"><button className={button} disabled={loading || changed || result.report.pagination.page <= 1} onClick={() => generate(result.criteria, result.report.pagination.page - 1)}>Previous</button><p className="text-sm">Page {result.report.pagination.page} of {Math.max(1, result.report.pagination.totalPages)}</p><button className={button} disabled={loading || changed || result.report.pagination.page >= result.report.pagination.totalPages} onClick={() => generate(result.criteria, result.report.pagination.page + 1)}>Next</button></nav>}
+      {type === 'tickets' && <Pagination metadata={result.report.pagination} noun="tickets" label="Report results" isLoading={loading} disabled={Boolean(changed) || Boolean(error) || Object.values(errors).some(Boolean)} onPageChange={page => generate(result.criteria, page)} />}
     </section>}
   </>
 }

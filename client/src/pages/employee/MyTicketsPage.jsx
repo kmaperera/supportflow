@@ -1,3 +1,4 @@
+import Pagination from '../../components/Pagination'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
@@ -42,6 +43,9 @@ function MyTickets() {
   useEffect(() => {
     const controller = new AbortController()
     getMyTickets({ ...request, signal: controller.signal }).then(data => {
+      if (controller.signal.aborted) return
+      const lastPage = Math.max(1, data.pagination.totalPages)
+      if (request.page > lastPage) { setRequest(previous => previous === request ? { ...previous, page: lastPage } : previous); return }
       if (!controller.signal.aborted) setResult({ request, data, error: null })
     }).catch(error => {
       if (!controller.signal.aborted) setResult({ request, data: null, error: getApiErrorMessage(error, 'Unable to load your tickets.') })
@@ -61,11 +65,7 @@ function MyTickets() {
     </ErrorState>}
     {current?.data && <>
       {filtered && current.data.tickets.length === 0 ? <EmptyState title="No tickets match your current search or filters." actions={<button type="button" className={actionClass} onClick={resetFilters}>Clear filters</button>} /> : <MyTicketsList tickets={current.data.tickets} totalRecords={current.data.pagination.totalRecords} />}
-      {(current.data.pagination.totalPages > 1 || request.page > 1) && <nav aria-label="Ticket pagination" className="flex flex-wrap items-center gap-4">
-        <button type="button" className={actionClass} disabled={!current.data.pagination.hasPrevious} onClick={() => setRequest({ ...request, page: request.page - 1, attempt: 0 })}>Previous</button>
-        <p className="text-sm text-slate-600">Page {current.data.pagination.currentPage} of {Math.max(1, current.data.pagination.totalPages)} · {current.data.pagination.totalRecords} tickets</p>
-        <button type="button" className={actionClass} disabled={!current.data.pagination.hasNext} onClick={() => setRequest({ ...request, page: request.page + 1, attempt: 0 })}>Next</button>
-      </nav>}
+      <Pagination metadata={current.data.pagination} noun="tickets" label="tickets" disabled={false} onPageChange={page => setRequest(previous => ({ ...previous, page }))} />
     </>}
   </div>
 }

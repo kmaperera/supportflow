@@ -1,3 +1,4 @@
+import Pagination from '../../components/Pagination'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
@@ -93,13 +94,8 @@ function UnassignedQueue() {
       <button type="button" className={actionClass} onClick={reload}>Retry</button>
     </ErrorState>}
     {current?.data && <>
-      <p className="text-sm text-slate-600">{current.data.pagination.totalRecords} unassigned tickets</p>
       <UnassignedTicketsList tickets={current.data.tickets} totalRecords={current.data.pagination.totalRecords} filtered={filtered} onReset={resetFilters} renderAction={ticket => <SelfAssignAction ticket={ticket} pending={pendingIds.includes(String(ticket.id))} onAssign={assign} />} />
-      {(current.data.pagination.totalPages > 1 || request.page > 1) && <nav aria-label="Unassigned ticket pagination" className="flex flex-wrap items-center gap-3">
-        <button type="button" className={actionClass} disabled={!current.data.pagination.hasPrevious} onClick={() => setRequest({ ...request, page: request.page - 1, attempt: 0 })}>Previous</button>
-        <p className="text-sm">Page {current.data.pagination.currentPage} of {Math.max(1, current.data.pagination.totalPages)} · {current.data.pagination.limit} per page</p>
-        <button type="button" className={actionClass} disabled={!current.data.pagination.hasNext} onClick={() => setRequest({ ...request, page: request.page + 1, attempt: 0 })}>Next</button>
-      </nav>}
+      <Pagination metadata={current.data.pagination} noun="unassigned tickets" label="unassigned tickets" disabled={pendingIds.length > 0} onPageChange={page => setRequest(previous => ({ ...previous, page }))} />
     </>}
   </div>
 }

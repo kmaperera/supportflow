@@ -1,0 +1,25 @@
+<!doctype html><html><body><div id="root" style="max-width:320px"></div><pre id="result">RUNNING</pre>
+<script type="module">
+import React,{useState} from 'react'
+import {createRoot} from 'react-dom/client'
+import Pagination from '/src/components/Pagination.jsx'
+import '/src/index.css'
+let calls=0
+function Fixture(){const [page,setPage]=useState(1),[loading,setLoading]=useState(false);return React.createElement(Pagination,{metadata:{page,limit:10,total:25,totalPages:3},noun:'tickets',isLoading:loading,onPageChange:next=>{calls++;setLoading(true);setTimeout(()=>{setPage(next);setLoading(false)},200)}})}
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms))
+const check=(ok,message)=>{if(!ok)throw new Error(message)}
+const button=text=>[...document.querySelectorAll('button')].find(b=>b.textContent===text)
+try {
+ createRoot(document.querySelector('#root')).render(React.createElement(Fixture));await wait(100)
+ check(button('Previous').disabled,'first boundary')
+ button('Previous').click();check(calls===0,'disabled boundary sends no request')
+ button('Next').click();button('Next').click();await wait(50)
+ check(calls===1 && button('Next').disabled,'duplicate/pending protection')
+ await wait(250);check(document.querySelector('nav').textContent.includes('Showing 11–20 of 25 tickets'),'page 2 range')
+ button('Next').click();await wait(250)
+ check(button('Next').disabled && document.querySelector('nav').textContent.includes('Showing 21–25'),'last boundary and partial page')
+ check(document.querySelector('#root').scrollWidth<=320,'narrow footer does not overflow')
+ button('Previous').click();await wait(250);check(document.querySelector('[aria-current="page"]').textContent==='2','previous and semantic current page')
+ document.querySelector('#result').textContent='PASS: boundaries, no duplicate requests, pending controls, correct ranges, narrow layout and current-page semantics'
+}catch(error){document.querySelector('#result').textContent='FAIL: '+error.message}
+</script></body></html>

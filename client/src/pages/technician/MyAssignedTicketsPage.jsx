@@ -1,3 +1,4 @@
+import Pagination from '../../components/Pagination'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
@@ -22,6 +23,9 @@ function AssignedTickets() {
   useEffect(() => {
     const controller = new AbortController()
     getMyAssignedTickets({ page: request.page, limit: 10, signal: controller.signal }).then(data => {
+      if (controller.signal.aborted) return
+      const lastPage = Math.max(1, data.pagination.totalPages)
+      if (request.page > lastPage) { setRequest(previous => previous === request ? { ...previous, page: lastPage } : previous); return }
       if (!controller.signal.aborted) setResult({ request, data })
     }).catch(error => {
       if (!controller.signal.aborted) setResult({ request, error: getApiErrorMessage(error, 'Unable to load your assigned tickets.') })
@@ -36,13 +40,8 @@ function AssignedTickets() {
       <button type="button" className={actionClass} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button>
     </ErrorState>}
     {current?.data && <>
-      <p className="text-sm text-slate-600">{current.data.pagination.totalRecords} assigned tickets</p>
       <AssignedTicketsList tickets={current.data.tickets} totalRecords={current.data.pagination.totalRecords} />
-      {(current.data.pagination.totalPages > 1 || request.page > 1) && <nav aria-label="Assigned ticket pagination" className="flex flex-wrap items-center gap-3">
-        <button type="button" className={actionClass} disabled={!current.data.pagination.hasPrevious} onClick={() => setRequest({ page: request.page - 1, attempt: 0 })}>Previous</button>
-        <p className="text-sm">Page {current.data.pagination.currentPage} of {Math.max(1, current.data.pagination.totalPages)} · {current.data.pagination.limit} per page</p>
-        <button type="button" className={actionClass} disabled={!current.data.pagination.hasNext} onClick={() => setRequest({ page: request.page + 1, attempt: 0 })}>Next</button>
-      </nav>}
+      <Pagination metadata={current.data.pagination} noun="assigned tickets" label="assigned tickets" disabled={false} onPageChange={page => setRequest(previous => ({ ...previous, page }))} />
     </>}
   </div>
 }

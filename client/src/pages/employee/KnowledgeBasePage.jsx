@@ -1,3 +1,4 @@
+import Pagination from '../../components/Pagination'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
@@ -16,6 +17,9 @@ export default function KnowledgeBasePage() {
   useEffect(() => {
     const controller = new AbortController()
     getPublishedArticles({ ...request, signal: controller.signal }).then(data => {
+      if (controller.signal.aborted) return
+      const lastPage = Math.max(1, data.pagination.totalPages)
+      if (request.page > lastPage) { setRequest(previous => previous === request ? { ...previous, page: lastPage } : previous); return }
       if (!controller.signal.aborted) setResult({ request, data })
     }).catch(error => {
       if (!controller.signal.aborted) setResult({ request, error: getApiErrorMessage(error, 'Unable to load Knowledge Base articles.') })
@@ -42,11 +46,7 @@ export default function KnowledgeBasePage() {
           <p className="mt-2 text-xs text-slate-500">Published {formatTicketDate(article.publishedAt)}</p>
         </li>)}
       </ul>}
-      {current.data.pagination.totalPages > 1 && <nav aria-label="Article pagination" className="flex flex-wrap items-center gap-3">
-        <button type="button" className={buttonClass} disabled={!current.data.pagination.hasPrevious} onClick={() => setRequest({ ...request, page: request.page - 1 })}>Previous</button>
-        <p className="text-sm">Page {current.data.pagination.currentPage} of {current.data.pagination.totalPages}</p>
-        <button type="button" className={buttonClass} disabled={!current.data.pagination.hasNext} onClick={() => setRequest({ ...request, page: request.page + 1 })}>Next</button>
-      </nav>}
+      <Pagination metadata={current.data.pagination} noun="articles" label="articles" disabled={false} onPageChange={page => setRequest(previous => ({ ...previous, page }))} />
     </>}
     <Link to="/employee/tickets/new" className="inline-block rounded text-sm font-semibold text-teal-800 underline focus-visible:outline-2">Still need help? Create Ticket</Link>
   </div>

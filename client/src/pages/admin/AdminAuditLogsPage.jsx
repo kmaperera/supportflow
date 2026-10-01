@@ -1,3 +1,4 @@
+import Pagination from '../../components/Pagination'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
@@ -19,6 +20,9 @@ export default function AdminAuditLogsPage() {
   useEffect(() => {
     const controller = new AbortController()
     getAuditLogs(request.filters, { page: request.page, signal: controller.signal }).then(data => {
+      if (controller.signal.aborted) return
+      const lastPage = Math.max(1, data.pagination.totalPages)
+      if (request.page > lastPage) { setRequest(previous => previous === request ? { ...previous, page: lastPage } : previous); return }
       if (!controller.signal.aborted) setResult({ request, data })
     }).catch(cause => { if (!controller.signal.aborted) setResult({ request, error: getApiErrorMessage(cause, 'Unable to load audit logs.') }) })
     return () => controller.abort()
@@ -56,7 +60,7 @@ export default function AdminAuditLogsPage() {
         <td className="min-w-32 break-words p-3 align-top">{log.entityType || 'Not specified'}{log.entityId != null && <p>ID: {log.entityId}</p>}</td>
         <td className="min-w-64 max-w-lg p-3 align-top"><p className="whitespace-pre-wrap break-words">{log.description || 'No description.'}</p>{(log.metadata || log.ipAddress) && <details className="mt-3"><summary className="w-fit cursor-pointer rounded text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2">View details<span className="sr-only"> for audit record {log.id}</span></summary><div className="mt-2 space-y-2">{log.ipAddress && <p className="break-all">IP address: {log.ipAddress}</p>}{log.metadata && <pre className="whitespace-pre-wrap break-all rounded bg-slate-50 p-3 text-xs">{JSON.stringify(log.metadata, null, 2)}</pre>}</div></details>}</td>
       </tr>)}</tbody></table></div>}
-      <nav aria-label="Audit pagination" className="flex flex-wrap items-center gap-3"><p className="text-sm">{current.data.pagination.total} records · Page {current.data.pagination.page} of {Math.max(1, current.data.pagination.totalPages)}</p><button className={button} disabled={!current.data.pagination.hasPreviousPage} onClick={() => setRequest(previous => ({ ...previous, page: current.data.pagination.page - 1 }))}>Previous</button><button className={button} disabled={!current.data.pagination.hasNextPage} onClick={() => setRequest(previous => ({ ...previous, page: current.data.pagination.page + 1 }))}>Next</button></nav>
+      <Pagination metadata={current.data.pagination} noun="logs" label="logs" disabled={false} onPageChange={page => setRequest(previous => ({ ...previous, page }))} />
     </section>}
   </div>
 }
