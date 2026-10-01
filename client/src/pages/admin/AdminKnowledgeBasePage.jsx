@@ -1,3 +1,4 @@
+import ConfirmDialog from '../../components/ConfirmDialog'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import LoadingState from '../../components/LoadingState'
@@ -85,16 +86,17 @@ function Articles({ categories }) {
           <Link className={button} to={`/admin/knowledge-base/articles/${encodeURIComponent(article.id)}/edit`}>Edit<span className="sr-only"> {article.title}</span></Link>
           {article.status !== 'ARCHIVED' && <>
             <button className={button} disabled={Boolean(busy) || resource.loading || resource.error} onClick={() => publication(article, article.status === 'PUBLISHED' ? 'unpublish' : 'publish')}>{busy?.id === article.id && busy.action !== 'archive' ? busy.action === 'publish' ? 'Publishing...' : 'Unpublishing...' : article.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}<span className="sr-only"> {article.title}</span></button>
-            <button className={button} disabled={Boolean(busy)} onClick={() => setArchive(article.id)}>Archive<span className="sr-only"> {article.title}</span></button>
+            <button className={button} disabled={Boolean(busy)} onClick={() => { setError(""); setArchive(article.id) }}>Archive<span className="sr-only"> {article.title}</span></button>
           </>}
         </div>
-        {archive === article.id && <div className="space-y-3 rounded-lg border border-slate-300 p-3"><p>Archive “{article.title}”? Archived articles cannot be published again.</p><div className="layout-actions"><button className={button} disabled={Boolean(busy)} onClick={() => publication(article, 'archive')}>{busy?.action === 'archive' ? 'Archiving...' : 'Confirm archive'}</button><button className={button} disabled={Boolean(busy)} onClick={() => setArchive(null)}>Cancel</button></div></div>}
+        <ConfirmDialog open={archive === article.id} title="Archive article?" description={`Archive “${article.title}”? It will no longer be an active knowledge-base article. Archived articles cannot be published again.`} variant="warning" confirmLabel="Archive Article" pending={Boolean(busy)} pendingLabel="Archiving..." onConfirm={() => publication(article, "archive")} onCancel={() => setArchive(null)}>{error && <AuthFeedback>{error}</AuthFeedback>}</ConfirmDialog>
       </article>)}
       <div className="flex flex-wrap items-center gap-3"><p className="text-sm">{pagination.totalRecords} articles · Page {pagination.currentPage} of {Math.max(1, pagination.totalPages)}</p><button className={button} disabled={resource.loading || resource.error || !pagination.hasPrevious} onClick={() => setQuery(previous => ({ ...previous, page: previous.page - 1 }))}>Previous</button><button className={button} disabled={resource.loading || resource.error || !pagination.hasNext} onClick={() => setQuery(previous => ({ ...previous, page: previous.page + 1 }))}>Next</button></div>
     </div>}
   </section>
 }
 function Categories({ resource }) {
+  const [deactivating, setDeactivating] = useState(null)
   const [editor, setEditor] = useState(null)
   const [busy, setBusy] = useState(null)
   const [message, setMessage] = useState('')
@@ -107,7 +109,7 @@ function Categories({ resource }) {
     pending.current = true; setBusy(category.id); setError(''); setMessage('')
     try {
       await changeKbCategoryStatus(category.id, !category.isActive)
-      if (mounted.current) { setMessage(`KB category ${category.isActive ? 'deactivated' : 'activated'} successfully.`); resource.reload() }
+      if (mounted.current) { setDeactivating(null); setMessage(`KB category ${category.isActive ? 'deactivated' : 'activated'} successfully.`); resource.reload() }
     } catch (cause) { if (mounted.current) { setError(kbError(cause, 'Unable to update KB category status.')); resource.reload() } }
     finally { pending.current = false; if (mounted.current) setBusy(null) }
   }
@@ -116,12 +118,13 @@ function Categories({ resource }) {
     <p className="text-sm text-slate-600">Inactive categories remain here for management. Their articles are hidden from employees and technicians until the category is active again.</p>
     {message && <AuthFeedback variant="success">{message}</AuthFeedback>}{error && <AuthFeedback>{error}</AuthFeedback>}
     {editor && <KbCategoryEditor key={editor.category?.id || 'new'} category={editor.category} onCancel={() => setEditor(null)} onSaved={() => { setMessage(editor.category ? 'KB category updated successfully.' : 'KB category created successfully.'); setEditor(null); resource.reload() }} />}
+    <ConfirmDialog open={Boolean(deactivating)} title="Deactivate KB category?" description={`Articles in ${deactivating?.name} will be hidden from employees and technicians until the category is active again.`} variant="warning" confirmLabel="Deactivate Category" pending={Boolean(busy)} pendingLabel="Deactivating..." onConfirm={() => toggle(deactivating)} onCancel={() => setDeactivating(null)}>{error && <AuthFeedback>{error}</AuthFeedback>}</ConfirmDialog>
     <CategoryLoadNotice resource={resource} skeleton />
     {!resource.loading && !resource.error && !resource.data?.length && <EmptyState compact title="No knowledge base categories found." />}
     <div className="grid gap-4 xl:grid-cols-2">{resource.data?.map(category => <article key={category.id} className={kbCard}>
       <div><h3 className="text-lg font-semibold">{category.name}</h3><p className="mt-1 text-sm font-medium">{category.isActive ? 'Active' : 'Inactive'}</p></div>
       {category.description && <p className="whitespace-pre-wrap text-sm text-slate-600">{category.description}</p>}
-      <div className="layout-actions"><button className={button} disabled={Boolean(editor) || Boolean(busy) || resource.loading || resource.error} onClick={() => { setEditor({ category }); setMessage('') }}>Edit<span className="sr-only"> {category.name}</span></button><button className={button} disabled={Boolean(editor) || Boolean(busy) || resource.loading || resource.error} onClick={() => toggle(category)}>{busy === category.id ? category.isActive ? 'Deactivating...' : 'Activating...' : category.isActive ? 'Deactivate' : 'Activate'}<span className="sr-only"> {category.name}</span></button></div>
+      <div className="layout-actions"><button className={button} disabled={Boolean(editor) || Boolean(busy) || resource.loading || resource.error} onClick={() => { setEditor({ category }); setMessage('') }}>Edit<span className="sr-only"> {category.name}</span></button><button className={button} disabled={Boolean(editor) || Boolean(busy) || resource.loading || resource.error} onClick={() => { setError(""); if (category.isActive) setDeactivating(category); else toggle(category) }}>{busy === category.id ? category.isActive ? 'Deactivating...' : 'Activating...' : category.isActive ? 'Deactivate' : 'Activate'}<span className="sr-only"> {category.name}</span></button></div>
     </article>)}</div>
   </section>
 }

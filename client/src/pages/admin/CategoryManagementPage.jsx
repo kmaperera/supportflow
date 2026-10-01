@@ -1,3 +1,4 @@
+import ConfirmDialog from '../../components/ConfirmDialog'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
@@ -47,11 +48,12 @@ export default function CategoryManagementPage() {
       const updated = await updateCategoryStatus(category.id, !category.isActive)
       if (!mounted.current) return
       setFeedback({ success: true, message: `Category ${updated.isActive ? 'activated' : 'deactivated'} successfully.` })
+      setConfirming(null)
       setAttempt(value => value + 1)
     } catch (error) { if (mounted.current) setFeedback({ success: false, message: categoryError(error) }) }
     finally {
       inFlight.current.delete(id)
-      if (mounted.current) { setPending(previous => ({ ...previous, [id]: false })); setConfirming(previous => previous === id ? null : previous) }
+      if (mounted.current) { setPending(previous => ({ ...previous, [id]: false })) }
     }
   }
   return <div className="layout-page">
@@ -68,8 +70,8 @@ export default function CategoryManagementPage() {
     {current?.data && (!categories.length ? <EmptyState title={filtered ? 'No categories match your current filters.' : 'No ticket categories found.'} actions={filtered ? <button type="button" className={button} onClick={() => { setSearch(''); setStatus(''); setSort('name') }}>Clear filters</button> : <Link className={button} to="/admin/categories/new">Add Category</Link>} /> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{categories.map(category => <li key={category.id} className="min-w-0 space-y-4 layout-panel">
       <div><h2 className="break-words text-lg font-semibold">{category.name}</h2><p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-600">{category.description || 'No description provided.'}</p></div>
       <dl className="grid gap-3 text-sm sm:grid-cols-3">{[['Status', category.isActive ? 'Active' : 'Inactive'], ['Created', formatTicketDate(category.createdAt)], ['Updated', formatTicketDate(category.updatedAt)]].map(([label, value]) => <div key={label}><dt className="text-slate-500">{label}</dt><dd>{value}</dd></div>)}</dl>
-      <div className="layout-actions">{!pending[category.id] && <Link className={button} to={`/admin/categories/${category.id}/edit`}>Edit</Link>}{confirming !== String(category.id) && <button className={button} disabled={pending[category.id]} onClick={() => category.isActive ? setConfirming(String(category.id)) : changeStatus(category)}>{pending[category.id] ? category.isActive ? 'Deactivating...' : 'Activating...' : category.isActive ? 'Deactivate' : 'Activate'}</button>}</div>
-      {confirming === String(category.id) && <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-3"><p className="font-medium">Deactivate this category?</p><p className="text-sm">It will no longer be available when creating new tickets. Existing tickets will keep their category.</p><div className="layout-actions"><button className={button} disabled={pending[category.id]} onClick={() => setConfirming(null)}>Cancel</button><button className={button} disabled={pending[category.id]} onClick={() => changeStatus(category)}>{pending[category.id] ? 'Deactivating...' : 'Deactivate'}</button></div></div>}
+      <div className="layout-actions">{!pending[category.id] && <Link className={button} to={`/admin/categories/${category.id}/edit`}>Edit</Link>}{<button className={button} disabled={pending[category.id]} onClick={() => category.isActive ? (setFeedback(null), setConfirming(String(category.id))) : changeStatus(category)}>{pending[category.id] ? category.isActive ? 'Deactivating...' : 'Activating...' : category.isActive ? 'Deactivate' : 'Activate'}</button>}</div>
+      <ConfirmDialog open={confirming === String(category.id)} title="Deactivate category?" description={`${category.name} will no longer be available for new tickets. Existing tickets will keep their category.`} variant="destructive" confirmLabel="Deactivate Category" pending={Boolean(pending[category.id])} pendingLabel="Deactivating..." onConfirm={() => changeStatus(category)} onCancel={() => setConfirming(null)}>{feedback && !feedback.success && <AuthFeedback>{feedback.message}</AuthFeedback>}</ConfirmDialog>
     </li>)}</ul>)}
   </div>
 }

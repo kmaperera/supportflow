@@ -1,21 +1,23 @@
+import ConfirmDialog from '../../components/ConfirmDialog'
 import { useRef, useState } from 'react'
 import { closeTicket } from '../../api/ticketApi'
 import { getApiErrorMessage } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
 
 export default function CloseTicketButton({ ticketId, onClosed, onConflict, disabled = false, onPendingChange }) {
+  const [confirming, setConfirming] = useState(false)
   const [closing, setClosing] = useState(false)
   const [error, setError] = useState(null)
   const pending = useRef(false)
   async function handleClose() {
     if (pending.current || disabled) return
-    if (!window.confirm('Close this resolved ticket? This will mark your support request as closed.')) return
     pending.current = true; onPendingChange?.(true)
     setClosing(true)
     setError(null)
-    try { onClosed(await closeTicket(ticketId)) }
+    try { const ticket = await closeTicket(ticketId); setConfirming(false); onClosed(ticket) }
     catch (cause) {
       if (cause?.response?.status === 409) {
+        setConfirming(false)
         onConflict()
         return
       }
@@ -23,8 +25,9 @@ export default function CloseTicketButton({ ticketId, onClosed, onConflict, disa
     } finally { pending.current = false; onPendingChange?.(false); setClosing(false) }
   }
   return <div className="space-y-3">
-    <button type="button" disabled={closing || disabled} onClick={handleClose} className="rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">{closing ? 'Closing...' : 'Close Ticket'}</button>
+    <button type="button" disabled={closing || disabled} onClick={() => { setError(null); setConfirming(true) }} className="rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">{closing ? 'Closing...' : 'Close Ticket'}</button>
     <p role="status" className="sr-only">{closing ? 'Closing ticket...' : ''}</p>
-    {error && <AuthFeedback>{error}</AuthFeedback>}
+    <ConfirmDialog open={confirming} title="Close Ticket?" description="This will mark your support request as closed." confirmLabel="Close Ticket" pending={closing} pendingLabel="Closing..." onConfirm={handleClose} onCancel={() => setConfirming(false)}>{error && <AuthFeedback>{error}</AuthFeedback>}</ConfirmDialog>
+    {!confirming && error && <AuthFeedback>{error}</AuthFeedback>}
   </div>
 }

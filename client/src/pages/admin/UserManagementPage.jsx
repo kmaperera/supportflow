@@ -1,3 +1,4 @@
+import ConfirmDialog from '../../components/ConfirmDialog'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
@@ -57,7 +58,6 @@ function UserList({ currentAdminId }) {
       const safe = error?.response?.status === 400 && ['You cannot change your own role', 'Invalid role'].includes(message)
         ? message : error?.response?.status === 404 ? 'User not found.' : getApiErrorMessage(error, 'Unable to change user role. Please try again.')
       setFeedback({ success: false, message: safe })
-      setRoleEditor(previous => previous?.id === id ? { ...previous, confirm: false } : previous)
     } finally {
       inFlight.current.delete(id)
       if (mounted.current) setPending(previous => ({ ...previous, [id]: false }))
@@ -72,6 +72,7 @@ function UserList({ currentAdminId }) {
     try {
       const updated = await updateUserStatus(user.id, !user.isActive)
       if (!mounted.current) return
+      setConfirming(null)
       setFeedback({ success: true, message: updated.isActive ? 'User activated successfully.' : 'User deactivated successfully.' })
       setQuery(previous => ({ ...previous, attempt: previous.attempt + 1 }))
     } catch (error) {
@@ -85,7 +86,6 @@ function UserList({ currentAdminId }) {
       inFlight.current.delete(id)
       if (mounted.current) {
         setPending(previous => ({ ...previous, [id]: false }))
-        setConfirming(previous => previous === id ? null : previous)
       }
     }
   }
@@ -130,13 +130,11 @@ function UserList({ currentAdminId }) {
         <div className="mt-4 space-y-3">
           {String(user.id) === String(currentAdminId) ? <p className="text-sm text-slate-600">You cannot change your own role.</p> : roleEditor?.id === String(user.id) ? <div className="space-y-3 rounded-lg border border-slate-200 p-3">
             <label className="block text-sm font-medium">New role<select className={input} value={roleEditor.role} disabled={Boolean(pending[user.id]) || roleEditor.confirm} onChange={event => setRoleEditor(previous => ({ ...previous, role: event.target.value, confirm: false }))}>{Object.entries(roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-            {roleEditor.confirm && <p className="text-sm">Change role from {roles[user.role]} to {roles[roleEditor.role]}? This will update the user's application permissions.</p>}
-            <div className="layout-actions"><button type="button" className={button} disabled={Boolean(pending[user.id]) || roleEditor.role === user.role} onClick={() => roleEditor.confirm ? saveRole(user) : setRoleEditor(previous => ({ ...previous, confirm: true }))}>{pending[user.id] === 'role' ? 'Updating role...' : roleEditor.confirm ? 'Confirm role change' : 'Update Role'}</button><button type="button" className={button} disabled={Boolean(pending[user.id])} onClick={() => setRoleEditor(null)}>Cancel</button></div>
+            <ConfirmDialog open={roleEditor.confirm} title="Change user role?" description={`User: ${user.email}. Current role: ${user.role}. New role: ${roleEditor.role}. This changes their application permissions.`} variant="warning" confirmLabel="Change Role" pending={Boolean(pending[user.id])} pendingLabel="Updating role..." onConfirm={() => saveRole(user)} onCancel={() => setRoleEditor(previous => ({ ...previous, confirm: false }))}>{feedback && !feedback.success && <AuthFeedback>{feedback.message}</AuthFeedback>}</ConfirmDialog>
+            <div className="layout-actions"><button type="button" className={button} disabled={Boolean(pending[user.id]) || roleEditor.role === user.role} onClick={() => { setFeedback(null); setRoleEditor(previous => ({ ...previous, confirm: true })) }}>{pending[user.id] === 'role' ? 'Updating role...' : roleEditor.confirm ? 'Confirm role change' : 'Update Role'}</button><button type="button" className={button} disabled={Boolean(pending[user.id])} onClick={() => setRoleEditor(null)}>Cancel</button></div>
           </div> : <button type="button" className={button} disabled={Boolean(pending[user.id])} onClick={() => { setConfirming(null); setRoleEditor({ id: String(user.id), role: user.role, confirm: false }) }}>Change Role</button>}
-          {user.isActive && String(user.id) === String(currentAdminId) ? <p className="text-sm text-slate-600">You cannot deactivate your own account.</p> : confirming === String(user.id) ? <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-3">
-            <p className="text-sm">Deactivate this user? This user will no longer be able to sign in until reactivated.</p>
-            <div className="layout-actions"><button type="button" className={`${button} border-red-700 text-red-700`} disabled={pending[user.id]} onClick={() => changeStatus(user)}>{pending[user.id] === true ? 'Deactivating...' : 'Confirm deactivation'}</button><button type="button" className={button} disabled={pending[user.id]} onClick={() => setConfirming(null)}>Cancel</button></div>
-          </div> : <button type="button" className={`${button} ${user.isActive ? 'border-red-700 text-red-700' : ''}`} disabled={pending[user.id]} onClick={() => user.isActive ? setConfirming(String(user.id)) : changeStatus(user)}>{pending[user.id] === true ? (user.isActive ? 'Deactivating...' : 'Activating...') : user.isActive ? 'Deactivate' : 'Activate'}</button>}
+          {user.isActive && String(user.id) === String(currentAdminId) ? <p className="text-sm text-slate-600">You cannot deactivate your own account.</p> : <button type="button" className={`${button} ${user.isActive ? 'border-red-700 text-red-700' : ''}`} disabled={pending[user.id]} onClick={() => user.isActive ? (setFeedback(null), setConfirming(String(user.id))) : changeStatus(user)}>{pending[user.id] === true ? (user.isActive ? 'Deactivating...' : 'Activating...') : user.isActive ? 'Deactivate' : 'Activate'}</button>}
+          <ConfirmDialog open={confirming === String(user.id)} title="Deactivate user?" description={`${user.email} will no longer be able to sign in until reactivated.`} variant="destructive" confirmLabel="Deactivate User" pending={Boolean(pending[user.id])} pendingLabel="Deactivating..." onConfirm={() => changeStatus(user)} onCancel={() => setConfirming(null)}>{feedback && !feedback.success && <AuthFeedback>{feedback.message}</AuthFeedback>}</ConfirmDialog>
         </div>
       </li>)}</ul>}
       {current.data.pagination.totalPages > 1 && <nav aria-label="User pagination" className="flex flex-wrap items-center gap-3"><button type="button" className={button} disabled={!current.data.pagination.hasPrevious} onClick={() => setQuery(previous => ({ ...previous, page: previous.page - 1 }))}>Previous</button><p>Page {current.data.pagination.currentPage} of {current.data.pagination.totalPages}</p><button type="button" className={button} disabled={!current.data.pagination.hasNext} onClick={() => setQuery(previous => ({ ...previous, page: previous.page + 1 }))}>Next</button></nav>}

@@ -1,0 +1,36 @@
+<!doctype html><html><body><div id="root"></div><pre id="result">RUNNING</pre>
+<script type="module">
+import React, { useState } from 'react'
+import { createRoot } from 'react-dom/client'
+import ConfirmDialog from '/src/components/ConfirmDialog.jsx'
+let calls=0, finish
+function Fixture(){
+ const [open,setOpen]=useState(false), [error,setError]=useState('')
+ return React.createElement(React.Fragment,null,
+  React.createElement('button',{id:'trigger',onClick:()=>setOpen(true)},'Deactivate'),
+  React.createElement(ConfirmDialog,{open,title:'Deactivate user?',description:'The account will be inactive.',variant:'destructive',confirmLabel:'Deactivate User',pendingLabel:'Deactivating...',onCancel:()=>setOpen(false),onConfirm:async()=>{calls++;await new Promise(resolve=>finish=resolve);setError('Unable to deactivate user.');}},error && React.createElement('p',{role:'alert'},error)))
+}
+const root=createRoot(document.querySelector('#root'))
+const wait=()=>new Promise(resolve=>setTimeout(resolve,100))
+const check=(ok,message)=>{if(!ok)throw new Error(message)}
+try {
+ root.render(React.createElement(React.StrictMode,null,React.createElement(Fixture)));await wait()
+ const trigger=document.querySelector('#trigger');trigger.focus();trigger.click();await wait()
+ let dialog=document.querySelector('dialog')
+ check(dialog.open && dialog.matches(':modal'),'native modal opened')
+ check(document.activeElement.textContent==='Cancel','safe initial focus')
+ check(document.body.style.overflow==='hidden','background scrolling locked')
+ dialog.click();await wait();check(dialog.open,'backdrop cannot dismiss')
+ const buttons=dialog.querySelectorAll('button');buttons[1].click();buttons[1].click();await wait()
+ check(calls===1 && [...buttons].every(b=>b.disabled),'duplicate submit and pending controls')
+ dialog.dispatchEvent(new Event('cancel',{cancelable:true}));await wait();check(dialog.open,'pending Escape cannot close')
+ finish();await wait();check(dialog.open && dialog.querySelector('[role="alert"]'),'failure remains visible in modal')
+ dialog.dispatchEvent(new Event('cancel',{cancelable:true}));await wait()
+ check(!document.querySelector('dialog'),'safe Escape closes')
+ check(document.activeElement===trigger && document.body.style.overflow==='','focus and scroll restored')
+ trigger.click();await wait();document.querySelector('dialog button').click();await wait()
+ check(calls===1 && !document.querySelector('dialog'),'Cancel never submits')
+ trigger.click();await wait();root.unmount();await wait();check(document.body.style.overflow==='','unmount restores scroll')
+ document.querySelector('#result').textContent='PASS: modal, safe focus, pending guards, Escape, cancel, retained failure, focus/scroll restoration, cleanup'
+}catch(error){document.querySelector('#result').textContent='FAIL: '+error.message}
+</script></body></html>

@@ -1,3 +1,4 @@
+import ConfirmDialog from '../../components/ConfirmDialog'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import LoadingState from '../../components/LoadingState'
@@ -94,17 +95,19 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
       await unassignTicket(ticket.id, unassignConfirmation.id)
       if (!mounted.current) return
       setSelected(''); setConfirm(false); setOpen(false)
+      setUnassignConfirmation(null)
       setNotice({ success: true, text: 'Ticket unassigned successfully.' })
       await refresh()
     } catch (error) {
       if (!mounted.current) return
       const message = error?.response?.data?.message
+      if ([403, 404, 409].includes(error?.response?.status)) setUnassignConfirmation(null)
       const safe = ['Ticket assignment has changed. Refresh and try again.', 'Ticket is already unassigned', 'Ticket cannot be unassigned in its current status', 'Ticket not found']
       setNotice({ success: false, text: safe.includes(message) ? message : getApiErrorMessage(error, 'Unable to unassign ticket. Please try again.') })
       await refresh()
     } finally {
       pending.current = false
-      if (mounted.current) { setBusy(false); setUnassignConfirmation(null) }
+      if (mounted.current) { setBusy(false) }
     }
   }
   async function save() {
@@ -129,11 +132,8 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
     <h2 id="assignment-heading" className="text-lg font-semibold">Assignment</h2>
     <dl><dt className="text-sm text-slate-500">Current technician</dt><dd className="mt-1 break-words">{assigned ? name(ticket.assignee) : 'Unassigned'}</dd></dl>
     {notice && <AuthFeedback variant={notice.success ? 'success' : 'error'}>{notice.text}</AuthFeedback>}
-    {unassignConfirmation ? <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-3">
-      <p className="font-medium">Unassign this ticket from {unassignConfirmation.name}?</p>
-      <p className="text-sm">The ticket will return to Open with no assigned technician. Assignment history will be retained and the removed technician will be notified.</p>
-      <div className="layout-actions"><button type="button" className={button} disabled={busy} onClick={() => setUnassignConfirmation(null)}>Cancel</button><button type="button" className={`${button} border-red-700 text-red-700 hover:bg-red-50`} disabled={busy} onClick={removeAssignment}>{busy ? 'Unassigning...' : 'Confirm Unassign'}</button></div>
-    </div> : <div className="flex flex-wrap items-start gap-3">
+    <ConfirmDialog open={Boolean(unassignConfirmation)} title="Unassign ticket?" description={`Current technician: ${unassignConfirmation?.name}. The ticket will return to Open in the unassigned queue. Assignment history will be retained and the removed technician notified.`} variant="warning" confirmLabel="Unassign Ticket" pending={busy} pendingLabel="Unassigning..." onConfirm={removeAssignment} onCancel={() => setUnassignConfirmation(null)}>{notice && !notice.success && <AuthFeedback>{notice.text}</AuthFeedback>}</ConfirmDialog>
+    <div className="flex flex-wrap items-start gap-3">
     {!eligible ? <p className="text-sm text-slate-600">Assignment cannot be changed on resolved or closed tickets.</p> : !open ? <button className={button} disabled={busy} onClick={() => { setOpen(true); setAttempt(value => value + 1); setSelected(''); setConfirm(false) }}>{assigned ? 'Reassign' : 'Assign technician'}</button> : <div className="w-full min-w-0 max-w-lg space-y-3">
       {!current && <div className="space-y-1" aria-busy="true"><p className="text-sm font-medium">Technician</p><div className="rounded-lg border border-slate-300 bg-slate-50 px-3"><LoadingState>Loading technicians...</LoadingState></div></div>}
       {current?.error && <ErrorState compact title="Unable to load technicians"><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></ErrorState>}
@@ -141,15 +141,15 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
         {!current.data.length ? <EmptyState compact title="No assignable technicians found." /> : <>
           <TechnicianCombobox technicians={current.data} counts={counts} selected={selected} currentId={ticket.assignedTo} disabled={busy || confirm} onSelect={value => { setSelected(value); setConfirm(false) }} />
           {workload?.error && <p className="text-sm text-slate-600">Workload counts are unavailable. You can still choose a technician.</p>}
-          {confirm && chosen && <p>{assigned ? `Reassign this ticket from ${name(ticket.assignee)} to ${name(chosen)}?` : `Assign this ticket to ${name(chosen)}?`}</p>}
+          <ConfirmDialog open={Boolean(confirm && chosen)} title={assigned ? "Reassign ticket?" : "Assign technician?"} description={assigned ? `Current technician: ${name(ticket.assignee)}. New technician: ${chosen ? name(chosen) : ""}.` : `Assign this ticket to ${chosen ? name(chosen) : "the selected technician"}?`} confirmLabel={assigned ? "Reassign Ticket" : "Assign Technician"} pending={busy} pendingLabel={assigned ? "Reassigning..." : "Assigning..."} onConfirm={save} onCancel={() => setConfirm(false)}>{notice && !notice.success && <AuthFeedback>{notice.text}</AuthFeedback>}</ConfirmDialog>
         </>}
       </>}
       <div className="layout-actions">
-      {current?.data?.length > 0 && <button className={button} disabled={busy || !chosen || !canConfirmAssignment(ticket, selected)} onClick={() => confirm ? save() : setConfirm(true)}>{busy ? assigned ? 'Reassigning...' : 'Assigning...' : confirm ? 'Confirm' : 'Continue'}</button>}
+      {current?.data?.length > 0 && <button className={button} disabled={busy || !chosen || !canConfirmAssignment(ticket, selected)} onClick={() => { setNotice(null); setConfirm(true) }}>{busy ? assigned ? 'Reassigning...' : 'Assigning...' : confirm ? 'Confirm' : 'Continue'}</button>}
       <button className={button} disabled={busy} onClick={() => { setOpen(false); setConfirm(false) }}>Cancel</button>
       </div>
     </div>}
-    {!open && canUnassign && <button type="button" className={`${button} border-red-700 text-red-700 hover:bg-red-50`} disabled={busy} onClick={() => setUnassignConfirmation({ id: ticket.assignment.id, name: name(ticket.assignee) })}>Unassign</button>}
-    </div>}
+    {!open && canUnassign && <button type="button" className={`${button} border-red-700 text-red-700 hover:bg-red-50`} disabled={busy} onClick={() => { setNotice(null); setUnassignConfirmation({ id: ticket.assignment.id, name: name(ticket.assignee) }) }}>Unassign</button>}
+    </div>
   </section>
 }
