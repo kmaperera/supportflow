@@ -21,7 +21,7 @@ export default function MyTicketsPage() {
 function MyTickets() {
   const location = useLocation()
   const navigate = useNavigate()
-  const [createdNumber, setCreatedNumber] = useState(() => typeof location.state?.createdTicketNumber === 'string' ? location.state.createdTicketNumber : null)
+  const [createdNumber] = useState(() => typeof location.state?.createdTicketNumber === 'string' ? location.state.createdTicketNumber : null)
   const [request, setRequest] = useState({ page: 1, attempt: 0 })
   const [result, setResult] = useState(null)
   const [search, setSearch] = useState('')
@@ -54,7 +54,6 @@ function MyTickets() {
     <TicketFilters query={request} search={search} setSearch={setSearch} onChange={changeFilters} onSearch={() => changeFilters({})} onReset={resetFilters} />
     {createdNumber && <div>
       <AuthFeedback variant="success">Ticket {createdNumber} created successfully.</AuthFeedback>
-      <button type="button" onClick={() => setCreatedNumber(null)} className="mt-2 rounded text-sm text-teal-800 underline focus-visible:outline-2">Dismiss confirmation</button>
     </div>}
     {!current && <ContentSkeleton initial={!result} variant="cards">{result ? 'Updating tickets...' : 'Loading tickets...'}</ContentSkeleton>}
     {current?.error && <ErrorState title="Unable to load tickets" message={<>{current.error}</>}>

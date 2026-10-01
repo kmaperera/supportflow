@@ -111,7 +111,7 @@ function LoginPage() {
             </div>
             {passwordChanged && <AuthFeedback variant="success">Password changed successfully. Please sign in with your new password.</AuthFeedback>}
             {authError && <AuthFeedback>{authError}</AuthFeedback>}
-            {loginSucceeded && <AuthFeedback variant="success">You are signed in.</AuthFeedback>}
+            {loginSucceeded && <AuthFeedback toast={false} variant="success">You are signed in.</AuthFeedback>}
             <button type="submit" disabled={isSubmitting || isInitializing || isLoggingOut} className="mt-2 w-full rounded-lg bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-60">{isLoggingOut ? 'Logging out...' : isSubmitting ? 'Signing in...' : 'Sign in'}</button>
           </form>
           <p className="mt-7 border-t border-slate-100 pt-6 text-center text-xs leading-5 text-slate-500">Accounts are managed by your SupportFlow administrator.</p>

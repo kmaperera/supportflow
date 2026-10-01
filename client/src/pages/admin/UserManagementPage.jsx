@@ -31,7 +31,7 @@ function UserList({ currentAdminId }) {
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   const location = useLocation()
   const navigate = useNavigate()
-  const [created, setCreated] = useState(location.state?.userCreated === true)
+  const [created] = useState(location.state?.userCreated === true)
   useEffect(() => {
     if (location.state?.userCreated === true) navigate(location.pathname, { replace: true, state: null })
   }, [location, navigate])
@@ -110,7 +110,7 @@ function UserList({ currentAdminId }) {
   function reset() { setSearch(''); setQuery({ ...defaults }) }
   return <div className="layout-page">
     <PageHeader title="User Management" description="View user accounts, roles, and account status." actions={<><Link to="/admin/users/new" className={`${button} inline-flex items-center`}>Create User</Link></>} />
-    {created && <div><AuthFeedback variant="success">User created successfully.</AuthFeedback><button type="button" className={button} onClick={() => setCreated(false)}>Dismiss</button></div>}
+    {created && <AuthFeedback variant="success">User created successfully.</AuthFeedback>}
     {feedback && <AuthFeedback variant={feedback.success ? 'success' : 'error'}>{feedback.message}</AuthFeedback>}
     <div className="grid gap-4 layout-panel sm:grid-cols-2 xl:grid-cols-4">
       <label className="min-w-0 text-sm font-medium">Search<input type="search" className={input} placeholder="Search users..." value={search} onChange={event => setSearch(event.target.value)} aria-describedby="user-search-help" /><span id="user-search-help" className="mt-1 block text-xs text-slate-500">Search first name, last name, or email.</span></label>

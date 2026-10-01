@@ -1,0 +1,37 @@
+<!doctype html><html><body><div id="root"></div><pre id="result">RUNNING</pre>
+<script>window.addEventListener('error',event=>document.querySelector('#result').textContent='FAIL: '+event.message); window.addEventListener('unhandledrejection',event=>document.querySelector('#result').textContent='FAIL: '+event.reason)</script>
+<script type="module">
+import React from 'react'
+import { createRoot } from 'react-dom/client'
+import ToastProvider from '/src/components/ToastProvider.jsx'
+import { useToast } from '/src/components/toastContext.js'
+import AuthFeedback from '/src/auth/AuthFeedback.jsx'
+let toast
+function Controls() { toast = useToast(); return React.createElement(AuthFeedback, {variant:'success'}, 'Ticket saved.') }
+const root=createRoot(document.querySelector('#root'))
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms))
+const check=(value,message)=>{if(!value)throw new Error(message)}
+const alerts=()=>[...document.querySelectorAll('[role="status"], [role="alert"]')]
+try {
+ root.render(React.createElement(React.StrictMode,null,React.createElement(ToastProvider,null,React.createElement(Controls))))
+ await wait(200)
+ check(alerts().length===1,'StrictMode success bridge must toast once')
+ toast.success('Ticket saved.'); await wait(50)
+ check(alerts().length===1,'identical messages must dedupe')
+ toast.info('<script>plain text<\/script>'); toast.warning('Warning'); toast.error('Error'); await wait(50)
+ check(alerts().length===4,'all four types supported')
+ check(document.querySelector('[role="alert"]').textContent.includes('Error'),'error alert')
+ check(alerts().some(el=>el.textContent.includes('<script>plain text<\/script>')),'safe plain text')
+ toast.info('Newest'); await wait(50)
+ check(alerts().length===4 && !alerts().some(el=>el.textContent.includes('Ticket saved.')),'bounded stack')
+ document.querySelector('button[aria-label="Dismiss info notification"]').click(); await wait(50)
+ check(alerts().length===3,'manual dismiss')
+ const warning=document.querySelector('button[aria-label="Dismiss warning notification"]')
+ warning.focus(); await wait(8500)
+ check(alerts().length===1,'auto-dismiss and keyboard focus pause')
+ warning.blur(); await wait(8200)
+ check(alerts().length===0,'paused toast resumes dismissal')
+ toast.success('Cleanup'); await wait(50); root.unmount(); await wait(100)
+ document.querySelector('#result').textContent='PASS: StrictMode, success bridge, dedupe, four types, safe text, stack limit, manual dismiss, timers, focus pause, cleanup'
+} catch(error) { document.querySelector('#result').textContent='FAIL: '+error.message }
+</script></body></html>

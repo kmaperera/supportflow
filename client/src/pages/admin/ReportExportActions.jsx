@@ -1,3 +1,4 @@
+import { useToast } from '../../components/toastContext'
 import { useEffect, useRef, useState } from 'react'
 import { exportReport, reportExportError } from '../../api/reportExportApi'
 import { saveAttachment } from '../employee/attachmentDownload'
@@ -5,6 +6,7 @@ import { validateReportDates } from './reportValidation'
 import AuthFeedback from '../../auth/AuthFeedback'
 
 export default function ReportExportActions({ type, criteria, disabled }) {
+  const toast = useToast()
   const [busy, setBusy] = useState(null)
   const [error, setError] = useState('')
   const pending = useRef(false)
@@ -18,10 +20,10 @@ export default function ReportExportActions({ type, criteria, disabled }) {
     request.current = controller
     try {
       const { blob, filename } = await exportReport(type, format, criteria, { signal: controller.signal })
-      if (!controller.signal.aborted) saveAttachment(blob, filename)
+      if (!controller.signal.aborted) { saveAttachment(blob, filename); toast.success(`${format.toUpperCase()} download started.`) }
     } catch (cause) {
       const message = await reportExportError(cause)
-      if (!controller.signal.aborted) setError(message)
+      if (!controller.signal.aborted) { setError(message); toast.error(message) }
     } finally { pending.current = false; if (!controller.signal.aborted) setBusy(null) }
   }
   return <div className="space-y-2">

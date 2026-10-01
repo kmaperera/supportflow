@@ -79,7 +79,7 @@ export default function TicketConversation({ ticketId, status, assignedTo, disab
       <textarea id="public-reply" value={content} onChange={event => { setContent(event.target.value); setError(null); setSent(false) }} required maxLength={5000} rows={4} placeholder="Write a public reply..." disabled={sending || disabled} aria-describedby="reply-feedback" aria-invalid={Boolean(error)} className="block w-full min-w-0 resize-y rounded-lg border border-slate-300 p-3 text-sm focus-visible:outline-2 focus-visible:outline-teal-700 disabled:opacity-60" />
       <div id="reply-feedback">{error && <AuthFeedback>{error}</AuthFeedback>}</div>
       <button type="submit" disabled={sending} className="cursor-pointer disabled:cursor-not-allowed rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60">{sending ? 'Sending...' : 'Send Reply'}</button>
-      <p role="status" className="text-sm text-teal-800">{sent ? 'Reply sent.' : sending ? 'Sending reply...' : ''}</p>
+      {sent && <AuthFeedback variant="success">Reply sent.</AuthFeedback>}
     </form> : <p className="mt-6 text-sm text-slate-600">This ticket is {status === 'CLOSED' ? 'closed' : status === 'RESOLVED' ? 'resolved' : 'not available for you to reply to'}. Public replies are unavailable.</p>}
   </section>
 }

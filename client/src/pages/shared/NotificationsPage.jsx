@@ -1,3 +1,4 @@
+import { useToast } from '../../components/toastContext'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
@@ -19,6 +20,7 @@ export default function NotificationsPage() {
   return <Notifications key={`${user?.id}:${user?.role}`} role={user?.role} accessToken={accessToken} />
 }
 function Notifications({ role, accessToken }) {
+  const toast = useToast()
   const technician = role === 'TECHNICIAN'
   const admin = role === 'ADMIN'
   const allowInternal = technician || admin
@@ -41,11 +43,18 @@ function Notifications({ role, accessToken }) {
     realtimeDirty.current = false
     setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))
   }, [])
+  // SLA events have no corresponding local mutation toast. Do not echo replies,
+  // assignment or status events back to an actor who already received feedback.
+  const notifyRealtime = useCallback(notification => {
+    if (!allowInternal) return
+    if (notification.type === 'SLA_WARNING') toast.warning('A support deadline is approaching. Check your notifications.')
+    if (notification.type === 'SLA_BREACHED') toast.warning('A support deadline has been exceeded. Check your notifications.')
+  }, [allowInternal, toast])
   useEffect(() => {
     if (!accessToken) return
     const origin = new URL(import.meta.env.VITE_API_BASE_URL || '/', window.location.href).origin
-    return subscribeToNotifications({ token: accessToken, origin, onRefresh: refreshRealtime })
-  }, [accessToken, refreshRealtime])
+    return subscribeToNotifications({ token: accessToken, origin, onRefresh: refreshRealtime, onNotification: notifyRealtime })
+  }, [accessToken, refreshRealtime, notifyRealtime])
   useEffect(() => {
     const controller = new AbortController()
     getNotifications({ page: request.page, signal: controller.signal, allowInternal }).then(data => {
@@ -90,6 +99,7 @@ function Notifications({ role, accessToken }) {
     allPending.current = true; setMarkingAll(true); setError(null)
     try {
       await markAllNotificationsRead()
+      if (active.current) toast.success('All notifications marked as read.')
       if (!active.current) return
       // Re-read server state, including any notifications created during the mutation.
       setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))

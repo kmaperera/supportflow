@@ -67,7 +67,7 @@ export default function TicketAttachments({ ticketId, status, canUpload = true, 
       <p id="attachment-help" className="text-xs text-slate-500">One file, maximum 10 MB. JPG/JPEG, PNG, WEBP, PDF, TXT, CSV, DOC/DOCX, XLS/XLSX.</p>
       <div id="attachment-error">{error && <AuthFeedback>{error}</AuthFeedback>}</div>
       <button type="submit" disabled={uploading || disabled} className="cursor-pointer rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60">{uploading ? 'Uploading...' : 'Upload Attachment'}</button>
-      <p role="status" className="text-sm text-teal-800">{success ? 'Attachment uploaded successfully.' : uploading ? 'Uploading attachment...' : ''}</p>
+      {success && <AuthFeedback variant="success">Attachment uploaded successfully.</AuthFeedback>}
     </form> : <div className="mt-6 text-sm text-slate-600"><p>{canUpload ? 'This ticket does not accept new attachments in its current status.' : 'Attachments are read-only unless this ticket is assigned to you.'}</p>{error && <AuthFeedback>{error}</AuthFeedback>}</div>}
   </section>
 }

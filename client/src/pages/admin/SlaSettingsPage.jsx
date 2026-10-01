@@ -1,3 +1,4 @@
+import { useToast } from '../../components/toastContext'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
@@ -11,9 +12,9 @@ import { formatPolicyMinutes, validateSlaDurations } from './slaPolicyForm'
 
 const button = 'min-h-11 w-fit cursor-pointer rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 export default function SlaSettingsPage() {
+  const toast = useToast()
   const [attempt, setAttempt] = useState(0)
   const [result, setResult] = useState(null)
-  const [success, setSuccess] = useState(false)
   useEffect(() => {
     const controller = new AbortController()
     getSlaPolicies({ signal: controller.signal }).then(data => { if (!controller.signal.aborted) setResult({ attempt, data }) }).catch(() => { if (!controller.signal.aborted) setResult({ attempt, error: true }) })
@@ -23,10 +24,10 @@ export default function SlaSettingsPage() {
   return <div className="layout-page">
     <PageHeader title="SLA Settings" description="Configure response and resolution targets by priority." />
     <p className="text-sm text-slate-600">Changes apply to new tickets and future SLA recalculations triggered by priority changes. Existing ticket deadlines are not automatically rewritten.</p>
-    {success && <AuthFeedback variant="success">SLA policy updated successfully.</AuthFeedback>}
+
     {!current && <ContentSkeleton initial={!result} variant="cards" columns="xl:grid-cols-2">Loading SLA settings...</ContentSkeleton>}
     {current?.error && <ErrorState title="Unable to load SLA settings."><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></ErrorState>}
-    {current?.data && (!current.data.length ? <EmptyState compact title="No SLA policies found." /> : <div className="grid min-w-0 gap-4 xl:grid-cols-2">{current.data.map(policy => <PolicyCard key={policy.id} policy={policy} onSaved={() => { setSuccess(true); setAttempt(value => value + 1) }} />)}</div>)}
+    {current?.data && (!current.data.length ? <EmptyState compact title="No SLA policies found." /> : <div className="grid min-w-0 gap-4 xl:grid-cols-2">{current.data.map(policy => <PolicyCard key={policy.id} policy={policy} onSaved={() => { toast.success('SLA policy updated successfully.'); setAttempt(value => value + 1) }} />)}</div>)}
   </div>
 }
 function PolicyCard({ policy, onSaved }) {

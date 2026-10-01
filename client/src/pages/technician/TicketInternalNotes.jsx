@@ -53,7 +53,7 @@ export default function TicketInternalNotes({ ticket, userId, disabled, draft, o
     <p className="mt-1 text-sm text-slate-600">Visible only to support staff.</p>
     {!current ? <ContentSkeleton initial={!result && attempt === 0} variant="rows">Loading internal notes...</ContentSkeleton> : current.error ? <ErrorState compact className="mt-4" title="Unable to load internal notes."><button type="button" onClick={() => setAttempt(value => value + 1)} className="cursor-pointer rounded text-teal-800 underline focus-visible:outline-2">Retry</button></ErrorState> : <InternalNoteList notes={current.notes} userId={userId} />}
     <div id="internal-note-feedback" className="mt-3">{error && <AuthFeedback>{error}</AuthFeedback>}</div>
-    {added && <p role="status" className="mt-3 text-sm text-teal-800">Internal note added.</p>}
+    {added && <AuthFeedback variant="success">Internal note added.</AuthFeedback>}
     {canAdd && <form onSubmit={submit} noValidate className="mt-4 space-y-3">
       <label htmlFor="internal-note" className="block text-sm font-semibold">Add an internal note</label>
       <textarea id="internal-note" placeholder="Add an internal note..." value={draft} onChange={event => { onDraftChange(event.target.value); setError(null); setAdded(false) }} rows={4} required disabled={adding || disabled} aria-describedby="internal-note-feedback" aria-invalid={Boolean(error)} className="block w-full min-w-0 resize-y rounded-lg border border-slate-300 bg-white p-3 text-base focus-visible:outline-2 focus-visible:outline-teal-700 disabled:opacity-60 sm:text-sm" />

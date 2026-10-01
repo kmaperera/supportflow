@@ -4,7 +4,8 @@ import { subscribeToNotifications } from '../src/api/notificationRealtime.js'
 const handlers = new Map()
 let disconnected = false
 let refreshed = 0
-const cleanup = subscribeToNotifications({ token: 'test-token', origin: 'http://localhost:5000', onRefresh: () => { refreshed++ } }, (origin, options) => {
+const received = []
+const cleanup = subscribeToNotifications({ token: 'test-token', origin: 'http://localhost:5000', onNotification: item => received.push(item.id), onRefresh: () => { refreshed++ } }, (origin, options) => {
   assert.equal(origin, 'http://localhost:5000')
   assert.deepEqual(options, { auth: { token: 'test-token' }, withCredentials: true })
   return {
@@ -26,6 +27,7 @@ handlers.get('notification:new')({ id: 51 })
 handlers.get('notification:new')({ id: 'invalid' })
 await settle()
 assert.equal(refreshed, 2, 'duplicate IDs and malformed events do not trigger refresh')
+assert.deepEqual(received, [51, 52], 'toast callbacks receive only new valid notifications')
 handlers.get('connect')()
 await settle()
 assert.equal(refreshed, 3, 'reconnection reconciles missed events')

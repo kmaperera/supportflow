@@ -2,7 +2,7 @@ import { io } from 'socket.io-client'
 
 // Shared by all role inboxes. The server joins the JWT owner's user room;
 // the client never supplies a recipient ID or requests a room itself.
-export function subscribeToNotifications({ token, onRefresh, origin }, connect = io) {
+export function subscribeToNotifications({ token, onRefresh, onNotification, origin }, connect = io) {
   const socket = connect(origin, { auth: { token }, withCredentials: true })
   const seen = new Set()
   let timer
@@ -16,6 +16,7 @@ export function subscribeToNotifications({ token, onRefresh, origin }, connect =
     if (seen.has(id)) return
     seen.add(id)
     if (seen.size > 200) seen.delete(seen.values().next().value)
+    onNotification?.(notification)
     scheduleRefresh()
   }
   socket.on('notification:new', receive)

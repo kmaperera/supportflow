@@ -1,3 +1,4 @@
+import { useToast } from '../components/toastContext'
 import AuthFeedback from './AuthFeedback'
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -5,6 +6,7 @@ import { useAuth } from './useAuth'
 import LogoutButton from './LogoutButton'
 
 export default function SessionActions() {
+  const toast = useToast()
   const { logoutAllUserSessions, isLoggingOut, isLoggingOutAll } = useAuth()
   const [error, setError] = useState(null)
   const pending = useRef(false)
@@ -17,6 +19,7 @@ export default function SessionActions() {
     setError(null)
     try {
       await logoutAllUserSessions()
+      toast.success('Logged out of all sessions.')
       navigate('/login', { replace: true })
     } catch {
       setError('Unable to log out all sessions. Please try again.')
