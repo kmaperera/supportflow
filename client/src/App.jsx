@@ -1,8 +1,9 @@
 import NavigationFocus from './components/NavigationFocus'
+import DocumentTitle from './components/DocumentTitle'
 import AppRoutes from './routes/AppRoutes'
 
 function App() {
-  return <><NavigationFocus /><AppRoutes /></>
+  return <><DocumentTitle /><NavigationFocus /><AppRoutes /></>
 }
 
 export default App

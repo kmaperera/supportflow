@@ -1,5 +1,5 @@
-export default function FilterBar({ as: Element = 'div', className = '', activeCount = 0, children, ...props }) {
-  return <Element {...props} className={`filter-bar ${className}`}>{children}{activeCount > 0 && <p className="col-span-full text-xs text-slate-500 dark:text-slate-400">{activeCount} {activeCount === 1 ? 'filter active' : 'filters active'}</p>}</Element>
+export default function FilterBar({ as: Element = 'div', label = 'Search and filters', className = '', activeCount = 0, children, ...props }) {
+  return <Element role={Element === 'div' ? 'group' : undefined} aria-label={label} {...props} className={`filter-bar ${className}`}>{children}{activeCount > 0 && <p className="col-span-full text-xs text-slate-500 dark:text-slate-400">{activeCount} {activeCount === 1 ? 'filter active' : 'filters active'}</p>}</Element>
 }
 
 export function ClearFilters({ disabled = false, onClick }) {

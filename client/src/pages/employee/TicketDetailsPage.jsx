@@ -44,6 +44,7 @@ function TicketDetails({ ticketId }) {
   }, [ticketId, attempt])
   return <div className="layout-page">
     <Link to="/employee/tickets" className="inline-block rounded text-sm font-semibold text-teal-800 dark:text-teal-300 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2">Back to My Tickets</Link>
+    {!state.ticket && <h1 className="text-2xl font-semibold">Ticket Details</h1>}
     {notice && <AuthFeedback variant={notice.error ? 'error' : 'success'}>{notice.text}</AuthFeedback>}
     {state.ticket?.status === 'RESOLVED' && user?.id != null && String(state.ticket.createdBy) === String(user.id) && <div className="flex flex-wrap items-start gap-3"><CloseTicketButton disabled={actionPending} onPendingChange={setActionPending} ticketId={ticketId} onClosed={ticket => {
       setState({ loading: false, ticket, error: null })

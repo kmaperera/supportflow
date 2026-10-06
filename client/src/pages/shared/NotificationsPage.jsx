@@ -70,13 +70,14 @@ function Notifications({ role, accessToken }) {
     return () => controller.abort()
   }, [request, allowInternal])
   const current = result?.request === request ? result : null
-  async function markOne(id) {
+  async function markOne(id, announce = false) {
     const key = String(id)
     if (pending.current.has(key) || allPending.current) return
     pending.current.add(key); setPendingIds([...pending.current]); setError(null)
     try {
       const notification = await markNotificationRead(id, { allowInternal })
       if (!active.current) return
+      if (announce) toast.success('Notification marked as read.')
       setResult(previous => {
         if (!previous?.data || previous.request !== request) return previous
         const wasUnread = previous.data.notifications.some(item => String(item.id) === key && !item.isRead)
@@ -123,10 +124,10 @@ function Notifications({ role, accessToken }) {
         <p className="text-xs font-semibold text-slate-600 dark:text-slate-300"><StateBadge value={item.isRead ? 'READ' : 'UNREAD'} /> · {item.type === 'INTERNAL_NOTE' ? 'Internal note' : labels[item.type] || 'Support update'}</p>
         <h2 className="mt-2 break-words font-semibold">{item.title}</h2>
         <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-700 dark:text-slate-200">{item.message}</p>
-        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{formatTicketDate(item.createdAt)}</p>
+        <p className="mt-2 text-xs text-slate-600 dark:text-slate-400"><time dateTime={item.createdAt}>{formatTicketDate(item.createdAt)}</time></p>
         <div className="mt-3 layout-actions">
-          {item.ticketId != null && /^[1-9]\d*$/.test(String(item.ticketId)) && <button type="button" className={buttonClass} disabled={openingId !== null || markingAll || pendingIds.includes(String(item.id))} onClick={() => viewTicket(item)}>{openingId === String(item.id) ? 'Opening...' : 'View Ticket'}</button>}
-          {!item.isRead && <button type="button" className={buttonClass} disabled={markingAll || pendingIds.includes(String(item.id))} onClick={() => markOne(item.id)}>{pendingIds.includes(String(item.id)) ? 'Marking as read...' : 'Mark as read'}</button>}
+          {item.ticketId != null && /^[1-9]\d*$/.test(String(item.ticketId)) && <button type="button" className={buttonClass} disabled={openingId !== null || markingAll || pendingIds.includes(String(item.id))} onClick={() => viewTicket(item)}>{openingId === String(item.id) ? 'Opening...' : 'View Ticket'}<span className="sr-only">: {item.title}</span></button>}
+          {!item.isRead && <button type="button" className={buttonClass} disabled={markingAll || pendingIds.includes(String(item.id))} onClick={() => markOne(item.id, true)}>{pendingIds.includes(String(item.id)) ? 'Marking as read...' : 'Mark as read'}<span className="sr-only">: {item.title}</span></button>}
         </div>
       </li>)}</ul>}
       <Pagination metadata={current.data.pagination} noun="notifications" label="notifications" disabled={markingAll || pendingIds.length > 0 || Boolean(openingId)} onPageChange={page => setRequest(previous => ({ ...previous, page }))} />

@@ -1,3 +1,4 @@
+import Tabs from '../../components/Tabs'
 import { StateBadge, ActiveBadge } from '../../components/Badges'
 import FilterBar, { ClearFilters } from '../../components/FilterBar'
 import useDebouncedSearch from '../../components/useDebouncedSearch'
@@ -29,11 +30,10 @@ export default function AdminKnowledgeBasePage() {
   }, [location.pathname, location.state, navigate])
   return <div className="layout-page">
     <PageHeader title="Knowledge Base Management" description="Manage help articles and their Knowledge Base categories." />
-    <nav aria-label="Knowledge Base sections" className="layout-actions">
-      {[['articles', 'KB Articles'], ['categories', 'KB Categories']].map(([value, label]) => <button key={value} type="button" className={`${button} ${tab === value ? 'bg-teal-50 dark:bg-teal-950 ring-1 ring-teal-700 dark:ring-teal-400' : ''}`} aria-pressed={tab === value} onClick={() => { setTab(value); setMessage('') }}>{label}</button>)}
-    </nav>
     {message && <AuthFeedback variant="success">{message}</AuthFeedback>}
-    {tab === 'articles' ? <Articles categories={categories} /> : <Categories resource={categories} />}
+    <Tabs label="Knowledge Base sections" tabs={[{ value: 'articles', label: 'KB Articles' }, { value: 'categories', label: 'KB Categories' }]} value={tab} onChange={value => { setTab(value); setMessage('') }} buttonClass={button}>
+      {tab === 'articles' ? <Articles categories={categories} /> : <Categories resource={categories} />}
+    </Tabs>
   </div>
 }
 function CategoryLoadNotice({ resource, skeleton = false }) {
@@ -80,7 +80,7 @@ function Articles({ categories }) {
       <p id="kb-search-help" className="text-sm text-slate-500 dark:text-slate-400">Search title and content. Newest articles appear first.</p>
       <CategoryLoadNotice resource={categories} />
     </FilterBar>
-    {error && <AuthFeedback>{error}</AuthFeedback>}{message && <AuthFeedback variant="success">{message}</AuthFeedback>}
+    {error && !archive && <AuthFeedback>{error}</AuthFeedback>}{message && <AuthFeedback variant="success">{message}</AuthFeedback>}
     {resource.loading && <ContentSkeleton initial={!resource.data}>{resource.data ? 'Updating articles...' : 'Loading articles...'}</ContentSkeleton>}
     {resource.error && <ErrorState title="Unable to load knowledge base articles."><button className={button} onClick={resource.reload}>Retry</button></ErrorState>}
     {resource.data && <div className="space-y-3" aria-busy={resource.loading}>
@@ -127,7 +127,7 @@ function Categories({ resource }) {
   return <section aria-labelledby="kb-categories-heading" className="space-y-4">
     <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="kb-categories-heading" className="text-xl font-semibold">KB Categories</h2><button className={button} disabled={Boolean(editor) || Boolean(busy)} onClick={() => { setEditor({ category: null }); setMessage('') }}>Add KB Category</button></div>
     <p className="text-sm text-slate-600 dark:text-slate-300">Inactive categories remain here for management. Their articles are hidden from employees and technicians until the category is active again.</p>
-    {message && <AuthFeedback variant="success">{message}</AuthFeedback>}{error && <AuthFeedback>{error}</AuthFeedback>}
+    {message && <AuthFeedback variant="success">{message}</AuthFeedback>}{error && !deactivating && <AuthFeedback>{error}</AuthFeedback>}
     {editor && <KbCategoryEditor key={editor.category?.id || 'new'} category={editor.category} onCancel={() => setEditor(null)} onSaved={() => { setMessage(editor.category ? 'KB category updated successfully.' : 'KB category created successfully.'); setEditor(null); resource.reload() }} />}
     <ConfirmDialog open={Boolean(deactivating)} title="Deactivate KB category?" description={`Articles in ${deactivating?.name} will be hidden from employees and technicians until the category is active again.`} variant="warning" confirmLabel="Deactivate Category" pending={Boolean(busy)} pendingLabel="Deactivating..." onConfirm={() => toggle(deactivating)} onCancel={() => setDeactivating(null)}>{error && <AuthFeedback>{error}</AuthFeedback>}</ConfirmDialog>
     <FilterBar activeCount={[search.trim(), status].filter(Boolean).length} className="grid gap-4 layout-panel sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]">

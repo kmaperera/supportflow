@@ -100,7 +100,7 @@ function AppRoutes() {
             <Route index element={<AdminDashboardPage />} />
             <Route path="audit-logs" element={<AdminAuditLogsPage />} />
             <Route path="reports" element={<AdminReportsPage />} />
-            <Route path="analytics" element={<Suspense fallback={<LoadingState>Loading analytics...</LoadingState>}><AdminAnalyticsPage /></Suspense>} />
+            <Route path="analytics" element={<Suspense fallback={<div className="layout-page"><h1 className="text-2xl font-semibold">Analytics Dashboard</h1><LoadingState>Loading analytics...</LoadingState></div>}><AdminAnalyticsPage /></Suspense>} />
             <Route path="notifications" element={<SharedNotificationsPage />} />
             <Route path="knowledge-base" element={<AdminKnowledgeBasePage />} />
             <Route path="knowledge-base/articles/new" element={<KbArticleFormPage />} />
@@ -122,7 +122,7 @@ function AppRoutes() {
           </Route>
         </Route>
       </Route>
-      <Route path="*" element={<NotFoundPage />} />
+      <Route path="*" element={<main id="main-content" tabIndex={-1}><NotFoundPage /></main>} />
     </Routes>
   )
 }

@@ -54,8 +54,8 @@ export function TechnicianCombobox({ technicians, counts, selected, currentId, d
     if (event.key === ' ' && !isOpen) { event.preventDefault(); open() }
   }
   return <div className="relative min-w-0" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) { setExpanded(false); setActive(-1) } }}>
-    <label htmlFor={id} className="block text-sm font-medium">Technician *</label>
-    <input id={id} role="combobox" aria-autocomplete="list" aria-expanded={isOpen} aria-controls={`${id}-list`} aria-activedescendant={isOpen && options[active] ? `${id}-option-${active}` : undefined} autoComplete="off" className={input} disabled={disabled} placeholder="Search or select a technician..." value={isOpen ? query : chosen ? name(chosen) : ''} onFocus={open} onClick={open} onKeyDown={keyDown} onChange={event => { setQuery(event.target.value); setExpanded(true); setActive(-1); onSelect('') }} />
+    <label htmlFor={id} className="block text-sm font-medium">Select technician<span aria-hidden="true"> *</span></label>
+    <input id={id} role="combobox" aria-required="true" aria-autocomplete="list" aria-expanded={isOpen} aria-controls={isOpen ? `${id}-list` : undefined} aria-activedescendant={isOpen && options[active] ? `${id}-option-${active}` : undefined} autoComplete="off" className={input} disabled={disabled} placeholder="Search or select a technician..." value={isOpen ? query : chosen ? name(chosen) : ''} onFocus={open} onClick={open} onKeyDown={keyDown} onChange={event => { setQuery(event.target.value); setExpanded(true); setActive(-1); onSelect('') }} />
     {isOpen && <div className="absolute inset-x-0 top-full z-20 mt-1 max-h-[min(16rem,45dvh)] overflow-y-auto rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg">
       <ul id={`${id}-list`} role="listbox" aria-label="Assignable technicians" ref={list}>{options.map((person, index) => {
         const current = String(person.id) === String(currentId)
@@ -140,7 +140,7 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
   return <section aria-labelledby="assignment-heading" className="min-w-0 space-y-4 layout-panel">
     <h2 id="assignment-heading" className="text-lg font-semibold">Assignment</h2>
     <dl><dt className="text-sm text-slate-500 dark:text-slate-400">Current technician</dt><dd className="mt-1 break-words">{assigned ? name(ticket.assignee) : 'Unassigned'}</dd></dl>
-    {notice && <AuthFeedback variant={notice.success ? 'success' : 'error'}>{notice.text}</AuthFeedback>}
+    {notice && !unassignConfirmation && !confirm && <AuthFeedback variant={notice.success ? 'success' : 'error'}>{notice.text}</AuthFeedback>}
     <ConfirmDialog open={Boolean(unassignConfirmation)} title="Unassign ticket?" description={`Current technician: ${unassignConfirmation?.name}. The ticket will return to Open in the unassigned queue. Assignment history will be retained and the removed technician notified.`} variant="warning" confirmLabel="Unassign Ticket" pending={busy} pendingLabel="Unassigning..." onConfirm={removeAssignment} onCancel={() => setUnassignConfirmation(null)}>{notice && !notice.success && <AuthFeedback>{notice.text}</AuthFeedback>}</ConfirmDialog>
     <div className="flex flex-wrap items-start gap-3">
     {!eligible ? <p className="text-sm text-slate-600 dark:text-slate-300">Assignment cannot be changed on resolved or closed tickets.</p> : !open ? <button className={button} disabled={busy} onClick={() => { setOpen(true); setAttempt(value => value + 1); setSelected(''); setConfirm(false) }}>{assigned ? 'Reassign' : 'Assign technician'}</button> : <div className="w-full min-w-0 max-w-lg space-y-3">

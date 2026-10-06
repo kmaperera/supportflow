@@ -61,7 +61,7 @@ function LoginPage() {
   const inputClass = 'mt-2 block w-full rounded-lg border bg-white dark:bg-slate-900 px-3.5 py-3 text-base text-slate-900 dark:text-slate-100 outline-none transition focus:border-teal-700 dark:focus:border-teal-400 focus:ring-2 focus:ring-teal-700/20 dark:focus:ring-teal-400/20'
 
   return (
-    <main className="auth-ui min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 lg:grid lg:grid-cols-[1fr_1fr]">
+    <main id="main-content" tabIndex={-1} className="auth-ui min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 lg:grid lg:grid-cols-[1fr_1fr]">
       <section className="relative hidden flex-col justify-between overflow-hidden bg-slate-900 px-12 py-12 text-white lg:flex xl:px-20" aria-label="About SupportFlow">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-400 text-xl font-bold text-slate-900" aria-hidden="true">S</span>
@@ -69,7 +69,7 @@ function LoginPage() {
         </div>
         <div className="relative z-10 my-16 max-w-lg">
           <p className="mb-5 text-xs font-semibold uppercase tracking-[0.2em] text-teal-300">IT Helpdesk &amp; Ticket Management</p>
-          <h1 className="text-4xl leading-tight font-semibold tracking-tight xl:text-5xl">Better support.<br />A smoother workday.</h1>
+          <p className="text-4xl leading-tight font-semibold tracking-tight xl:text-5xl">Better support.<br />A smoother workday.</p>
           <p className="mt-6 max-w-md text-base leading-7 text-slate-300">Manage support requests, track ticket progress, and stay connected with your IT team.</p>
           <div className="mt-10 rounded-2xl border border-slate-700 bg-slate-800/80 p-6">
             <p className="text-sm font-medium text-slate-200">A clear path from request to resolution</p>
@@ -93,7 +93,7 @@ function LoginPage() {
         </div>
         <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm sm:p-9">
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-teal-700 dark:text-teal-300">Your support workspace</p>
-          <h2 id="login-heading" className="text-3xl font-semibold tracking-tight">Welcome back</h2>
+          <h1 id="login-heading" className="text-3xl font-semibold tracking-tight">Welcome back</h1>
           <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Sign in to your SupportFlow account.</p>
           <form onSubmit={handleSubmit} aria-busy={isSubmitting || isLoggingOut} noValidate className="mt-8 space-y-5">
             <p role="status" aria-live="polite" className="sr-only">{isLoggingOut ? 'Logging out...' : isSubmitting ? 'Signing in...' : ''}</p>

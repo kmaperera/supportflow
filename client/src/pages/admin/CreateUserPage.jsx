@@ -2,7 +2,7 @@ import FieldError from '../../components/FieldError'
 import { focusFirstError, mapFieldErrors } from '../../components/formValidation'
 import PageHeader from '../../layouts/PageHeader'
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { createUser } from '../../api/userApi'
 import { getApiErrorMessage } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
@@ -52,13 +52,13 @@ export default function CreateUserPage() {
     <form onSubmit={submit} noValidate className="space-y-5 layout-panel">
       <div className="grid min-w-0 gap-5 sm:grid-cols-2">{Object.entries(labels).map(([field, label]) => {
         const optional = ['phone', 'department'].includes(field)
-        return <div key={field} className="min-w-0"><label htmlFor={`create-user-${field}`} className="text-sm font-semibold">{label}{optional ? ' (optional)' : ' *'}</label>
+        return <div key={field} className="min-w-0"><label htmlFor={`create-user-${field}`} className="text-sm font-semibold">{label}{optional ? ' (optional)' : <span aria-hidden="true"> *</span>}</label>
           {field === 'role' ? <select id={`create-user-${field}`} className={control} required disabled={creating} value={values.role} aria-invalid={Boolean(errors.role)} aria-describedby={`create-user-${field}-error`} onChange={event => { setValues(previous => ({ ...previous, role: event.target.value })); setErrors(previous => ({ ...previous, role: null })) }}>{[['EMPLOYEE', 'Employee'], ['TECHNICIAN', 'Technician'], ['ADMIN', 'Admin']].map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select> : <input id={`create-user-${field}`} className={control} type={field.toLowerCase().includes('password') ? 'password' : field === 'email' ? 'email' : field === 'phone' ? 'tel' : 'text'} autoComplete={field.toLowerCase().includes('password') ? 'new-password' : 'off'} required={!optional} maxLength={({ firstName: 100, lastName: 100, email: 255, phone: 30, department: 150 })[field]} disabled={creating} value={values[field]} aria-invalid={Boolean(errors[field])} aria-describedby={`create-user-${field}-error${field === 'password' ? ' password-help' : ''}`} onChange={event => { setValues(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [field]: null })) }} />}
           {field === 'password' && <p id="password-help" className="mt-1 text-xs text-slate-600 dark:text-slate-300">At least 8 characters, including uppercase, lowercase, and a number.</p>}
           <div id={`create-user-${field}-error`}>{errors[field] && <FieldError>{errors[field]}</FieldError>}</div>
         </div>
       })}</div>
-      <div className="layout-actions"><button type="submit" className={button} disabled={creating}>{creating ? 'Creating user...' : 'Create User'}</button><button type="button" className={button} disabled={creating} onClick={() => navigate('/admin/users')}>Cancel</button></div>
+      <div className="layout-actions"><button type="submit" className={button} disabled={creating}>{creating ? 'Creating user...' : 'Create User'}</button><Link className={`${button} inline-flex items-center ${creating ? 'cursor-not-allowed opacity-50' : ''}`} to="/admin/users" aria-disabled={creating || undefined} tabIndex={creating ? -1 : undefined} onClick={event => { if (creating) event.preventDefault() }}>Cancel</Link></div>
     </form>
   </div>
 }

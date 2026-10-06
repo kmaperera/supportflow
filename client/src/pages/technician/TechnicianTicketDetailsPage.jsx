@@ -150,6 +150,7 @@ function TicketWorkspace({ ticketId, userId }) {
       <Link to={unassigned ? '/technician/tickets/unassigned' : '/technician/tickets/assigned'} className={actionClass}>{unassigned ? 'Back to Unassigned Queue' : 'Back to My Assigned Tickets'}</Link>
       {current?.ticket && <button type="button" disabled={updating} className={actionClass} onClick={() => setAttempt(value => value + 1)}>Refresh</button>}
     </div>
+    {!current?.ticket && <h1 className="text-2xl font-semibold">Ticket Workspace</h1>}
     {notice && <AuthFeedback variant={notice.error ? 'error' : 'success'}>{notice.text}</AuthFeedback>}
     {!current && <ContentSkeleton initial={!result && attempt === 0} variant="detail">Loading ticket...</ContentSkeleton>}
     {current?.error && <ErrorState title={current.errorTitle} message={current.error}>

@@ -35,7 +35,7 @@ try {
   assert.ok(cardLink, 'Ticket card is a semantic link')
   for (const content of ['SUP-2026-000081', 'Network unavailable', '<dl']) assert.ok(cardLink[1].includes(content))
   assert.ok(!/<a\b|<button\b/.test(cardLink[1]), 'No nested interactive elements')
-  assert.match(cardLink[0], /aria-labelledby="ticket-number-81 ticket-title-81"/)
+  assert.match(cardLink[0], /aria-labelledby="ticket-number-81 ticket-title-81 ticket-status-81"/)
   assert.match(render([], 0), /support tickets yet/)
   assert.match(render([], 0), /href="\/employee\/tickets\/new"/)
   assert.match(render([], 11), /No tickets on this page/)

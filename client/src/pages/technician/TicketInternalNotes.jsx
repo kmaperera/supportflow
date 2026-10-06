@@ -55,7 +55,7 @@ export default function TicketInternalNotes({ ticket, userId, disabled, draft, o
     <div id="internal-note-feedback" className="mt-3">{error && <AuthFeedback>{error}</AuthFeedback>}</div>
     {added && <AuthFeedback variant="success">Internal note added.</AuthFeedback>}
     {canAdd && <form onSubmit={submit} noValidate className="mt-4 space-y-3">
-      <label htmlFor="internal-note" className="block text-sm font-semibold">Add an internal note *</label>
+      <label htmlFor="internal-note" className="block text-sm font-semibold">Add an internal note <span aria-hidden="true">*</span></label>
       <textarea id="internal-note" placeholder="Add an internal note..." value={draft} onChange={event => { onDraftChange(event.target.value); setError(null); setAdded(false) }} rows={4} maxLength={5000} required disabled={adding || disabled} aria-describedby="internal-note-feedback" aria-invalid={Boolean(error)} className="block w-full min-w-0 resize-y rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-base focus-visible:outline-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400 disabled:opacity-60 sm:text-sm" />
       <button type="submit" disabled={adding || disabled} className="cursor-pointer rounded-lg border border-teal-700 dark:border-teal-400 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50">{adding ? 'Sending...' : 'Add Note'}</button>
     </form>}
@@ -69,9 +69,9 @@ export function InternalNoteList({ notes, userId }) {
     const name = [note.author?.firstName, note.author?.lastName].filter(value => typeof value === 'string' && value.trim()).map(value => value.trim()).join(' ')
     const role = { TECHNICIAN: 'Technician', ADMIN: 'Admin' }[note.author?.role]
     return <li key={note.id} className="min-w-0 rounded-xl bg-white dark:bg-slate-900 p-4">
-      <p className="text-sm font-semibold">{userId != null && String(note.author?.id) === String(userId) ? 'You' : name || 'Support staff'}{role ? ` (${role})` : ''}</p>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{formatTicketDate(note.createdAt)}</p>
-      <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{note.content}</p>
+      <article aria-labelledby={`note-author-${note.id}`}><p id={`note-author-${note.id}`} className="text-sm font-semibold">Internal note by {userId != null && String(note.author?.id) === String(userId) ? 'You' : name || 'Support staff'}{role ? ` (${role})` : ''}</p>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400"><time dateTime={note.createdAt}>{formatTicketDate(note.createdAt)}</time></p>
+      <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{note.content}</p></article>
     </li>
   })}</ol>
 }
