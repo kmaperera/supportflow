@@ -1,3 +1,4 @@
+import WorkspaceHeader from '../../layouts/WorkspaceHeader'
 import AppearanceSettings from '../../theme/AppearanceSettings'
 import { ActiveBadge } from '../../components/Badges'
 import { Link, Navigate } from 'react-router-dom'
@@ -23,6 +24,7 @@ export default function ProfilePage({ embedded = false }) {
   return (
     <Container className={embedded ? 'auth-ui min-w-0' : 'auth-ui min-h-screen bg-slate-50 dark:bg-slate-950 px-4 py-6 sm:px-6 sm:py-16'}>
       <div className="mx-auto max-w-2xl">
+        {!embedded && <WorkspaceHeader title="My Profile" displayName={fullName} role={role} />}
         {!embedded && <Link to={getRoleHome(user.role)} className="rounded text-sm font-semibold text-teal-800 dark:text-teal-300 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400">Return to dashboard</Link>}
         <h1 className={`${embedded ? '' : 'mt-6 '}text-2xl sm:text-3xl font-semibold text-slate-900 dark:text-slate-100`}>My Profile</h1>
         <section aria-labelledby="account-heading" className="mt-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm sm:p-9">

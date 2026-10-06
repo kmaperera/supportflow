@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
 import React from 'react'
 import { renderToString } from 'react-dom/server'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter as TestRouter } from 'react-router-dom'
 import { createServer } from 'vite'
 const server = await createServer({ server: { middlewareMode: true }, appType: 'custom' })
 try {
+  const { default: ThemeProvider } = await server.ssrLoadModule('/src/theme/ThemeProvider.jsx')
+  const MemoryRouter = props => React.createElement(ThemeProvider, null, React.createElement(TestRouter, props))
   const { default: api } = await server.ssrLoadModule('/src/api/axios.js')
   const { getMyAssignedTickets } = await server.ssrLoadModule('/src/api/ticketApi.js')
   const { AssignedTicketsList } = await server.ssrLoadModule('/src/pages/technician/MyAssignedTicketsPage.jsx')

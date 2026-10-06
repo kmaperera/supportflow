@@ -132,3 +132,17 @@ Updated:
 - src/routes/RoleHomeRedirect.jsx
 - src/routes/SessionLoading.jsx
 - tests/profile.smoke.mjs
+
+## Theme switcher UI refinement
+
+- Shared `ThemeToggle.jsx` is integrated beside user details in `WorkspaceHeader.jsx`, used by Employee, Technician and Admin layouts. The standalone Profile page also uses this header.
+- `ThemeIcon.jsx` supplies inline SVG sun, moon, monitor, chevron and check icons; no icon package was installed. Option labels/values are shared from `theme.js`.
+- The main icon reflects resolved appearance and switches to its opposite, including when starting in System mode. A separately labeled chevron opens Light/Dark/System choices with a selected/check state.
+- The popup focuses its first option, closes on selection, outside pointer interaction, focus leaving or Escape, and restores trigger focus on selection/Escape. Native buttons remain tabbable; it uses a labeled group rather than claiming ARIA menu keyboard behavior.
+- Profile Appearance now uses responsive icon cards, selected borders/backgrounds/checks and pressed states instead of a native select. Cards stack below the small breakpoint.
+- Both controls use the existing provider and persistence. Startup, OS listening, System preference, cross-tab sync and charts are unchanged. No backend/workflow changes or theme toasts.
+- Popup is left-anchored on narrow screens to stay within the viewport and right-aligned on wider screens near user information.
+- Build and lint passed; the existing bundle-size warning remains. Profile and startup tests passed. Browser checks passed header/Profile synchronization, quick toggle from System, selected state, Escape/focus restoration, outside dismissal, persistence and popup fit at 320/375/768/1440px, alongside the original theme checks.
+- Role/layout smoke fixtures now mount ThemeProvider to match the application root. The previously documented legacy Technician placeholder assertion is unchanged.
+
+Refinement files: `src/theme/ThemeToggle.jsx`, `src/theme/ThemeIcon.jsx`, `src/theme/AppearanceSettings.jsx`, `src/theme/theme.js`, `src/layouts/WorkspaceHeader.jsx`, `src/pages/auth/ProfilePage.jsx`, `tests/theme.browser.html`, the six role/layout smoke fixtures (`employeeLayout`, `technicianLayout`, `roleRoutes`, `passwordChangeRoutes`, `protectedRoute`, `myAssignedTickets`) and this document.

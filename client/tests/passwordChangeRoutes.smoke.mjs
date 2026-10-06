@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
 import React from 'react'
 import {renderToString} from 'react-dom/server'
-import {MemoryRouter, Navigate, Outlet} from 'react-router-dom'
+import {MemoryRouter as TestRouter, Navigate, Outlet} from 'react-router-dom'
 import {createServer} from 'vite'
 const server=await createServer({server:{middlewareMode:true},appType:'custom'})
 try {
+  const { default: ThemeProvider } = await server.ssrLoadModule('/src/theme/ThemeProvider.jsx')
+  const MemoryRouter = props => React.createElement(ThemeProvider, null, React.createElement(TestRouter, props))
  const load=path=>server.ssrLoadModule(path)
  const {AuthContext}=await load('/src/auth/AuthContext.js')
  const {default:AppRoutes}=await load('/src/routes/AppRoutes.jsx')

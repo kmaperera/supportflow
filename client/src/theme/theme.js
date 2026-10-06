@@ -10,3 +10,5 @@ export function applyTheme(resolvedTheme) {
   document.documentElement.classList.toggle('dark', resolvedTheme === 'dark')
   document.documentElement.style.colorScheme = resolvedTheme
 }
+
+export const themeOptions = [{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }, { value: 'system', label: 'System' }]
