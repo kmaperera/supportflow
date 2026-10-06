@@ -111,3 +111,11 @@ html, body { background: var(--page-bg); color: var(--page-text); }
 @media (min-width: 640px) {
   .filter-bar input, .filter-bar select { font-size: .875rem; }
 }
+
+/* Consistent keyboard focus, including native summaries and scroll regions. */
+:root { --keyboard-focus: #0f766e; }
+:root.dark { --keyboard-focus: #5eead4; }
+:is(a[href], button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--keyboard-focus);
+  outline-offset: 3px;
+}

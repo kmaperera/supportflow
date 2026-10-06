@@ -1,3 +1,4 @@
+import SkipLink from './SkipLink'
 import PageContainer from './PageContainer'
 import WorkspaceHeader from './WorkspaceHeader'
 import { NavLink, Outlet, matchPath } from 'react-router-dom'
@@ -15,7 +16,7 @@ export default function TechnicianLayout() {
   const displayName = name || (typeof user?.email === 'string' && user.email.trim()) || 'Technician'
 
   return <div className="workspace-ui min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 [overflow-wrap:anywhere] lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] [&_.break-words]:[overflow-wrap:anywhere] [&_button]:min-h-11 [&_button]:max-w-full">
-    <a href="#technician-content" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-white dark:focus:bg-slate-900 focus:p-3 focus:text-teal-800 dark:focus:text-teal-300">Skip to main content</a>
+    <SkipLink />
     <aside className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:overflow-y-auto lg:border-r lg:border-b-0">
       <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-6">
         <div className="min-w-0">
@@ -39,7 +40,7 @@ export default function TechnicianLayout() {
     </aside>
     <div className="min-w-0">
       <WorkspaceHeader title={currentPage?.title || 'Technician workspace'} displayName={displayName} role="Technician" />
-      <PageContainer id="technician-content"><Outlet /></PageContainer>
+      <PageContainer id="main-content"><Outlet /></PageContainer>
     </div>
   </div>
 }

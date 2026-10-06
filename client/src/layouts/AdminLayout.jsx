@@ -1,3 +1,4 @@
+import SkipLink from './SkipLink'
 import PageContainer from './PageContainer'
 import WorkspaceHeader from './WorkspaceHeader'
 import { NavLink, Outlet, matchPath } from 'react-router-dom'
@@ -13,7 +14,7 @@ export default function AdminLayout() {
   const name = [user?.firstName, user?.lastName].filter(value => typeof value === 'string' && value.trim()).map(value => value.trim()).join(' ')
   const displayName = name || (typeof user?.email === 'string' && user.email.trim()) || 'Admin'
   return <div className="workspace-ui min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 [overflow-wrap:anywhere] lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] [&_button]:min-h-11 [&_button]:max-w-full">
-    <a href="#admin-content" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-white dark:focus:bg-slate-900 focus:p-3 focus:text-teal-800 dark:focus:text-teal-300">Skip to main content</a>
+    <SkipLink />
     {menuOpen && <button type="button" tabIndex={-1} aria-label="Close admin menu overlay" onClick={closeMenu} className="fixed inset-0 z-20 bg-slate-900/40 lg:hidden" />}
     <aside className="relative z-30 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 lg:sticky lg:top-0 lg:flex lg:h-dvh lg:min-h-0 lg:flex-col lg:border-r lg:border-b-0" onKeyDown={event => { if (event.key === 'Escape' && menuOpen) { event.preventDefault(); closeMenu() } }}>
       <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-6">
@@ -31,7 +32,7 @@ export default function AdminLayout() {
     </aside>
     <div className="min-w-0">
       <WorkspaceHeader title={page?.title || 'Admin workspace'} displayName={displayName} role="Admin" />
-      <PageContainer id="admin-content"><Outlet /></PageContainer>
+      <PageContainer id="main-content"><Outlet /></PageContainer>
     </div>
   </div>
 }

@@ -1,3 +1,4 @@
+import { focusFirstError } from '../../components/formValidation'
 import FilterBar, { ClearFilters } from '../../components/FilterBar'
 import Pagination from '../../components/Pagination'
 import ErrorState from '../../components/ErrorState'
@@ -40,7 +41,8 @@ export default function AdminAuditLogsPage() {
       if (value && (!/^[1-9]\d*$/.test(value) || value.length > 20 || BigInt(value) > 18446744073709551615n)) next[field] = 'Enter a valid positive integer ID.'
     }
     setErrors(next)
-    if (!Object.keys(next).length) setRequest({ filters, page: 1 })
+    if (Object.keys(next).length) focusFirstError(Object.fromEntries(auditFilterFields.map(field => [field, next[field]])), field => `audit-${field}`)
+    else setRequest({ filters, page: 1 })
   }
   function clear() { setDraft(blank()); setErrors({}); setRequest({ filters: blank(), page: 1 }) }
   return <div className="layout-page">

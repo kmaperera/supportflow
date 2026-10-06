@@ -13,7 +13,7 @@ const input = 'mt-1 block w-full min-w-0 rounded-lg border border-slate-300 dark
 const name = person => [person?.firstName, person?.lastName].filter(Boolean).join(' ') || person?.email || 'Technician'
 const canConfirmAssignment = (ticket, selected) => Boolean(selected) && String(selected) !== String(ticket.assignedTo) && !['RESOLVED', 'CLOSED'].includes(ticket.status)
 
-function TechnicianCombobox({ technicians, counts, selected, currentId, disabled, onSelect }) {
+export function TechnicianCombobox({ technicians, counts, selected, currentId, disabled, onSelect }) {
   const id = useId()
   const [expanded, setExpanded] = useState(false)
   const [query, setQuery] = useState('')
@@ -31,18 +31,27 @@ function TechnicianCombobox({ technicians, counts, selected, currentId, disabled
     onSelect(String(person.id)); setExpanded(false); setActive(-1)
   }
   function keyDown(event) {
-    if (event.key === 'Escape') { event.preventDefault(); setExpanded(false); setActive(-1) }
+    if (event.key === 'Escape' && isOpen) { event.preventDefault(); event.stopPropagation(); setExpanded(false); setActive(-1); return }
+    if (event.key === 'Tab') { setExpanded(false); setActive(-1); return }
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault()
-      if (!isOpen) { open(); return }
+      const candidates = isOpen ? options : technicians
       const step = event.key === 'ArrowDown' ? 1 : -1
-      let next = active
-      for (let count = 0; count < options.length; count++) {
-        next = (next + step + options.length) % options.length
-        if (String(options[next].id) !== String(currentId)) { setActive(next); break }
+      let next = isOpen && active >= 0 ? active : step === 1 ? -1 : 0
+      if (!isOpen) open()
+      for (let count = 0; count < candidates.length; count++) {
+        next = (next + step + candidates.length) % candidates.length
+        if (String(candidates[next].id) !== String(currentId)) { setActive(next); break }
       }
+      return
     }
-    if (event.key === 'Enter' && isOpen) { event.preventDefault(); if (options[active]) select(options[active]) }
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      if (!isOpen) open()
+      else if (options[active]) select(options[active])
+    }
+    // Space opens the closed control; while searching it remains normal text input.
+    if (event.key === ' ' && !isOpen) { event.preventDefault(); open() }
   }
   return <div className="relative min-w-0" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) { setExpanded(false); setActive(-1) } }}>
     <label htmlFor={id} className="block text-sm font-medium">Technician *</label>

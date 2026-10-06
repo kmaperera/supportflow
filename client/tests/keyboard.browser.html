@@ -1,0 +1,45 @@
+﻿<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div id="root"></div>
+<script type="module">
+import React,{useState} from 'react'
+import {createRoot} from 'react-dom/client'
+import {MemoryRouter,Routes,Route,Link} from 'react-router-dom'
+import EmployeeLayout from '/src/layouts/EmployeeLayout.jsx'
+import TechnicianLayout from '/src/layouts/TechnicianLayout.jsx'
+import AdminLayout from '/src/layouts/AdminLayout.jsx'
+import {AuthContext} from '/src/auth/AuthContext.js'
+import NavigationFocus from '/src/components/NavigationFocus.jsx'
+import SkipLink from '/src/layouts/SkipLink.jsx'
+import PageContainer from '/src/layouts/PageContainer.jsx'
+import ConfirmDialog from '/src/components/ConfirmDialog.jsx'
+import {TechnicianCombobox} from '/src/pages/admin/AdminTicketAssignment.jsx'
+import ThemeProvider from '/src/theme/ThemeProvider.jsx'
+import ThemeToggle from '/src/theme/ThemeToggle.jsx'
+import Pagination from '/src/components/Pagination.jsx'
+import {ClearFilters} from '/src/components/FilterBar.jsx'
+import {focusFirstError} from '/src/components/formValidation.js'
+import '/src/index.css'
+const h=React.createElement
+window.testState={themeClicks:0,clear:0,submits:0,confirms:0}
+function Fixture(){
+ const [selected,setSelected]=useState(''),[open,setOpen]=useState(false),[page,setPage]=useState(1),[row,setRow]=useState(true),[error,setError]=useState(false)
+ return h(React.Fragment,null,h(SkipLink),h('header',{className:'p-4'},h(ThemeToggle)),h(PageContainer,{id:'main-content'},
+ h('h1',null,'Keyboard fixture'),h(Link,{id:'card',to:'/next',className:'block rounded p-3'},'Open ticket'),
+ h('form',{onSubmit:e=>{e.preventDefault();window.testState.submits++;if(!document.querySelector('#search').value){setError(true);focusFirstError({search:'Required'},x=>x)}}},h('label',null,'Search',h('input',{id:'search',type:'search','aria-invalid':error,className:'border p-2'})),h('label',null,'Status',h('select',{id:'status'},h('option',null,'All'),h('option',null,'Open'))),h('button',{id:'submit',type:'submit'},'Search'),h(ClearFilters,{onClick:()=>window.testState.clear++}),h(ClearFilters,{disabled:true})),
+ h(TechnicianCombobox,{technicians:[{id:1,firstName:'Current'},{id:2,firstName:'Alex'},{id:3,firstName:'Zoe'}],counts:new Map(),selected,currentId:1,onSelect:value=>{setSelected(value);window.testState.selected=value}}),
+ h('button',{id:'after-combo'},'After combobox'),h('textarea',{id:'reply','aria-label':'Reply'}),h('input',{type:'file',id:'file','aria-label':'Attachment'}),
+ h('button',{id:'dialog-trigger',onClick:()=>setOpen(true)},'Open confirmation'),
+ h(ConfirmDialog,{open,title:'Confirm action?',confirmLabel:'Confirm',onCancel:()=>setOpen(false),onConfirm:async()=>{window.testState.confirms++;await new Promise(resolve=>window.finish=resolve);setOpen(false)}}),
+ h(Pagination,{metadata:{page,limit:10,total:30,totalPages:3},onPageChange:n=>{setPage(n);window.testState.page=n}}),
+ h('details',null,h('summary',{id:'details'},'Metadata'),h('button',{id:'hidden-detail'},'Detail action')),
+ row&&h('button',{id:'remove',onClick:()=>setRow(false)},'Remove row'),h('button',{id:'end'},'End')))
+}
+const nextPage=h(PageContainer,{id:'main-content'},h('h1',null,'Ticket details'),h(Link,{to:'/'},'Back'))
+const routes=h(Routes,null,h(Route,{path:'/',element:h(Fixture)}),h(Route,{path:'/next',element:nextPage}))
+const role=new URLSearchParams(location.search).get('role')
+const Layout=({employee:EmployeeLayout,technician:TechnicianLayout,admin:AdminLayout})[role]
+const roleRoutes=Layout&&h(Routes,null,h(Route,{path:'/',element:h(Layout)},h(Route,{path:'*',element:h('h1',null,'Role page')})))
+const content=h(MemoryRouter,null,h(NavigationFocus),roleRoutes||routes)
+const auth={user:{role:role?.toUpperCase(),firstName:'Alex',lastName:'Lee'},logoutUser:()=>{window.testState.logout=(window.testState.logout||0)+1}}
+createRoot(document.querySelector('#root')).render(h(ThemeProvider,null,h(AuthContext.Provider,{value:auth},content)))
+window.ready=true
+</script></body></html>
