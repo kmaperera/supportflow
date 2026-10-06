@@ -1,3 +1,4 @@
+import FilterBar, { ClearFilters } from '../../components/FilterBar'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
@@ -18,7 +19,7 @@ export default function AdminTechnicianWorkloadPage() {
   const [sort, setSort] = useState('ascending')
   const [attempt, setAttempt] = useState(0)
   const [result, setResult] = useState(null)
-  useEffect(() => { const timer = setTimeout(() => setQuery(search.trim()), 500); return () => clearTimeout(timer) }, [search])
+  useEffect(() => { const timer = setTimeout(() => setQuery(search.trim()), 350); return () => clearTimeout(timer) }, [search])
   useEffect(() => {
     const controller = new AbortController()
     getTechnicianWorkloads({ search: query, signal: controller.signal }).then(data => {
@@ -33,19 +34,19 @@ export default function AdminTechnicianWorkloadPage() {
   function reset() { setSearch(''); setQuery(''); setFilter(''); setSort('ascending') }
   return <div className="layout-page">
     <PageHeader title="Technician Workload" description="Current workload for active technicians. Active tickets include Assigned, In Progress, Waiting for User, and Reopened." actions={<><Link className={button} to="/admin/technicians">Technician Management</Link></>} />
-    <div className="grid gap-4 layout-panel sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-end">
+    <FilterBar activeCount={[query, filter, sort !== 'ascending'].filter(Boolean).length} className="grid gap-4 layout-panel sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-end">
       <label className="min-w-0 text-sm font-medium">Search<input className={input} type="search" maxLength={100} placeholder="Search technicians..." value={search} onChange={event => setSearch(event.target.value)} aria-describedby="workload-search-help" /></label>
-      <label className="text-sm font-medium">Workload<select className={input} value={filter} onChange={event => setFilter(event.target.value)}><option value="">All</option><option value="has">Has active tickets</option><option value="none">No active tickets</option></select></label>
-      <label className="text-sm font-medium">Sort by<select className={input} value={sort} onChange={event => setSort(event.target.value)}><option value="ascending">Active tickets ascending</option><option value="descending">Active tickets descending</option><option value="name">Name</option></select></label>
-      <button className={button} disabled={!search && !query && !filter && sort === 'ascending'} onClick={reset}>Clear filters</button>
+      <label className="text-sm font-medium">Workload<select className={input} value={filter} onChange={event => setFilter(event.target.value)}><option value="">All workloads</option><option value="has">Has active tickets</option><option value="none">No active tickets</option></select></label>
+      <label className="text-sm font-medium">Sort by<select className={input} value={sort} onChange={event => setSort(event.target.value)}><option value="ascending">Active tickets ascending</option><option value="descending">Active tickets descending</option><option value="name">Name: A–Z</option></select></label>
+      <ClearFilters disabled={!search && !query && !filter && sort === 'ascending'} onClick={reset} />
       <p id="workload-search-help" className="text-xs text-slate-500 sm:col-span-2 xl:col-span-4">Search first name, last name, email, or department.</p>
-    </div>
-    {!current && <ContentSkeleton initial={!result} variant="workload">Loading technician workload...</ContentSkeleton>}
+    </FilterBar>
+    {!current && <ContentSkeleton initial={!result} variant="workload">{result ? 'Updating technician workload...' : 'Loading technician workload...'}</ContentSkeleton>}
     {current?.error && <ErrorState title="Unable to load technician workload."><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></ErrorState>}
     {current?.data && <>
       <p className="text-sm text-slate-600">{query || filter ? 'Summary for technicians matching the current search and workload filter.' : 'Summary across all active technicians.'} Inactive technicians are not included by this endpoint.</p>
       <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[['Active technicians', rows.length], ['With active tickets', rows.filter(person => person.workload.totalActive > 0).length], ['No active tickets', rows.filter(person => person.workload.totalActive === 0).length], ['Active assigned tickets', rows.reduce((sum, person) => sum + person.workload.totalActive, 0)]].map(([label, value]) => <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4"><dt className="text-sm text-slate-600">{label}</dt><dd className="mt-2 text-2xl font-semibold tabular-nums">{value}</dd></div>)}</dl>
-      {!rows.length ? <EmptyState title={query || filter ? 'No technicians match your current filters.' : 'No technician workload data is available.'} actions={(query || filter) && <button type="button" className={button} onClick={reset}>Clear filters</button>} /> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{rows.map(person => <li key={person.id} className="min-w-0 layout-panel"><h2 className="break-words text-lg font-semibold">{personName(person)}</h2><p className="mt-1 break-all text-sm text-slate-600">{person.email}</p><p className="mt-1 text-sm">Active</p><dl className="mt-4 grid gap-4 text-sm sm:grid-cols-3">{fields.map(([label, key]) => <div key={key}><dt className="text-slate-500">{label}</dt><dd className="mt-1 font-semibold tabular-nums">{person.workload[key]}</dd></div>)}</dl></li>)}</ul>}
+      {!rows.length ? <EmptyState title={query || filter ? 'No technicians match your current filters.' : 'No technician workload data is available.'} actions={(query || filter) && <ClearFilters onClick={reset} />} /> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{rows.map(person => <li key={person.id} className="min-w-0 layout-panel"><h2 className="break-words text-lg font-semibold">{personName(person)}</h2><p className="mt-1 break-all text-sm text-slate-600">{person.email}</p><p className="mt-1 text-sm">Active</p><dl className="mt-4 grid gap-4 text-sm sm:grid-cols-3">{fields.map(([label, key]) => <div key={key}><dt className="text-slate-500">{label}</dt><dd className="mt-1 font-semibold tabular-nums">{person.workload[key]}</dd></div>)}</dl></li>)}</ul>}
     </>}
   </div>
 }

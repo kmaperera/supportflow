@@ -1,3 +1,5 @@
+import FilterBar, { ClearFilters } from '../../components/FilterBar'
+import useDebouncedSearch from '../../components/useDebouncedSearch'
 import Pagination from '../../components/Pagination'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import ErrorState from '../../components/ErrorState'
@@ -53,10 +55,7 @@ function Articles({ categories }) {
   const pending = useRef(false)
   const mounted = useRef(false)
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
-  useEffect(() => {
-    const timer = setTimeout(() => setQuery(previous => previous.search === search.trim() ? previous : { ...previous, search: search.trim(), page: 1 }), 500)
-    return () => clearTimeout(timer)
-  }, [search])
+  useDebouncedSearch(search, query.search, setQuery)
   const pagination = resource.data?.pagination
   function clear() { setSearch(''); setQuery({ page: 1, search: '', categoryId: '' }) }
   async function publication(article, action) {
@@ -71,20 +70,20 @@ function Articles({ categories }) {
   }
   return <section aria-labelledby="kb-articles-heading" className="space-y-4">
     <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="kb-articles-heading" className="text-xl font-semibold">KB Articles</h2><Link className={button} to="/admin/knowledge-base/articles/new">Add Article</Link></div>
-    <div className={kbCard}>
+    <FilterBar activeCount={[query.search, query.categoryId].filter(Boolean).length} className={kbCard}>
       <div className="grid items-end gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]">
         <div><label htmlFor="kb-search" className="text-sm font-semibold">Search articles</label><input id="kb-search" type="search" maxLength={200} className={input} placeholder="Search articles..." value={search} onChange={event => setSearch(event.target.value)} aria-describedby="kb-search-help" /></div>
-        <div><label htmlFor="kb-filter-category" className="text-sm font-semibold">KB Category</label><select id="kb-filter-category" className={input} value={query.categoryId} disabled={categories.loading || categories.error} onChange={event => setQuery(previous => ({ ...previous, categoryId: event.target.value, page: 1 }))}><option value="">All categories</option>{categories.data?.map(category => <option key={category.id} value={String(category.id)}>{category.name}{!category.isActive ? ' (inactive)' : ''}</option>)}</select></div>
-        <button className={button} onClick={clear} disabled={!search && !query.categoryId}>Clear filters</button>
+        <div><label htmlFor="kb-filter-category" className="text-sm font-semibold">KB Category</label><select id="kb-filter-category" className={input} value={query.categoryId} disabled={categories.loading || categories.error} onChange={event => setQuery(previous => ({ ...previous, categoryId: event.target.value, search: search.trim(), page: 1 }))}><option value="">All categories</option>{categories.data?.map(category => <option key={category.id} value={String(category.id)}>{category.name}{!category.isActive ? ' (inactive)' : ''}</option>)}</select></div>
+        <ClearFilters disabled={!search && !query.search && !query.categoryId} onClick={clear} />
       </div>
       <p id="kb-search-help" className="text-sm text-slate-500">Search title and content. Newest articles appear first.</p>
       <CategoryLoadNotice resource={categories} />
-    </div>
+    </FilterBar>
     {error && <AuthFeedback>{error}</AuthFeedback>}{message && <AuthFeedback variant="success">{message}</AuthFeedback>}
     {resource.loading && <ContentSkeleton initial={!resource.data}>{resource.data ? 'Updating articles...' : 'Loading articles...'}</ContentSkeleton>}
     {resource.error && <ErrorState title="Unable to load knowledge base articles."><button className={button} onClick={resource.reload}>Retry</button></ErrorState>}
     {resource.data && <div className="space-y-3" aria-busy={resource.loading}>
-      {!resource.loading && !resource.error && !resource.data.articles.length && <EmptyState title={query.search || query.categoryId ? 'No articles match your current filters.' : 'No knowledge base articles found.'} actions={query.search || query.categoryId ? <button type="button" className={button} onClick={clear}>Clear filters</button> : <Link className={button} to="/admin/knowledge-base/articles/new">Add Article</Link>} />}
+      {!resource.loading && !resource.error && !resource.data.articles.length && <EmptyState title={query.search || query.categoryId ? 'No articles match your current filters.' : 'No knowledge base articles found.'} actions={query.search || query.categoryId ? <ClearFilters onClick={clear} /> : <Link className={button} to="/admin/knowledge-base/articles/new">Add Article</Link>} />}
       {resource.data.articles.map(article => <article key={article.id} className={kbCard}>
         <div><h3 className="text-lg font-semibold break-words">{article.title}</h3><p className="mt-1 text-sm text-slate-600">{article.categoryName} · {publicationLabel(article.status)} · {article.viewCount} views</p></div>
         <p className="text-sm text-slate-500">Created {formatTicketDate(article.createdAt)} · Updated {formatTicketDate(article.updatedAt)}</p>
@@ -102,6 +101,11 @@ function Articles({ categories }) {
   </section>
 }
 function Categories({ resource }) {
+  const [search, setSearch] = useState('')
+  const [status, setStatus] = useState('')
+  const filtered = Boolean(search.trim() || status)
+  const rows = (resource.data || []).filter(category => category.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()) && (!status || category.isActive === (status === 'active')))
+  function clear() { setSearch(''); setStatus('') }
   const [deactivating, setDeactivating] = useState(null)
   const [editor, setEditor] = useState(null)
   const [busy, setBusy] = useState(null)
@@ -125,9 +129,14 @@ function Categories({ resource }) {
     {message && <AuthFeedback variant="success">{message}</AuthFeedback>}{error && <AuthFeedback>{error}</AuthFeedback>}
     {editor && <KbCategoryEditor key={editor.category?.id || 'new'} category={editor.category} onCancel={() => setEditor(null)} onSaved={() => { setMessage(editor.category ? 'KB category updated successfully.' : 'KB category created successfully.'); setEditor(null); resource.reload() }} />}
     <ConfirmDialog open={Boolean(deactivating)} title="Deactivate KB category?" description={`Articles in ${deactivating?.name} will be hidden from employees and technicians until the category is active again.`} variant="warning" confirmLabel="Deactivate Category" pending={Boolean(busy)} pendingLabel="Deactivating..." onConfirm={() => toggle(deactivating)} onCancel={() => setDeactivating(null)}>{error && <AuthFeedback>{error}</AuthFeedback>}</ConfirmDialog>
+    <FilterBar activeCount={[search.trim(), status].filter(Boolean).length} className="grid gap-4 layout-panel sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]">
+      <label className="min-w-0 text-sm font-medium">Search KB categories<input type="search" className={input} placeholder="Search KB categories..." value={search} onChange={event => setSearch(event.target.value)} /></label>
+      <label className="min-w-0 text-sm font-medium">Status<select className={input} value={status} onChange={event => setStatus(event.target.value)}><option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></label>
+      <ClearFilters disabled={!search && !status} onClick={clear} />
+    </FilterBar>
     <CategoryLoadNotice resource={resource} skeleton />
-    {!resource.loading && !resource.error && !resource.data?.length && <EmptyState compact title="No knowledge base categories found." />}
-    <div className="grid gap-4 xl:grid-cols-2">{resource.data?.map(category => <article key={category.id} className={kbCard}>
+    {!resource.loading && !resource.error && !rows.length && <EmptyState compact title={filtered ? 'No KB categories match your current filters.' : 'No knowledge base categories found.'} actions={filtered && <ClearFilters onClick={clear} />} />}
+    <div className="grid gap-4 xl:grid-cols-2">{rows.map(category => <article key={category.id} className={kbCard}>
       <div><h3 className="text-lg font-semibold">{category.name}</h3><p className="mt-1 text-sm font-medium">{category.isActive ? 'Active' : 'Inactive'}</p></div>
       {category.description && <p className="whitespace-pre-wrap text-sm text-slate-600">{category.description}</p>}
       <div className="layout-actions"><button className={button} disabled={Boolean(editor) || Boolean(busy) || resource.loading || resource.error} onClick={() => { setEditor({ category }); setMessage('') }}>Edit<span className="sr-only"> {category.name}</span></button><button className={button} disabled={Boolean(editor) || Boolean(busy) || resource.loading || resource.error} onClick={() => { setError(""); if (category.isActive) setDeactivating(category); else toggle(category) }}>{busy === category.id ? category.isActive ? 'Deactivating...' : 'Activating...' : category.isActive ? 'Deactivate' : 'Activate'}<span className="sr-only"> {category.name}</span></button></div>

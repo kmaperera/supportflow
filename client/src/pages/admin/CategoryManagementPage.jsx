@@ -1,3 +1,4 @@
+import FilterBar, { ClearFilters } from '../../components/FilterBar'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
@@ -59,15 +60,15 @@ export default function CategoryManagementPage() {
   return <div className="layout-page">
     <PageHeader title="Category Management" description="Manage ticket categories used when creating support tickets." actions={<><Link className={button} to="/admin/categories/new">Add Category</Link></>} />
     {feedback && <AuthFeedback variant={feedback.success ? 'success' : 'error'}>{feedback.message}</AuthFeedback>}
-    <div className="grid gap-4 layout-panel sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-end">
+    <FilterBar activeCount={[search.trim(), status, sort !== 'name'].filter(Boolean).length} className="grid gap-4 layout-panel sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-end">
       <label className="min-w-0 text-sm font-medium sm:col-span-2 lg:col-span-1">Search<input className={input} type="search" placeholder="Search categories..." value={search} onChange={event => setSearch(event.target.value)} /></label>
-      <label className="text-sm font-medium">Status<select className={input} value={status} onChange={event => setStatus(event.target.value)}><option value="">All categories</option><option value="active">Active</option><option value="inactive">Inactive</option></select></label>
-      <label className="text-sm font-medium">Sort by<select className={input} value={sort} onChange={event => setSort(event.target.value)}><option value="name">Name</option><option value="newest">Newest</option><option value="oldest">Oldest</option></select></label>
-      <button className="min-h-11 w-fit cursor-pointer self-end rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-50" disabled={!search && !status && sort === 'name'} onClick={() => { setSearch(''); setStatus(''); setSort('name') }}>Clear filters</button>
-    </div>
-    {!current && <ContentSkeleton initial={!result} variant="cards" columns="xl:grid-cols-2">Loading categories...</ContentSkeleton>}
+      <label className="text-sm font-medium">Status<select className={input} value={status} onChange={event => setStatus(event.target.value)}><option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></label>
+      <label className="text-sm font-medium">Sort by<select className={input} value={sort} onChange={event => setSort(event.target.value)}><option value="name">Name: A–Z</option><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select></label>
+      <ClearFilters disabled={!search && !status && sort === 'name'} onClick={() => { setSearch(''); setStatus(''); setSort('name') }} />
+    </FilterBar>
+    {!current && <ContentSkeleton initial={!result} variant="cards" columns="xl:grid-cols-2">{result ? 'Updating categories...' : 'Loading categories...'}</ContentSkeleton>}
     {current?.error && <ErrorState title="Unable to load categories."><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></ErrorState>}
-    {current?.data && (!categories.length ? <EmptyState title={filtered ? 'No categories match your current filters.' : 'No ticket categories found.'} actions={filtered ? <button type="button" className={button} onClick={() => { setSearch(''); setStatus(''); setSort('name') }}>Clear filters</button> : <Link className={button} to="/admin/categories/new">Add Category</Link>} /> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{categories.map(category => <li key={category.id} className="min-w-0 space-y-4 layout-panel">
+    {current?.data && (!categories.length ? <EmptyState title={filtered ? 'No categories match your current filters.' : 'No ticket categories found.'} actions={filtered ? <ClearFilters onClick={() => { setSearch(''); setStatus(''); setSort('name') }} /> : <Link className={button} to="/admin/categories/new">Add Category</Link>} /> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{categories.map(category => <li key={category.id} className="min-w-0 space-y-4 layout-panel">
       <div><h2 className="break-words text-lg font-semibold">{category.name}</h2><p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-600">{category.description || 'No description provided.'}</p></div>
       <dl className="grid gap-3 text-sm sm:grid-cols-3">{[['Status', category.isActive ? 'Active' : 'Inactive'], ['Created', formatTicketDate(category.createdAt)], ['Updated', formatTicketDate(category.updatedAt)]].map(([label, value]) => <div key={label}><dt className="text-slate-500">{label}</dt><dd>{value}</dd></div>)}</dl>
       <div className="layout-actions">{!pending[category.id] && <Link className={button} to={`/admin/categories/${category.id}/edit`}>Edit</Link>}{<button className={button} disabled={pending[category.id]} onClick={() => category.isActive ? (setFeedback(null), setConfirming(String(category.id))) : changeStatus(category)}>{pending[category.id] ? category.isActive ? 'Deactivating...' : 'Activating...' : category.isActive ? 'Deactivate' : 'Activate'}</button>}</div>

@@ -1,3 +1,5 @@
+import FilterBar, { ClearFilters } from '../../components/FilterBar'
+import useDebouncedSearch from '../../components/useDebouncedSearch'
 import Pagination from '../../components/Pagination'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import ErrorState from '../../components/ErrorState'
@@ -90,10 +92,7 @@ function UserList({ currentAdminId }) {
       }
     }
   }
-  useEffect(() => {
-    const timeout = setTimeout(() => setQuery(previous => previous.search === search.trim() ? previous : { ...previous, search: search.trim(), page: 1 }), 500)
-    return () => clearTimeout(timeout)
-  }, [search])
+  useDebouncedSearch(search, query.search, setQuery)
   useEffect(() => {
     const controller = new AbortController()
     const [sortBy, order] = sorts[query.sort]
@@ -113,17 +112,17 @@ function UserList({ currentAdminId }) {
     <PageHeader title="User Management" description="View user accounts, roles, and account status." actions={<><Link to="/admin/users/new" className={`${button} inline-flex items-center`}>Create User</Link></>} />
     {created && <AuthFeedback variant="success">User created successfully.</AuthFeedback>}
     {feedback && <AuthFeedback variant={feedback.success ? 'success' : 'error'}>{feedback.message}</AuthFeedback>}
-    <div className="grid gap-4 layout-panel sm:grid-cols-2 xl:grid-cols-4">
+    <FilterBar activeCount={[query.search, query.role, query.isActive, query.sort !== 'newest'].filter(Boolean).length} className="grid gap-4 layout-panel sm:grid-cols-2 xl:grid-cols-4">
       <label className="min-w-0 text-sm font-medium">Search<input type="search" className={input} placeholder="Search users..." value={search} onChange={event => setSearch(event.target.value)} aria-describedby="user-search-help" /><span id="user-search-help" className="mt-1 block text-xs text-slate-500">Search first name, last name, or email.</span></label>
       <label className="text-sm font-medium">Role<select className={input} value={query.role} onChange={event => change({ role: event.target.value })}><option value="">All roles</option>{Object.entries(roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-      <label className="text-sm font-medium">Status<select className={input} value={query.isActive} onChange={event => change({ isActive: event.target.value })}><option value="">All users</option><option value="true">Active</option><option value="false">Inactive</option></select></label>
-      <label className="text-sm font-medium">Sort by<select className={input} value={query.sort} onChange={event => change({ sort: event.target.value })}><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="name">First name</option><option value="role">Role</option></select></label>
-      {(filtered || search || query.sort !== 'newest') && <div><button type="button" className={button} onClick={reset}>Clear filters</button></div>}
-    </div>
-    {!current && <ContentSkeleton initial={!result} variant="cards" columns="xl:grid-cols-2">Loading users...</ContentSkeleton>}
+      <label className="text-sm font-medium">Status<select className={input} value={query.isActive} onChange={event => change({ isActive: event.target.value })}><option value="">All statuses</option><option value="true">Active</option><option value="false">Inactive</option></select></label>
+      <label className="text-sm font-medium">Sort by<select className={input} value={query.sort} onChange={event => change({ sort: event.target.value })}><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="name">First name: A–Z</option><option value="role">Role</option></select></label>
+      <ClearFilters disabled={!filtered && !search && query.sort === 'newest'} onClick={reset} />
+    </FilterBar>
+    {!current && <ContentSkeleton initial={!result} variant="cards" columns="xl:grid-cols-2">{result ? 'Updating users...' : 'Loading users...'}</ContentSkeleton>}
     {current?.error && <ErrorState title="Unable to load users."><button type="button" className={button} onClick={() => setQuery(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></ErrorState>}
     {current?.data && <>
-      {!current.data.users.length ? <EmptyState title={filtered ? 'No users match your current search or filters.' : 'No users found.'} actions={filtered ? <button type="button" className={button} onClick={reset}>Clear filters</button> : <Link className={button} to="/admin/users/new">Create User</Link>} /> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{current.data.users.map(user => <li key={user.id} className="min-w-0 layout-panel">
+      {!current.data.users.length ? <EmptyState title={filtered ? 'No users match your current search or filters.' : 'No users found.'} actions={filtered ? <ClearFilters onClick={reset} /> : <Link className={button} to="/admin/users/new">Create User</Link>} /> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{current.data.users.map(user => <li key={user.id} className="min-w-0 layout-panel">
         <h2 className="break-words text-lg font-semibold">{[user.firstName, user.lastName].filter(value => typeof value === 'string' && value.trim()).join(' ') || 'Name unavailable'}</h2>
         <dl className="mt-3 grid min-w-0 gap-4 text-sm sm:grid-cols-2">{[['Email', user.email], ['Role', roles[user.role] || 'Unknown role'], ['Status', user.isActive ? 'Active' : 'Inactive'], ['Created', formatTicketDate(user.createdAt)]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-slate-500">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
         {user.mustChangePassword === true && <p className="mt-4 text-sm font-medium">Password change required</p>}

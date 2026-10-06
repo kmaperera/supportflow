@@ -1,0 +1,41 @@
+﻿<!doctype html><html><body><div id="root"></div><pre id="result">RUNNING</pre>
+<script type="module">
+import React, { useEffect, useState } from 'react'
+import { createRoot } from 'react-dom/client'
+import useDebouncedSearch from '/src/components/useDebouncedSearch.js'
+import FilterBar, { ClearFilters } from '/src/components/FilterBar.jsx'
+import '/src/index.css'
+let controls, requests = []
+function Fixture() {
+ const [search,setSearch] = useState(''), [query,setQuery] = useState({search:'',status:'',page:3})
+ useDebouncedSearch(search,query.search,setQuery)
+ useEffect(()=>{requests.push(query)},[query])
+ controls={setSearch,setQuery,query,clear:()=>{setSearch('');setQuery({search:'',status:'',page:1})}}
+ return React.createElement(FilterBar,{className:'grid gap-4 layout-panel sm:grid-cols-3',activeCount:[query.search,query.status].filter(Boolean).length},
+  React.createElement('label',null,'Search tickets',React.createElement('input',{type:'search',value:search,onChange:e=>setSearch(e.target.value),placeholder:'Search tickets...'})),
+  React.createElement('label',null,'Status',React.createElement('select',{value:query.status,onChange:e=>setQuery(p=>({...p,status:e.target.value,search:search.trim(),page:1}))},React.createElement('option',{value:''},'All statuses'),React.createElement('option',{value:'OPEN'},'Open'))),
+  React.createElement(ClearFilters,{disabled:!search&&!query.status,onClick:controls.clear}))
+}
+const wait=ms=>new Promise(r=>setTimeout(r,ms)), check=(ok,message)=>{if(!ok)throw new Error(message)}
+try {
+ createRoot(document.querySelector('#root')).render(React.createElement(Fixture)); await wait(100)
+ check(requests.length===1,'no duplicate initial query')
+ controls.setSearch('p');await wait(60);controls.setSearch('  printer  room  ');await wait(150)
+ check(requests.length===1,'typing waits for debounce');await wait(300)
+ check(requests.length===2 && controls.query.page===1 && controls.query.search==='printer  room','single atomic search/page update, outer trim only')
+ controls.setQuery(p=>({...p,page:2}));await wait(400)
+ check(controls.query.search==='printer  room' && requests.length===3,'paging preserves search without another debounce')
+ controls.setSearch('pending');await wait(50)
+ controls.setQuery(p=>({...p,status:'OPEN',search:'pending',page:1}));await wait(450)
+ check(requests.length===4 && controls.query.status==='OPEN','immediate select cancels redundant search commit')
+ controls.setSearch('cancel me');await wait(50);controls.clear();await wait(450)
+ check(requests.length===5 && controls.query.search==='' && controls.query.page===1,'clear cancels pending search')
+ check(document.querySelector('button').disabled,'clear disabled at defaults')
+ for(const width of [320,375,430]) {
+  document.querySelector('#root').style.width=width+'px';await wait(30)
+  check(document.querySelector('#root').scrollWidth<=width,'no overflow at '+width)
+  check(document.querySelector('button').getBoundingClientRect().width<200,'compact clear at '+width)
+ }
+ document.querySelector('#result').textContent='PASS: debounce, normalization, immediate selects, pagination, clear cancellation, compact responsive controls'
+}catch(error){document.querySelector('#result').textContent='FAIL: '+error.message}
+</script></body></html>

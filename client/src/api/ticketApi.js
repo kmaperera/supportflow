@@ -13,9 +13,9 @@ export async function assignTicket(ticketId, technicianId) {
   return data.data.ticket
 }
 
-export async function getAdminTickets({ page = 1, limit = 10, search, status, categoryId, priorityId, assignment, sortBy, order, signal } = {}) {
+export async function getAdminTickets({ page = 1, limit = 10, search, status, categoryId, priorityId, assignment, assignedTo, sortBy, order, signal } = {}) {
   const params = { page, limit }
-  for (const [key, value] of Object.entries({ search: search?.trim(), status, categoryId, priorityId, assignment, sortBy, order })) {
+  for (const [key, value] of Object.entries({ search: search?.trim(), status, categoryId, priorityId, assignment, assignedTo, sortBy, order })) {
     if (value !== undefined && value !== '') params[key] = value
   }
   const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/queue`, { params, signal })
@@ -53,8 +53,12 @@ export async function selfAssignTicket(ticketId) {
   return data.data.ticket
 }
 
-export async function getMyAssignedTickets({ page = 1, limit = 10, signal } = {}) {
-  const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/assigned-to-me`, { params: { page, limit }, signal })
+export async function getMyAssignedTickets({ page = 1, limit = 10, search, status, categoryId, priorityId, sortBy, order, signal } = {}) {
+  const params = { page, limit }
+  for (const [key, value] of Object.entries({ search: search?.trim(), status, categoryId, priorityId, sortBy, order })) {
+    if (value !== undefined && value !== '') params[key] = value
+  }
+  const { data } = await api.get(`${API_ENDPOINTS.TICKETS}/assigned-to-me`, { params, signal })
   return readTechnicianTicketList(data)
 }
 

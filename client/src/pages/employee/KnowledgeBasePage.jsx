@@ -1,3 +1,4 @@
+import FilterBar, { ClearFilters } from '../../components/FilterBar'
 import Pagination from '../../components/Pagination'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
@@ -31,15 +32,15 @@ export default function KnowledgeBasePage() {
   return <div className="layout-page">
     <PageHeader title="Knowledge Base" />
     <p className="text-slate-600">Find helpful guides and answers for common support issues.</p>
-    <form onSubmit={event => { event.preventDefault(); setRequest({ page: 1, search: search.trim(), attempt: request.attempt + 1 }) }} className="flex flex-wrap items-end gap-3">
-      <label className="min-w-0 basis-full sm:flex-1 text-sm font-semibold">Search articles<input type="search" maxLength={200} value={search} onChange={event => setSearch(event.target.value)} className="mt-2 block w-full rounded-lg border border-slate-300 bg-white p-3 focus-visible:outline-2 focus-visible:outline-teal-700" placeholder="Search titles and content..." /></label>
+    <FilterBar activeCount={[request.search].filter(Boolean).length} as="form" onSubmit={event => { event.preventDefault(); setRequest({ page: 1, search: search.trim(), attempt: request.attempt + 1 }) }} className="flex flex-wrap items-end gap-3">
+      <label className="min-w-0 basis-full sm:flex-1 text-sm font-semibold">Search articles<input type="search" maxLength={200} value={search} onChange={event => setSearch(event.target.value)} className="mt-2 block w-full rounded-lg border border-slate-300 bg-white p-3 focus-visible:outline-2 focus-visible:outline-teal-700" placeholder="Search articles..." /></label>
       <button type="submit" className={buttonClass}>Search</button>
-      {(search || request.search) && <button type="button" className={buttonClass} onClick={reset}>Clear filters</button>}
-    </form>
-    {!current && <ContentSkeleton initial={!result} variant="cards">Loading articles...</ContentSkeleton>}
+      <ClearFilters disabled={!search && !request.search} onClick={reset} />
+    </FilterBar>
+    {!current && <ContentSkeleton initial={!result} variant="cards">{result ? 'Updating articles...' : 'Loading articles...'}</ContentSkeleton>}
     {current?.error && <ErrorState title="Unable to load articles" message={<>{current.error}</>}><button type="button" className={buttonClass} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></ErrorState>}
     {current?.data && <>
-      {!current.data.articles.length ? <EmptyState title={request.search ? 'No articles match your search.' : 'No knowledge base articles are available yet.'} actions={request.search && <button type="button" className={buttonClass} onClick={reset}>Clear search</button>} /> : <ul className="grid gap-4 md:grid-cols-2">
+      {!current.data.articles.length ? <EmptyState title={request.search ? 'No articles match your search.' : 'No knowledge base articles are available yet.'} actions={request.search && <ClearFilters onClick={reset} />} /> : <ul className="grid gap-4 md:grid-cols-2">
         {current.data.articles.map(article => <li key={article.id} className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
           <h2 className="break-words text-lg font-semibold"><Link to={`/employee/knowledge-base/${encodeURIComponent(article.id)}`} className="rounded text-teal-800 underline underline-offset-4 focus-visible:outline-2">{article.title}</Link></h2>
           <p className="mt-3 break-words text-sm text-slate-600">{article.categoryName}</p>

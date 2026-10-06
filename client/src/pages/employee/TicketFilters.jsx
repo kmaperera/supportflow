@@ -1,3 +1,4 @@
+import FilterBar, { ClearFilters } from '../../components/FilterBar'
 import ErrorState from '../../components/ErrorState'
 import { useEffect, useState } from 'react'
 import { getTicketCategories, getTicketPriorities } from '../../api/ticketApi'
@@ -29,8 +30,8 @@ export function MetadataFilter({ label, value, onChange, fetchOptions }) {
   </div>
 }
 
-export default function TicketFilters({ query, search, setSearch, onChange, onSearch, onReset }) {
-  return <form onSubmit={event => { event.preventDefault(); onSearch() }} className="space-y-4 layout-panel" aria-label="Ticket search and filters">
+export default function TicketFilters({ query, search, setSearch, onChange, onSearch, onReset, statuses = ticketStatuses }) {
+  return <FilterBar activeCount={[query.search, query.status, query.categoryId, query.priorityId, (query.sortBy && query.sortBy !== 'created_at') || (query.order && query.order !== 'desc')].filter(Boolean).length} as="form" onSubmit={event => { event.preventDefault(); onSearch() }} className="space-y-4 layout-panel" aria-label="Ticket search and filters">
     <div className="flex flex-wrap items-end gap-3">
       <label className="min-w-0 basis-full sm:flex-1 text-sm font-medium">Search tickets
         <input type="search" maxLength={200} value={search} onChange={event => setSearch(event.target.value)} placeholder="Search tickets..." aria-describedby="ticket-search-hint" className={controlClass} />
@@ -40,7 +41,7 @@ export default function TicketFilters({ query, search, setSearch, onChange, onSe
     <p id="ticket-search-hint" className="text-xs text-slate-500">Search ticket number, title, or description. Press Enter or select Search.</p>
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <label className="text-sm font-medium">Status<select className={controlClass} value={query.status || ''} onChange={event => onChange({ status: event.target.value })}>
-        <option value="">All statuses</option>{ticketStatuses.map(status => <option key={status.value} value={status.value}>{status.label}</option>)}
+        <option value="">All statuses</option>{statuses.map(status => <option key={status.value} value={status.value}>{status.label}</option>)}
       </select></label>
       <MetadataFilter label="Category" value={query.categoryId || ''} onChange={categoryId => onChange({ categoryId })} fetchOptions={getTicketCategories} />
       <MetadataFilter label="Priority" value={query.priorityId || ''} onChange={priorityId => onChange({ priorityId })} fetchOptions={getTicketPriorities} />
@@ -48,6 +49,6 @@ export default function TicketFilters({ query, search, setSearch, onChange, onSe
         <option value="created_at:desc">Newest first</option><option value="created_at:asc">Oldest first</option><option value="updated_at:desc">Recently updated</option><option value="ticket_number:asc">Ticket number</option><option value="priority:asc">Priority (display order)</option>
       </select></label>
     </div>
-    <button type="button" onClick={onReset} className="rounded text-sm font-semibold text-teal-800 underline focus-visible:outline-2">Clear filters</button>
-  </form>
+    <ClearFilters disabled={!search && !query.search && !query.status && !query.categoryId && !query.priorityId && (!query.sortBy || query.sortBy === 'created_at') && (!query.order || query.order === 'desc')} onClick={onReset} />
+  </FilterBar>
 }

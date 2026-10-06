@@ -66,3 +66,17 @@
     font-size: 1rem;
   }
 }
+
+/* Search/filter controls share sizing without affecting editing forms. */
+.filter-bar input, .filter-bar select {
+  min-height: 2.75rem;
+  width: 100%;
+  min-width: 0;
+  padding: .5rem .75rem;
+  font-size: 1rem;
+}
+.filter-bar input::placeholder { color: var(--color-slate-500); }
+.filter-bar label { min-width: 0; }
+@media (min-width: 640px) {
+  .filter-bar input, .filter-bar select { font-size: .875rem; }
+}

@@ -1,3 +1,4 @@
+import useDebouncedSearch from '../../components/useDebouncedSearch'
 import Pagination from '../../components/Pagination'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
@@ -28,11 +29,7 @@ function UnassignedQueue() {
   const [notice, setNotice] = useState(null)
   const mounted = useRef(false)
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
-  useEffect(() => {
-    if (search.trim() === (request.search || '')) return
-    const timer = setTimeout(() => setRequest(previous => ({ ...previous, search: search.trim(), page: 1, attempt: 0 })), 500)
-    return () => clearTimeout(timer)
-  }, [search, request.search])
+  useDebouncedSearch(search, request.search, setRequest)
   const changeFilters = changes => setRequest(previous => ({ ...previous, ...changes, search: search.trim(), page: 1, attempt: 0 }))
   function resetFilters() {
     setSearch('')
