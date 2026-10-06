@@ -18,8 +18,8 @@ try {
     } }
     const html = render(state)
     assert.match(html, /My Profile/)
-    assert.match(html, /Appearance/)
-    for (const mode of ['Light', 'Dark', 'System']) assert.ok(html.includes(mode))
+    assert.ok(!html.includes('appearance-heading'))
+    assert.match(html, /Switch to (light|dark) mode/)
     assert.match(html, /Malith Perera/)
     assert.match(html, /profile@example.test/)
     assert.ok(html.includes(`href="/${role.toLowerCase()}"`))

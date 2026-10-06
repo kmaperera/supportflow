@@ -1,3 +1,4 @@
+import ThemeToggle from '../../theme/ThemeToggle'
 import FieldError from '../../components/FieldError'
 import AuthFeedback from '../../auth/AuthFeedback'
 import { getAuthFieldErrors } from '../../api/apiError'
@@ -51,7 +52,7 @@ export default function ChangePasswordPage() {
   return (
     <main className="auth-ui flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 px-5 py-10">
       <section aria-labelledby="password-change-heading" className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm sm:p-9">
-        <p className="mb-3 text-sm font-semibold text-teal-700 dark:text-teal-300">SupportFlow</p>
+        <header className="mb-3 flex items-center justify-between gap-3"><p className="text-sm font-semibold text-teal-700 dark:text-teal-300">SupportFlow</p><ThemeToggle /></header>
         <h1 id="password-change-heading" className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Change your password</h1>
         <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Your account requires a new password before you can continue.</p>
         <p id="password-guidance" className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Use at least 8 characters with an uppercase letter, a lowercase letter, and a number.</p>

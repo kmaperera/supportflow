@@ -1,5 +1,4 @@
 import WorkspaceHeader from '../../layouts/WorkspaceHeader'
-import AppearanceSettings from '../../theme/AppearanceSettings'
 import { ActiveBadge } from '../../components/Badges'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -43,7 +42,6 @@ export default function ProfilePage({ embedded = false }) {
             <div><dt className="text-sm text-slate-600 dark:text-slate-300">Account Status</dt><dd className="mt-2"><ActiveBadge value={user.isActive} /></dd></div>
           </dl>
         </section>
-        <AppearanceSettings />
         <section aria-labelledby="session-heading" className="mt-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 sm:p-9">
           <h2 id="session-heading" className="text-lg font-semibold text-slate-900 dark:text-slate-100">Session actions</h2>
           <SessionActions />

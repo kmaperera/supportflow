@@ -9,12 +9,12 @@ for (const saved of [null, 'light', 'dark', 'system', 'invalid']) {
    let applied
    const root={classList:{toggle:(name,value)=>{assert.equal(name,'dark');applied=value}},style:{}}
    runInNewContext(script,{document:{documentElement:root},window:{matchMedia:()=>({matches:systemDark})},localStorage:{getItem:key=>{assert.equal(key,'supportflow-theme');if(blocked)throw Error('blocked');return saved}}})
-   const preference=blocked?'system':normalizeTheme(saved)
-   const expected=preference==='dark'||(preference==='system'&&systemDark)
+   const preference=blocked?'light':normalizeTheme(saved)
+   const expected=preference==='dark'
    assert.equal(applied,expected)
    assert.equal(root.style.colorScheme,expected?'dark':'light')
   }
  }
 }
-assert.equal(normalizeTheme({}),'system')
-console.log('PASS: startup Light/Dark/System, absent/invalid storage, blocked storage and native color-scheme matrix.')
+assert.equal(normalizeTheme({}),'light')
+console.log('PASS: startup Light/Dark, legacy/absent/invalid storage, blocked storage and OS-independent color-scheme.')
