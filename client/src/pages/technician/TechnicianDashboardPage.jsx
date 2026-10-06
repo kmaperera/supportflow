@@ -1,3 +1,4 @@
+import { StatusBadge, PriorityBadge } from '../../components/Badges'
 import ErrorState from '../../components/ErrorState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import EmptyState from '../../components/EmptyState'
@@ -8,7 +9,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { getApiErrorMessage } from '../../api/apiError'
 import { getTechnicianDashboard } from '../../api/dashboardApi'
-import { ticketStatuses, formatTicketStatus, formatTicketPriority, formatTicketDate } from '../employee/ticketFormatting'
+import { ticketStatuses, formatTicketDate } from '../employee/ticketFormatting'
 
 const panelClass = 'min-w-0 layout-panel'
 const actionClass = 'inline-flex min-h-11 items-center rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700'
@@ -62,8 +63,8 @@ export function TechnicianDashboardContent({ data: { summary, tickets, sla } }) 
           <p className="text-sm font-semibold text-teal-800">{ticket.ticketNumber}</p>
           <h3 className="mt-1 font-medium">{ticket.title}</h3>
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-full bg-teal-50 px-3 py-1 font-medium text-teal-900">{formatTicketStatus(ticket.status)}</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">Priority: {formatTicketPriority(ticket.priority?.name)}</span>
+            <StatusBadge value={ticket.status} />
+            <PriorityBadge value={ticket.priority?.name} />
             <span className="text-slate-500">Created {formatTicketDate(ticket.createdAt)}</span>
           </div>
         </li>)}
@@ -74,7 +75,7 @@ export function TechnicianDashboardContent({ data: { summary, tickets, sla } }) 
       <p className="mt-1 text-sm text-slate-500">Active work includes Assigned, In Progress, Waiting for User, and Reopened tickets.</p>
       <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
         {ticketStatuses.filter(status => Object.hasOwn(summary, status.countField)).map(status => <div key={status.value} className="flex min-w-0 justify-between gap-4 text-sm">
-          <dt className="text-slate-600">{status.label}</dt><dd className="font-semibold tabular-nums">{summary[status.countField]}</dd>
+          <dt className="text-slate-600"><StatusBadge value={status.value} /></dt><dd className="font-semibold tabular-nums">{summary[status.countField]}</dd>
         </div>)}
       </dl>
     </section>

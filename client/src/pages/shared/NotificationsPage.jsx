@@ -1,3 +1,4 @@
+import { StateBadge } from '../../components/Badges'
 import Pagination from '../../components/Pagination'
 import { useToast } from '../../components/toastContext'
 import ErrorState from '../../components/ErrorState'
@@ -119,7 +120,7 @@ function Notifications({ role, accessToken }) {
     {current?.data && <>
       <div className="flex flex-wrap items-center gap-3"><p className="text-sm">{current.data.unreadCount} unread</p>{current.data.unreadCount > 0 && <button type="button" className={buttonClass} disabled={markingAll || pendingIds.length > 0} onClick={markAll}>{markingAll ? 'Marking as read...' : 'Mark all as read'}</button>}</div>
       {!current.data.notifications.length ? <EmptyState compact title="No notifications yet." /> : <ul className="space-y-3">{current.data.notifications.map(item => item.type === 'INTERNAL_NOTE' && !allowInternal ? null : <li key={item.id} className={`min-w-0 rounded-xl border p-5 ${item.isRead ? 'border-slate-200 bg-white' : 'border-teal-200 bg-teal-50'}`}>
-        <p className="text-xs font-semibold text-slate-600">{item.isRead ? 'Read' : 'Unread'} · {item.type === 'INTERNAL_NOTE' ? 'Internal note' : labels[item.type] || 'Support update'}</p>
+        <p className="text-xs font-semibold text-slate-600"><StateBadge value={item.isRead ? 'READ' : 'UNREAD'} /> · {item.type === 'INTERNAL_NOTE' ? 'Internal note' : labels[item.type] || 'Support update'}</p>
         <h2 className="mt-2 break-words font-semibold">{item.title}</h2>
         <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-700">{item.message}</p>
         <p className="mt-2 text-xs text-slate-500">{formatTicketDate(item.createdAt)}</p>

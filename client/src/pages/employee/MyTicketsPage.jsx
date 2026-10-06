@@ -1,3 +1,4 @@
+import { StatusBadge, PriorityBadge } from '../../components/Badges'
 import Pagination from '../../components/Pagination'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
@@ -9,7 +10,7 @@ import { useAuth } from '../../auth/useAuth'
 import AuthFeedback from '../../auth/AuthFeedback'
 import { getMyTickets } from '../../api/ticketApi'
 import { getApiErrorMessage } from '../../api/apiError'
-import { formatTicketDate, formatTicketPriority, formatTicketStatus } from './ticketFormatting'
+import { formatTicketDate } from './ticketFormatting'
 import TicketFilters from './TicketFilters'
 
 const actionClass = 'inline-block rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-50'
@@ -79,8 +80,8 @@ export function MyTicketsList({ tickets, totalRecords }) {
       <h2 id={`ticket-title-${ticket.id}`} className="mt-1 break-words text-lg font-semibold">{ticket.title}</h2>
       <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2 xl:grid-cols-4">
         <div><dt className="text-slate-500">Category</dt><dd className="mt-1 break-words">{ticket.category?.name || 'Not specified'}</dd></div>
-        <div><dt className="text-slate-500">Priority</dt><dd className="mt-1">{formatTicketPriority(ticket.priority?.name)}</dd></div>
-        <div><dt className="text-slate-500">Status</dt><dd className="mt-1 font-medium text-teal-900">{formatTicketStatus(ticket.status)}</dd></div>
+        <div><dt className="text-slate-500">Priority</dt><dd className="mt-1"><PriorityBadge value={ticket.priority?.name} /></dd></div>
+        <div><dt className="text-slate-500">Status</dt><dd className="mt-1 font-medium text-teal-900"><StatusBadge value={ticket.status} /></dd></div>
         <div><dt className="text-slate-500">Created</dt><dd className="mt-1">{formatTicketDate(ticket.createdAt)}</dd></div>
       </dl>
       </Link>

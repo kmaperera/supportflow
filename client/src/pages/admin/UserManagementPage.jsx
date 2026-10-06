@@ -1,3 +1,4 @@
+import { ActiveBadge } from '../../components/Badges'
 import FilterBar, { ClearFilters } from '../../components/FilterBar'
 import useDebouncedSearch from '../../components/useDebouncedSearch'
 import Pagination from '../../components/Pagination'
@@ -124,7 +125,7 @@ function UserList({ currentAdminId }) {
     {current?.data && <>
       {!current.data.users.length ? <EmptyState title={filtered ? 'No users match your current search or filters.' : 'No users found.'} actions={filtered ? <ClearFilters onClick={reset} /> : <Link className={button} to="/admin/users/new">Create User</Link>} /> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{current.data.users.map(user => <li key={user.id} className="min-w-0 layout-panel">
         <h2 className="break-words text-lg font-semibold">{[user.firstName, user.lastName].filter(value => typeof value === 'string' && value.trim()).join(' ') || 'Name unavailable'}</h2>
-        <dl className="mt-3 grid min-w-0 gap-4 text-sm sm:grid-cols-2">{[['Email', user.email], ['Role', roles[user.role] || 'Unknown role'], ['Status', user.isActive ? 'Active' : 'Inactive'], ['Created', formatTicketDate(user.createdAt)]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-slate-500">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
+        <dl className="mt-3 grid min-w-0 gap-4 text-sm sm:grid-cols-2">{[['Email', user.email], ['Role', roles[user.role] || 'Unknown role'], ['Status', <ActiveBadge key="status" value={user.isActive} />], ['Created', formatTicketDate(user.createdAt)]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-slate-500">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
         {user.mustChangePassword === true && <p className="mt-4 text-sm font-medium">Password change required</p>}
         <div className="mt-4 space-y-3">
           {String(user.id) === String(currentAdminId) ? <p className="text-sm text-slate-600">You cannot change your own role.</p> : roleEditor?.id === String(user.id) ? <div className="space-y-3 rounded-lg border border-slate-200 p-3">

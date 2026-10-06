@@ -1,3 +1,4 @@
+import { StatusBadge, PriorityBadge } from '../../components/Badges'
 import ErrorState from '../../components/ErrorState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import MetadataList from '../../layouts/MetadataList'
@@ -18,7 +19,7 @@ import TicketStatusTimeline from '../employee/TicketStatusTimeline'
 import TicketConversation from '../employee/TicketConversation'
 import TicketInternalNotes from './TicketInternalNotes'
 import TicketAttachments from '../employee/TicketAttachments'
-import { formatTicketDate, formatTicketPriority, formatTicketStatus } from '../employee/ticketFormatting'
+import { formatTicketDate } from '../employee/ticketFormatting'
 
 const actionClass = 'inline-flex min-h-11 items-center rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-50'
 const panelClass = 'min-w-0 layout-panel'
@@ -191,8 +192,8 @@ export function TechnicianTicketDetailsContent({ ticket, userId }) {
       <h1 className="mt-2 text-2xl font-semibold">{ticket.title}</h1>
       <p className="mt-3 text-sm font-medium">{assignment}</p>
       <dl className="mt-4 flex flex-wrap gap-6 text-sm">
-        <div className="min-w-0"><dt className="text-slate-500">Status</dt><dd className="mt-1 font-semibold text-teal-900">{formatTicketStatus(ticket.status)}</dd></div>
-        <div className="min-w-0"><dt className="text-slate-500">Priority</dt><dd className="mt-1 font-semibold">{formatTicketPriority(ticket.priority?.name)}</dd></div>
+        <div className="min-w-0"><dt className="text-slate-500">Status</dt><dd className="mt-1 font-semibold text-teal-900"><StatusBadge value={ticket.status} /></dd></div>
+        <div className="min-w-0"><dt className="text-slate-500">Priority</dt><dd className="mt-1 font-semibold"><PriorityBadge value={ticket.priority?.name} /></dd></div>
       </dl>
     </header>
     <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">

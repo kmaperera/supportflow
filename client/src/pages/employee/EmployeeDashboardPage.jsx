@@ -1,3 +1,4 @@
+import { StatusBadge, PriorityBadge } from '../../components/Badges'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
@@ -8,7 +9,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { getEmployeeDashboard } from '../../api/dashboardApi'
 import { getApiErrorMessage } from '../../api/apiError'
-import { ticketStatuses, formatTicketStatus, formatTicketPriority, formatTicketDate } from './ticketFormatting'
+import { ticketStatuses, formatTicketDate } from './ticketFormatting'
 
 const actionClass = 'inline-flex rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700'
 const panelClass = 'layout-panel'
@@ -32,8 +33,8 @@ export function EmployeeDashboardContent({ data }) {
               <p className="break-all text-xs font-semibold text-teal-800">{ticket.ticketNumber}</p>
               <h3 className="mt-1 break-words font-medium">{ticket.title}</h3>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                <span className="rounded-full bg-teal-50 px-3 py-1 font-medium text-teal-900">{formatTicketStatus(ticket.status)}</span>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">Priority: {formatTicketPriority(ticket.priority?.name)}</span>
+                <StatusBadge value={ticket.status} />
+                <PriorityBadge value={ticket.priority?.name} />
                 <span className="text-slate-500">Created {formatTicketDate(ticket.createdAt)}</span>
               </div>
             </li>)}
@@ -43,7 +44,7 @@ export function EmployeeDashboardContent({ data }) {
         <h2 id="ticket-status-heading" className="text-lg font-semibold">Ticket status overview</h2>
         <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
           {ticketStatuses.map(status => <div key={status.value} className="flex justify-between gap-4 text-sm">
-            <dt className="text-slate-600">{status.label}</dt>
+            <dt className="text-slate-600"><StatusBadge value={status.value} /></dt>
             <dd className="font-semibold tabular-nums">{summary[status.countField]}</dd>
           </div>)}
         </dl>

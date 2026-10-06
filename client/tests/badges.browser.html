@@ -1,0 +1,22 @@
+﻿<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><div id="root"></div><pre id="result">RUNNING</pre>
+<script type="module">
+import React from 'react'
+import {createRoot} from 'react-dom/client'
+import {StatusBadge,PriorityBadge,StateBadge,ActiveBadge} from '/src/components/Badges.jsx'
+import '/src/index.css'
+const h=React.createElement, wait=ms=>new Promise(r=>setTimeout(r,ms)), check=(ok,message)=>{if(!ok)throw Error(message)}
+const groups=[[StatusBadge,['OPEN','ASSIGNED','IN_PROGRESS','WAITING_FOR_USER','RESOLVED','CLOSED','REOPENED',null,'FUTURE_STATE','X'.repeat(200)]],[PriorityBadge,['LOW','MEDIUM','HIGH','CRITICAL',undefined]],[StateBadge,['ACTIVE','INACTIVE','PUBLISHED','DRAFT','ARCHIVED','READ','UNREAD','on-track','warning','breached','met','unavailable']],[ActiveBadge,[true,false,null]]]
+try {
+ createRoot(document.querySelector('#root')).render(h('div',{className:'space-y-4 p-4'},groups.map(([Component,values],i)=>h('div',{key:i,className:'flex flex-wrap items-center gap-2'},values.map((value,j)=>h(Component,{key:j,value}))))));await wait(100)
+ const badges=[...document.querySelectorAll('span')]
+ check(badges.every(b=>b.textContent.trim()),'all badges include text')
+ check(badges.some(b=>b.textContent==='Waiting for User') && badges.some(b=>b.textContent==='Unknown') && badges.some(b=>b.textContent==='Future State'),'human labels and fallbacks')
+ for(const width of [320,375,1280]) {
+  document.querySelector('#root').style.width=width+'px'; await wait(50)
+  check(document.querySelector('#root').scrollWidth<=width,'no overflow at '+width)
+  check(badges.filter(b=>b.textContent.length<30).every(b=>b.getBoundingClientRect().width<250),'badges stay compact at '+width)
+ }
+ check(getComputedStyle(badges.find(b=>b.textContent==='Critical')).backgroundColor!==getComputedStyle(badges.find(b=>b.textContent==='Low')).backgroundColor,'priority tones distinct')
+ document.querySelector('#result').textContent='PASS: labels, fallbacks, compact badges and wrapping at 320/375/1280px'
+}catch(e){document.querySelector('#result').textContent='FAIL: '+e.message}
+</script></body></html>

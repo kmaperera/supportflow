@@ -1,3 +1,4 @@
+import { PriorityBadge, ActiveBadge } from '../../components/Badges'
 import FieldError from '../../components/FieldError'
 import { focusFirstError } from '../../components/formValidation'
 import { useToast } from '../../components/toastContext'
@@ -9,7 +10,7 @@ import { useEffect, useRef, useState } from 'react'
 import { getSlaPolicies, updateSlaPolicy } from '../../api/slaPolicyApi'
 import { getApiErrorMessage } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
-import { formatTicketDate, formatTicketPriority } from '../employee/ticketFormatting'
+import { formatTicketDate } from '../employee/ticketFormatting'
 import { formatPolicyMinutes, validateSlaDurations } from './slaPolicyForm'
 
 const button = 'min-h-11 w-fit cursor-pointer rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
@@ -62,8 +63,8 @@ function PolicyCard({ policy, onSaved }) {
     } finally { pending.current = false; if (mounted.current) setSaving(false) }
   }
   return <section className="min-w-0 space-y-4 layout-panel">
-    <h2 className="text-lg font-semibold">{formatTicketPriority(policy.priorityName)}</h2>
-    <dl className="grid gap-4 text-sm sm:grid-cols-2">{[['Response target', formatPolicyMinutes(policy.responseTimeMinutes)], ['Resolution target', formatPolicyMinutes(policy.resolutionTimeMinutes)], ['Status', policy.isActive ? 'Active' : 'Inactive'], ['Updated', formatTicketDate(policy.updatedAt)]].map(([label, value]) => <div key={label}><dt className="text-slate-500">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
+    <h2 className="text-lg font-semibold"><PriorityBadge value={policy.priorityName} /></h2>
+    <dl className="grid gap-4 text-sm sm:grid-cols-2">{[['Response target', formatPolicyMinutes(policy.responseTimeMinutes)], ['Resolution target', formatPolicyMinutes(policy.resolutionTimeMinutes)], ['Status', <ActiveBadge key="status" value={policy.isActive} />], ['Updated', formatTicketDate(policy.updatedAt)]].map(([label, value]) => <div key={label}><dt className="text-slate-500">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
     {!editing ? <button className={button} onClick={() => { setEditing(true); setError(null); setErrors({}) }}>Edit</button> : <form onSubmit={submit} noValidate className="space-y-4 border-t border-slate-200 pt-4">
       {error && <AuthFeedback>{error}</AuthFeedback>}
       <p className="text-sm text-slate-600">Enter whole minutes (60 minutes = 1 hour; 1,440 minutes = 24 hours).</p>

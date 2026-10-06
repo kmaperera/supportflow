@@ -1,3 +1,4 @@
+import { StatusBadge, PriorityBadge } from '../../components/Badges'
 import ErrorState from '../../components/ErrorState'
 import ContentSkeleton from '../../components/ContentSkeleton'
 import MetadataList from '../../layouts/MetadataList'
@@ -15,7 +16,7 @@ import EditTicketForm from './EditTicketForm'
 import CloseTicketButton from './CloseTicketButton'
 import ReopenTicketButton from './ReopenTicketButton'
 import TicketRating from './TicketRating'
-import { formatTicketDate, formatTicketPriority, formatTicketStatus } from './ticketFormatting'
+import { formatTicketDate } from './ticketFormatting'
 
 export default function TicketDetailsPage() {
   const { ticketId } = useParams()
@@ -92,8 +93,8 @@ export function TicketDetailsContent({ ticket }) {
       <p className="break-all text-sm font-semibold text-teal-800">{ticket.ticketNumber}</p>
       <h1 className="mt-2 break-words text-2xl font-semibold">{ticket.title}</h1>
       <dl className="mt-4 flex flex-wrap gap-6 text-sm">
-        <div><dt className="text-slate-500">Status</dt><dd className="mt-1 font-semibold text-teal-900">{formatTicketStatus(ticket.status)}</dd></div>
-        <div><dt className="text-slate-500">Priority</dt><dd className="mt-1 font-semibold">{formatTicketPriority(ticket.priority?.name)}</dd></div>
+        <div><dt className="text-slate-500">Status</dt><dd className="mt-1 font-semibold text-teal-900"><StatusBadge value={ticket.status} /></dd></div>
+        <div><dt className="text-slate-500">Priority</dt><dd className="mt-1 font-semibold"><PriorityBadge value={ticket.priority?.name} /></dd></div>
       </dl>
     </header>
     <section aria-labelledby="ticket-metadata-heading" className="layout-panel">

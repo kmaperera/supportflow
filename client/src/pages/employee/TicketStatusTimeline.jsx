@@ -1,9 +1,10 @@
+import { StatusBadge } from '../../components/Badges'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import LoadingState from '../../components/LoadingState'
 import { useEffect, useState } from 'react'
 import { getTicketStatusHistory } from '../../api/ticketApi'
-import { formatTicketDate, formatTicketStatus } from './ticketFormatting'
+import { formatTicketDate } from './ticketFormatting'
 
 export default function TicketStatusTimeline({ ticketId, title = 'Status timeline' }) {
   const [attempt, setAttempt] = useState(0)
@@ -36,7 +37,7 @@ export function StatusHistoryList({ history }) {
       const name = [entry.changedBy?.firstName, entry.changedBy?.lastName]
         .filter(value => typeof value === 'string' && value.trim()).map(value => value.trim()).join(' ')
       return <li key={entry.id} className="min-w-0">
-        <p className="break-words text-sm font-semibold text-slate-900">{entry.fromStatus ? `${formatTicketStatus(entry.fromStatus)} → ${formatTicketStatus(entry.toStatus)}` : `Moved to ${formatTicketStatus(entry.toStatus)}`}</p>
+        <p className="break-words text-sm font-semibold text-slate-900">{entry.fromStatus ? <><StatusBadge value={entry.fromStatus} /> → <StatusBadge value={entry.toStatus} /></> : <>Moved to <StatusBadge value={entry.toStatus} /></>}</p>
         <p className="mt-1 break-words text-sm text-slate-600">{name ? `Changed by ${name}` : 'Changed by a support team member or requester'}</p>
         <p className="mt-1 text-xs text-slate-500">{formatTicketDate(entry.changedAt)}</p>
       </li>

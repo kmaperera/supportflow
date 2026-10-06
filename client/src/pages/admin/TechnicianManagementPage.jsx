@@ -1,3 +1,4 @@
+import { ActiveBadge } from '../../components/Badges'
 import FilterBar, { ClearFilters } from '../../components/FilterBar'
 import useDebouncedSearch from '../../components/useDebouncedSearch'
 import Pagination from '../../components/Pagination'
@@ -66,7 +67,7 @@ export default function TechnicianManagementPage() {
     {current?.data && <>
       {!current.data.users.length ? <EmptyState title={filtered ? 'No technicians match your current filters.' : 'No technicians found.'} actions={filtered ? <ClearFilters onClick={reset} /> : <Link className={button} to="/admin/users">Manage User Accounts</Link>} /> : <ul className="grid min-w-0 gap-4 xl:grid-cols-2">{current.data.users.map(user => <li key={user.id} className="min-w-0 layout-panel">
         <h2 className="break-words text-lg font-semibold">{[user.firstName, user.lastName].filter(Boolean).join(' ') || 'Name unavailable'}</h2>
-        <dl className="mt-3 grid min-w-0 gap-4 text-sm sm:grid-cols-2">{[['Email', user.email], ['Status', user.isActive ? 'Active' : 'Inactive'], ['Department', user.department || 'Not provided'], ['Active tickets', !user.isActive ? 'Unavailable for inactive technicians' : byId.has(String(user.id)) ? byId.get(String(user.id)) : counts ? 'Unavailable' : 'Loading workload...']].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-slate-500">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
+        <dl className="mt-3 grid min-w-0 gap-4 text-sm sm:grid-cols-2">{[['Email', user.email], ['Status', <ActiveBadge key="status" value={user.isActive} />], ['Department', user.department || 'Not provided'], ['Active tickets', !user.isActive ? 'Unavailable for inactive technicians' : byId.has(String(user.id)) ? byId.get(String(user.id)) : counts ? 'Unavailable' : 'Loading workload...']].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-slate-500">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
       </li>)}</ul>}
       <Pagination metadata={current.data.pagination} noun="technicians" label="technicians" disabled={false} onPageChange={page => setQuery(previous => ({ ...previous, page }))} />
     </>}

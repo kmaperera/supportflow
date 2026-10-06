@@ -1,3 +1,4 @@
+import { StateBadge } from '../../components/Badges'
 import { useEffect, useState } from 'react'
 import { formatTicketDate } from '../employee/ticketFormatting'
 import { formatRemaining, parseSlaTimestamp } from './slaTiming'
@@ -27,7 +28,7 @@ function TimingCard({ title, dueAt, completedAt, completedLabel, timestampLabel,
   const style = state === 'breached' ? 'border-2 border-red-700 bg-red-50 text-red-900' : state === 'warning' ? 'border border-amber-500 bg-amber-50 text-amber-950' : 'border border-slate-200 bg-slate-50'
   return <div className={`min-w-0 rounded-xl p-4 ${style}`}>
     <h3 className="font-semibold">{title}</h3>
-    <p className="mt-2 break-words text-sm font-semibold">{label}</p>
+    <p className="mt-2"><StateBadge value={state} label={label} /></p>
     {state === 'warning' && <p className="mt-1 text-sm">{title === 'Response SLA' ? 'Response' : 'Resolution'} deadline is approaching.</p>}
     {completed !== null ? <>
       <p className="mt-2 font-semibold">{completedLabel}</p>

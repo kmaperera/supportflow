@@ -1,3 +1,4 @@
+import { StatusBadge, PriorityBadge } from '../../components/Badges'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
@@ -6,7 +7,6 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { getTechnicianStatisticsSection } from '../../api/dashboardApi'
-import { formatTicketStatus, formatTicketPriority } from '../employee/ticketFormatting'
 
 const buttonClass = 'inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2'
 const sections = [['status', 'Workload by status'], ['priority', 'Workload by priority'], ['response', 'First-response performance'], ['resolution', 'Resolution performance'], ['sla', 'SLA summary']]
@@ -44,7 +44,7 @@ function StatisticsContent({ kind, data }) {
     const active = kind === 'status' ? data.filter(row => ['ASSIGNED', 'IN_PROGRESS', 'WAITING_FOR_USER', 'REOPENED'].includes(row.status)).reduce((sum, row) => sum + row.count, 0) : null
     return <>
       {kind === 'status' && <dl className="grid gap-4 sm:grid-cols-2"><div><dt>Total assigned (all statuses)</dt><dd className="text-2xl font-semibold">{total}</dd></div><div><dt>Active</dt><dd className="text-2xl font-semibold">{active}</dd></div></dl>}
-      <dl className="space-y-3">{data.map(row => <div key={row.status || row.priorityId} className="flex flex-wrap justify-between gap-3 border-b border-slate-100 pb-2"><dt>{kind === 'status' ? formatTicketStatus(row.status) : formatTicketPriority(row.priorityName)}</dt><dd className="font-semibold tabular-nums">{row.count}</dd></div>)}</dl>
+      <dl className="space-y-3">{data.map(row => <div key={row.status || row.priorityId} className="flex flex-wrap justify-between gap-3 border-b border-slate-100 pb-2"><dt>{kind === 'status' ? <StatusBadge value={row.status} /> : <PriorityBadge value={row.priorityName} />}</dt><dd className="font-semibold tabular-nums">{row.count}</dd></div>)}</dl>
     </>
   }
   if (kind === 'response' || kind === 'resolution') {

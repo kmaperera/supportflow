@@ -1,5 +1,6 @@
+import { StatusBadge, PriorityBadge } from '../../components/Badges'
 import { Link } from 'react-router-dom'
-import { formatTicketDate, formatTicketPriority, formatTicketStatus } from '../employee/ticketFormatting'
+import { formatTicketDate } from '../employee/ticketFormatting'
 
 export default function TechnicianTicketCards({ tickets, renderAction }) {
   return <ul className="space-y-4">
@@ -12,7 +13,7 @@ export default function TechnicianTicketCards({ tickets, renderAction }) {
           <h2 id={`ticket-card-title-${ticket.id}`} className="mt-1 break-words text-lg font-semibold">{ticket.title}</h2>
           <p className="mt-2 text-sm text-slate-600">Requested by: {requester}</p>
           <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2 xl:grid-cols-4">
-            {[['Category', ticket.category?.name || 'Not specified'], ['Priority', formatTicketPriority(ticket.priority?.name)], ['Status', formatTicketStatus(ticket.status)], ['Created', formatTicketDate(ticket.createdAt)]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-slate-500">{label}</dt><dd className={`mt-1 break-words ${label === 'Status' ? 'font-medium text-teal-900' : ''}`}>{value}</dd></div>)}
+            {[['Category', ticket.category?.name || 'Not specified'], ['Priority', <PriorityBadge key="priority" value={ticket.priority?.name} />], ['Status', <StatusBadge key="status" value={ticket.status} />], ['Created', formatTicketDate(ticket.createdAt)]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-slate-500">{label}</dt><dd className={`mt-1 break-words ${label === 'Status' ? 'font-medium text-teal-900' : ''}`}>{value}</dd></div>)}
           </dl>
         </Link>
         {renderAction && <div className="relative z-10 mt-4 flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">{renderAction(ticket)}</div>}

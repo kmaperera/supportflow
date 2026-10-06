@@ -1,3 +1,4 @@
+import { PriorityBadge } from '../../components/Badges'
 import ErrorState from '../../components/ErrorState'
 import LoadingState from '../../components/LoadingState'
 import { useEffect, useState } from 'react'
@@ -9,7 +10,7 @@ import { canManagePriority } from './ticketPriorityEligibility'
 export default function TicketPriorityControl({ ticket, userId, pending, onUpdate }) {
   return <section aria-labelledby="ticket-priority-heading" className="min-w-0 layout-panel">
     <h2 id="ticket-priority-heading" className="text-lg font-semibold">Priority</h2>
-    <p className="mt-3 text-sm">Current priority: <span className="font-semibold">{formatTicketPriority(ticket.priority?.name)}</span></p>
+    <p className="mt-3 text-sm">Current priority: <PriorityBadge value={ticket.priority?.name} /></p>
     {canManagePriority(ticket, userId) && <PriorityForm key={String(ticket.priority?.id)} ticket={ticket} pending={pending} onUpdate={onUpdate} />}
   </section>
 }

@@ -1,3 +1,4 @@
+import { StateBadge, ActiveBadge } from '../../components/Badges'
 import FilterBar, { ClearFilters } from '../../components/FilterBar'
 import useDebouncedSearch from '../../components/useDebouncedSearch'
 import Pagination from '../../components/Pagination'
@@ -14,7 +15,7 @@ import AuthFeedback from '../../auth/AuthFeedback'
 import { formatTicketDate } from '../employee/ticketFormatting'
 import KbCategoryEditor from './KbCategoryEditor'
 import useKbResource from './useKbResource'
-import { kbButton as button, kbInput as input, kbCard, kbError, publicationLabel } from './kbPresentation'
+import { kbButton as button, kbInput as input, kbCard, kbError } from './kbPresentation'
 
 const loadCategories = signal => getKbCategories({ signal })
 export default function AdminKnowledgeBasePage() {
@@ -85,7 +86,7 @@ function Articles({ categories }) {
     {resource.data && <div className="space-y-3" aria-busy={resource.loading}>
       {!resource.loading && !resource.error && !resource.data.articles.length && <EmptyState title={query.search || query.categoryId ? 'No articles match your current filters.' : 'No knowledge base articles found.'} actions={query.search || query.categoryId ? <ClearFilters onClick={clear} /> : <Link className={button} to="/admin/knowledge-base/articles/new">Add Article</Link>} />}
       {resource.data.articles.map(article => <article key={article.id} className={kbCard}>
-        <div><h3 className="text-lg font-semibold break-words">{article.title}</h3><p className="mt-1 text-sm text-slate-600">{article.categoryName} · {publicationLabel(article.status)} · {article.viewCount} views</p></div>
+        <div><h3 className="text-lg font-semibold break-words">{article.title}</h3><p className="mt-1 text-sm text-slate-600">{article.categoryName} · <StateBadge value={article.status} /> · {article.viewCount} views</p></div>
         <p className="text-sm text-slate-500">Created {formatTicketDate(article.createdAt)} · Updated {formatTicketDate(article.updatedAt)}</p>
         <div className="layout-actions">
           <Link className={button} to={`/admin/knowledge-base/articles/${encodeURIComponent(article.id)}/edit`}>Edit<span className="sr-only"> {article.title}</span></Link>
@@ -137,7 +138,7 @@ function Categories({ resource }) {
     <CategoryLoadNotice resource={resource} skeleton />
     {!resource.loading && !resource.error && !rows.length && <EmptyState compact title={filtered ? 'No KB categories match your current filters.' : 'No knowledge base categories found.'} actions={filtered && <ClearFilters onClick={clear} />} />}
     <div className="grid gap-4 xl:grid-cols-2">{rows.map(category => <article key={category.id} className={kbCard}>
-      <div><h3 className="text-lg font-semibold">{category.name}</h3><p className="mt-1 text-sm font-medium">{category.isActive ? 'Active' : 'Inactive'}</p></div>
+      <div><h3 className="text-lg font-semibold">{category.name}</h3><p className="mt-1 text-sm font-medium"><ActiveBadge value={category.isActive} /></p></div>
       {category.description && <p className="whitespace-pre-wrap text-sm text-slate-600">{category.description}</p>}
       <div className="layout-actions"><button className={button} disabled={Boolean(editor) || Boolean(busy) || resource.loading || resource.error} onClick={() => { setEditor({ category }); setMessage('') }}>Edit<span className="sr-only"> {category.name}</span></button><button className={button} disabled={Boolean(editor) || Boolean(busy) || resource.loading || resource.error} onClick={() => { setError(""); if (category.isActive) setDeactivating(category); else toggle(category) }}>{busy === category.id ? category.isActive ? 'Deactivating...' : 'Activating...' : category.isActive ? 'Deactivate' : 'Activate'}<span className="sr-only"> {category.name}</span></button></div>
     </article>)}</div>
