@@ -41,7 +41,7 @@ export function CreateTicketForm({ categories = [], priorities = [], categorySta
   const pending = useRef(false)
   const form = useRef(null)
   const optionsAvailable = !categoryState.loading && !priorityState.loading && categories.length > 0 && priorities.length > 0
-  const inputClass = 'mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-slate-900 focus:border-teal-700 focus:outline-2 focus:outline-teal-700 disabled:bg-slate-100 disabled:text-slate-500'
+  const inputClass = 'mt-2 block w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-3 text-slate-900 dark:text-slate-100 focus:border-teal-700 dark:focus:border-teal-400 focus:outline-2 focus:outline-teal-700 dark:focus:outline-teal-400 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-500 dark:disabled:text-slate-400'
 
   function update(event) {
     const { name, value } = event.target
@@ -77,7 +77,7 @@ export function CreateTicketForm({ categories = [], priorities = [], categorySta
 
   return <section className="layout-narrow layout-panel">
     <h1 className="text-2xl font-semibold">Create Ticket</h1>
-    <p className="mt-2 text-sm text-slate-600">Tell us what went wrong and how it affects your work. All fields are required.</p>
+    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Tell us what went wrong and how it affects your work. All fields are required.</p>
     <form ref={form} onSubmit={submit} noValidate className="mt-6 space-y-6" aria-busy={creating}>
       {error && <AuthFeedback>{error}</AuthFeedback>}
       <fieldset disabled={creating} className="space-y-6">
@@ -89,7 +89,7 @@ export function CreateTicketForm({ categories = [], priorities = [], categorySta
           <label htmlFor={field.name} className="text-sm font-semibold">{field.label}</label>
           {field.name === 'description' ? <textarea id={field.name} name={field.name} value={values[field.name]} onChange={update} required minLength={field.min} maxLength={field.max} rows={7} className={`${inputClass} resize-y`} aria-invalid={Boolean(errors[field.name])} aria-describedby={`${field.name}-hint ${field.name}-error`} /> :
             <input id={field.name} name={field.name} value={values[field.name]} onChange={update} required minLength={field.min} maxLength={field.max} className={inputClass} aria-invalid={Boolean(errors[field.name])} aria-describedby={`${field.name}-hint ${field.name}-error`} />}
-          <p id={`${field.name}-hint`} className="mt-2 text-sm text-slate-500">{field.hint}</p>
+          <p id={`${field.name}-hint`} className="mt-2 text-sm text-slate-500 dark:text-slate-400">{field.hint}</p>
           <FieldError id={`${field.name}-error`}>{errors[field.name]}</FieldError>
         </div>)}
         <div className="grid gap-6 sm:grid-cols-2">
@@ -101,16 +101,16 @@ export function CreateTicketForm({ categories = [], priorities = [], categorySta
             </select>
             <FieldError id={`${name}-error`}>{errors[name]}</FieldError>
             {optionState.failed && <ErrorState compact title={`Unable to load ${plural}.`}>
-              <button type="button" onClick={optionState.retry} className="mt-2 rounded text-sm font-semibold text-teal-800 underline focus-visible:outline-2 focus-visible:outline-offset-2">Retry {plural}</button>
+              <button type="button" onClick={optionState.retry} className="mt-2 rounded text-sm font-semibold text-teal-800 dark:text-teal-300 underline focus-visible:outline-2 focus-visible:outline-offset-2">Retry {plural}</button>
             </ErrorState>}
           </div>)}
         </div>
       </fieldset>
       <SuggestedArticles title={values.title} description={values.description} />
-      {!optionsAvailable && (categoryState.loading || priorityState.loading ? <LoadingState id="selection-notice" className="rounded-lg bg-slate-50 p-3">Loading ticket options...</LoadingState> : <p id="selection-notice" role="status" className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">Categories and priorities must be available before you can submit a ticket.</p>)}
+      {!optionsAvailable && (categoryState.loading || priorityState.loading ? <LoadingState id="selection-notice" className="rounded-lg bg-slate-50 dark:bg-slate-950 p-3">Loading ticket options...</LoadingState> : <p id="selection-notice" role="status" className="rounded-lg bg-slate-50 dark:bg-slate-950 p-3 text-sm text-slate-600 dark:text-slate-300">Categories and priorities must be available before you can submit a ticket.</p>)}
       <div className="flex flex-wrap items-center gap-4">
-        <button type="submit" disabled={creating || !optionsAvailable} className="rounded-lg bg-teal-800 px-5 py-3 text-sm font-semibold text-white hover:bg-teal-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-50 disabled:cursor-not-allowed">{creating ? 'Creating ticket...' : 'Create Ticket'}</button>
-        {!creating && <Link to="/employee" className="rounded text-sm font-semibold text-slate-700 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700">Cancel</Link>}
+        <button type="submit" disabled={creating || !optionsAvailable} className="rounded-lg bg-teal-800 px-5 py-3 text-sm font-semibold text-white hover:bg-teal-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400 disabled:opacity-50 disabled:cursor-not-allowed">{creating ? 'Creating ticket...' : 'Create Ticket'}</button>
+        {!creating && <Link to="/employee" className="rounded text-sm font-semibold text-slate-700 dark:text-slate-200 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400">Cancel</Link>}
         <span role="status" className="sr-only">{creating ? 'Creating ticket...' : ''}</span>
       </div>
     </form>

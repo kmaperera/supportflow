@@ -21,9 +21,9 @@ export default function TicketStatusTimeline({ ticketId, title = 'Status timelin
   const current = result?.ticketId === ticketId && result?.attempt === attempt ? result : null
   return <section aria-labelledby="status-history-heading" className="min-w-0 layout-panel">
     <h2 id="status-history-heading" className="text-lg font-semibold">{title}</h2>
-    {!current && <LoadingState className="mt-4 text-sm text-slate-600">Loading status history...</LoadingState>}
+    {!current && <LoadingState className="mt-4 text-sm text-slate-600 dark:text-slate-300">Loading status history...</LoadingState>}
     {current?.failed && <ErrorState compact className="mt-4" title="Unable to load status history.">
-      <button type="button" onClick={() => setAttempt(value => value + 1)} className="mt-3 rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2">Retry status history</button>
+      <button type="button" onClick={() => setAttempt(value => value + 1)} className="mt-3 rounded-lg border border-teal-700 dark:border-teal-400 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 focus-visible:outline-2 focus-visible:outline-offset-2">Retry status history</button>
     </ErrorState>}
     {current && !current.failed && <StatusHistoryList history={current.history} />}
   </section>
@@ -32,14 +32,14 @@ export default function TicketStatusTimeline({ ticketId, title = 'Status timelin
 export function StatusHistoryList({ history }) {
   if (!history.length) return <EmptyState compact title="No status history is available yet." />
   // The endpoint orders records by changed_at ASC, id ASC; preserve that order.
-  return <ol className="mt-5 space-y-5 border-l-2 border-teal-100 pl-4 sm:pl-6">
+  return <ol className="mt-5 space-y-5 border-l-2 border-teal-100 dark:border-teal-800 pl-4 sm:pl-6">
     {history.map(entry => {
       const name = [entry.changedBy?.firstName, entry.changedBy?.lastName]
         .filter(value => typeof value === 'string' && value.trim()).map(value => value.trim()).join(' ')
       return <li key={entry.id} className="min-w-0">
-        <p className="break-words text-sm font-semibold text-slate-900">{entry.fromStatus ? <><StatusBadge value={entry.fromStatus} /> → <StatusBadge value={entry.toStatus} /></> : <>Moved to <StatusBadge value={entry.toStatus} /></>}</p>
-        <p className="mt-1 break-words text-sm text-slate-600">{name ? `Changed by ${name}` : 'Changed by a support team member or requester'}</p>
-        <p className="mt-1 text-xs text-slate-500">{formatTicketDate(entry.changedAt)}</p>
+        <p className="break-words text-sm font-semibold text-slate-900 dark:text-slate-100">{entry.fromStatus ? <><StatusBadge value={entry.fromStatus} /> → <StatusBadge value={entry.toStatus} /></> : <>Moved to <StatusBadge value={entry.toStatus} /></>}</p>
+        <p className="mt-1 break-words text-sm text-slate-600 dark:text-slate-300">{name ? `Changed by ${name}` : 'Changed by a support team member or requester'}</p>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{formatTicketDate(entry.changedAt)}</p>
       </li>
     })}
   </ol>

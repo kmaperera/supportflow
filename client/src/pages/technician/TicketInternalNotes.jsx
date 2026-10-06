@@ -48,16 +48,16 @@ export default function TicketInternalNotes({ ticket, userId, disabled, draft, o
       if (active.current) setAdding(false)
     }
   }
-  return <section aria-labelledby="internal-notes-heading" className="min-w-0 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:p-6">
+  return <section aria-labelledby="internal-notes-heading" className="min-w-0 rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 p-4 sm:p-6">
     <h2 id="internal-notes-heading" className="text-lg font-semibold">Internal Notes</h2>
-    <p className="mt-1 text-sm text-slate-600">Visible only to support staff.</p>
-    {!current ? <ContentSkeleton initial={!result && attempt === 0} variant="rows">Loading internal notes...</ContentSkeleton> : current.error ? <ErrorState compact className="mt-4" title="Unable to load internal notes."><button type="button" onClick={() => setAttempt(value => value + 1)} className="cursor-pointer rounded text-teal-800 underline focus-visible:outline-2">Retry</button></ErrorState> : <InternalNoteList notes={current.notes} userId={userId} />}
+    <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Visible only to support staff.</p>
+    {!current ? <ContentSkeleton initial={!result && attempt === 0} variant="rows">Loading internal notes...</ContentSkeleton> : current.error ? <ErrorState compact className="mt-4" title="Unable to load internal notes."><button type="button" onClick={() => setAttempt(value => value + 1)} className="cursor-pointer rounded text-teal-800 dark:text-teal-300 underline focus-visible:outline-2">Retry</button></ErrorState> : <InternalNoteList notes={current.notes} userId={userId} />}
     <div id="internal-note-feedback" className="mt-3">{error && <AuthFeedback>{error}</AuthFeedback>}</div>
     {added && <AuthFeedback variant="success">Internal note added.</AuthFeedback>}
     {canAdd && <form onSubmit={submit} noValidate className="mt-4 space-y-3">
       <label htmlFor="internal-note" className="block text-sm font-semibold">Add an internal note *</label>
-      <textarea id="internal-note" placeholder="Add an internal note..." value={draft} onChange={event => { onDraftChange(event.target.value); setError(null); setAdded(false) }} rows={4} maxLength={5000} required disabled={adding || disabled} aria-describedby="internal-note-feedback" aria-invalid={Boolean(error)} className="block w-full min-w-0 resize-y rounded-lg border border-slate-300 bg-white p-3 text-base focus-visible:outline-2 focus-visible:outline-teal-700 disabled:opacity-60 sm:text-sm" />
-      <button type="submit" disabled={adding || disabled} className="cursor-pointer rounded-lg border border-teal-700 bg-white px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50">{adding ? 'Sending...' : 'Add Note'}</button>
+      <textarea id="internal-note" placeholder="Add an internal note..." value={draft} onChange={event => { onDraftChange(event.target.value); setError(null); setAdded(false) }} rows={4} maxLength={5000} required disabled={adding || disabled} aria-describedby="internal-note-feedback" aria-invalid={Boolean(error)} className="block w-full min-w-0 resize-y rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-base focus-visible:outline-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400 disabled:opacity-60 sm:text-sm" />
+      <button type="submit" disabled={adding || disabled} className="cursor-pointer rounded-lg border border-teal-700 dark:border-teal-400 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50">{adding ? 'Sending...' : 'Add Note'}</button>
     </form>}
   </section>
 }
@@ -68,9 +68,9 @@ export function InternalNoteList({ notes, userId }) {
   return <ol className="mt-4 space-y-4">{visible.map(note => {
     const name = [note.author?.firstName, note.author?.lastName].filter(value => typeof value === 'string' && value.trim()).map(value => value.trim()).join(' ')
     const role = { TECHNICIAN: 'Technician', ADMIN: 'Admin' }[note.author?.role]
-    return <li key={note.id} className="min-w-0 rounded-xl bg-white p-4">
+    return <li key={note.id} className="min-w-0 rounded-xl bg-white dark:bg-slate-900 p-4">
       <p className="text-sm font-semibold">{userId != null && String(note.author?.id) === String(userId) ? 'You' : name || 'Support staff'}{role ? ` (${role})` : ''}</p>
-      <p className="mt-1 text-xs text-slate-500">{formatTicketDate(note.createdAt)}</p>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{formatTicketDate(note.createdAt)}</p>
       <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{note.content}</p>
     </li>
   })}</ol>

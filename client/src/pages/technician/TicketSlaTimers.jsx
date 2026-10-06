@@ -25,7 +25,7 @@ function TimingCard({ title, dueAt, completedAt, completedLabel, timestampLabel,
   const now = useSlaClock(deadline, !stopped && !completionProvided)
   const state = getSlaDisplayState({ created: parseSlaTimestamp(createdAt), deadline, completed, completionProvided, stopped, recordedBreach, now })
   const label = { breached: completed !== null ? `${completedLabel} — SLA breached` : 'SLA Breached', met: `${completedLabel} within SLA`, warning: 'SLA Warning', 'on-track': 'On Track', unavailable: 'No SLA data available' }[state]
-  const style = state === 'breached' ? 'border-2 border-red-700 bg-red-50 text-red-900' : state === 'warning' ? 'border border-amber-500 bg-amber-50 text-amber-950' : 'border border-slate-200 bg-slate-50'
+  const style = state === 'breached' ? 'border-2 border-red-700 dark:border-red-400 bg-red-50 dark:bg-red-950 text-red-900 dark:text-red-200' : state === 'warning' ? 'border border-amber-500 dark:border-amber-400 bg-amber-50 dark:bg-amber-950 text-amber-950 dark:text-amber-200' : 'border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950'
   return <div className={`min-w-0 rounded-xl p-4 ${style}`}>
     <h3 className="font-semibold">{title}</h3>
     <p className="mt-2"><StateBadge value={state} label={label} /></p>
@@ -35,7 +35,7 @@ function TimingCard({ title, dueAt, completedAt, completedLabel, timestampLabel,
       <p className="mt-1 text-sm">{timestampLabel}: {formatTicketDate(new Date(completed).toISOString())}</p>
     </> : stopped ? <p className="mt-2 text-sm">Timer stopped. Completion time unavailable.</p>
       : deadline !== null && !completionProvided ? <p className="mt-2 font-semibold tabular-nums">{formatRemaining(deadline, now)}</p> : null}
-    <p className="mt-2 text-sm text-slate-600">{deadline !== null ? `Due: ${formatTicketDate(new Date(deadline).toISOString())}` : 'No SLA deadline available'}</p>
+    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{deadline !== null ? `Due: ${formatTicketDate(new Date(deadline).toISOString())}` : 'No SLA deadline available'}</p>
   </div>
 }
 

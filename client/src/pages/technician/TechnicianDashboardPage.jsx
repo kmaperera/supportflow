@@ -12,7 +12,7 @@ import { getTechnicianDashboard } from '../../api/dashboardApi'
 import { ticketStatuses, formatTicketDate } from '../employee/ticketFormatting'
 
 const panelClass = 'min-w-0 layout-panel'
-const actionClass = 'inline-flex min-h-11 items-center rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700'
+const actionClass = 'inline-flex min-h-11 items-center rounded-lg border border-teal-700 dark:border-teal-400 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400'
 
 export default function TechnicianDashboardPage() {
   const { user } = useAuth()
@@ -57,36 +57,36 @@ export function TechnicianDashboardContent({ data: { summary, tickets, sla } }) 
     </dl>
     <section className={panelClass} aria-labelledby="recent-assigned-heading">
       <h2 id="recent-assigned-heading" className="text-lg font-semibold">Recent Assigned Tickets</h2>
-      <p className="mt-1 text-sm text-slate-500">Tickets currently assigned to you, newest created first.</p>
-      {!tickets.length ? <EmptyState compact title="You don't have any assigned tickets right now." actions={<Link to="/technician/tickets/unassigned" className={actionClass}>View Unassigned Queue</Link>} /> : <ul className="mt-4 divide-y divide-slate-200">
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Tickets currently assigned to you, newest created first.</p>
+      {!tickets.length ? <EmptyState compact title="You don't have any assigned tickets right now." actions={<Link to="/technician/tickets/unassigned" className={actionClass}>View Unassigned Queue</Link>} /> : <ul className="mt-4 divide-y divide-slate-200 dark:divide-slate-700">
         {tickets.map(ticket => <li key={ticket.id} className="min-w-0 py-4 first:pt-0 last:pb-0">
-          <p className="text-sm font-semibold text-teal-800">{ticket.ticketNumber}</p>
+          <p className="text-sm font-semibold text-teal-800 dark:text-teal-300">{ticket.ticketNumber}</p>
           <h3 className="mt-1 font-medium">{ticket.title}</h3>
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
             <StatusBadge value={ticket.status} />
             <PriorityBadge value={ticket.priority?.name} />
-            <span className="text-slate-500">Created {formatTicketDate(ticket.createdAt)}</span>
+            <span className="text-slate-500 dark:text-slate-400">Created {formatTicketDate(ticket.createdAt)}</span>
           </div>
         </li>)}
       </ul>}
     </section>
     <section className={panelClass} aria-labelledby="workload-heading">
       <h2 id="workload-heading" className="text-lg font-semibold">My workload by status</h2>
-      <p className="mt-1 text-sm text-slate-500">Active work includes Assigned, In Progress, Waiting for User, and Reopened tickets.</p>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Active work includes Assigned, In Progress, Waiting for User, and Reopened tickets.</p>
       <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
         {ticketStatuses.filter(status => Object.hasOwn(summary, status.countField)).map(status => <div key={status.value} className="flex min-w-0 justify-between gap-4 text-sm">
-          <dt className="text-slate-600"><StatusBadge value={status.value} /></dt><dd className="font-semibold tabular-nums">{summary[status.countField]}</dd>
+          <dt className="text-slate-600 dark:text-slate-300"><StatusBadge value={status.value} /></dt><dd className="font-semibold tabular-nums">{summary[status.countField]}</dd>
         </div>)}
       </dl>
     </section>
     <section className={panelClass} aria-labelledby="sla-overview-heading">
       <h2 id="sla-overview-heading" className="text-lg font-semibold">SLA overview</h2>
-      <p className="mt-1 text-sm text-slate-500">Met and missed counts reflect completed milestones. Pending milestones may already be overdue.</p>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Met and missed counts reflect completed milestones. Pending milestones may already be overdue.</p>
       <div className="mt-4 grid gap-6 sm:grid-cols-2">
         {['response', 'resolution'].map(kind => <div key={kind} className="min-w-0">
           <h3 className="font-medium">{kind === 'response' ? 'First response' : 'Resolution'}</h3>
           <dl className="mt-2 space-y-2 text-sm">
-            {[['Met', 'metTickets'], ['Missed', 'missedTickets'], ['Pending', 'pendingTickets']].map(([label, field]) => <div key={field} className="flex justify-between gap-4"><dt className="text-slate-600">{label}</dt><dd className="font-semibold tabular-nums">{sla[kind][field]}</dd></div>)}
+            {[['Met', 'metTickets'], ['Missed', 'missedTickets'], ['Pending', 'pendingTickets']].map(([label, field]) => <div key={field} className="flex justify-between gap-4"><dt className="text-slate-600 dark:text-slate-300">{label}</dt><dd className="font-semibold tabular-nums">{sla[kind][field]}</dd></div>)}
           </dl>
         </div>)}
       </div>

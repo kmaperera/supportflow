@@ -6,10 +6,11 @@ import { createServer } from 'vite'
 
 const server = await createServer({ server: { middlewareMode: true }, appType: 'custom' })
 try {
+  const { default: ThemeProvider } = await server.ssrLoadModule('/src/theme/ThemeProvider.jsx')
   const { AuthContext } = await server.ssrLoadModule('/src/auth/AuthContext.js')
   const { default: AppRoutes } = await server.ssrLoadModule('/src/routes/AppRoutes.jsx')
   const render = (state, path = state.user?.role === 'EMPLOYEE' ? '/employee/profile' : '/profile') => renderToString(React.createElement(MemoryRouter, { initialEntries: [path] },
-    React.createElement(AuthContext.Provider, { value: state }, React.createElement(AppRoutes))))
+    React.createElement(AuthContext.Provider, { value: state }, React.createElement(ThemeProvider, null, React.createElement(AppRoutes)))))
   for (const role of ['ADMIN', 'TECHNICIAN', 'EMPLOYEE']) {
     const state = { isAuthenticated: true, isInitializing: false, user: {
       firstName: 'Malith', lastName: 'Perera', email: 'profile@example.test', role,
@@ -17,6 +18,8 @@ try {
     } }
     const html = render(state)
     assert.match(html, /My Profile/)
+    assert.match(html, /Appearance/)
+    for (const mode of ['Light', 'Dark', 'System']) assert.ok(html.includes(mode))
     assert.match(html, /Malith Perera/)
     assert.match(html, /profile@example.test/)
     assert.ok(html.includes(`href="/${role.toLowerCase()}"`))

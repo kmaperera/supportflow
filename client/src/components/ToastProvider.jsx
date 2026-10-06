@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ToastContext } from './toastContext'
 
 const styles = {
-  success: 'border-teal-300 bg-teal-50 text-teal-950',
-  error: 'border-red-300 bg-red-50 text-red-950',
-  info: 'border-sky-300 bg-sky-50 text-sky-950',
-  warning: 'border-amber-300 bg-amber-50 text-amber-950',
+  success: 'border-teal-300 dark:border-teal-800 bg-teal-50 dark:bg-teal-950 text-teal-950 dark:text-teal-200',
+  error: 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950 text-red-950 dark:text-red-200',
+  info: 'border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950 text-sky-950 dark:text-sky-200',
+  warning: 'border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 text-amber-950 dark:text-amber-200',
 }
 
 export default function ToastProvider({ children }) {
@@ -51,6 +51,6 @@ function ToastItem({ toast, dismiss }) {
         <div role={toast.type === 'error' ? 'alert' : 'status'} aria-live={toast.type === 'error' ? 'assertive' : 'polite'} aria-atomic="true" className="min-w-0 flex-1 break-words text-sm">
           <p className="font-semibold capitalize">{toast.type}</p><p className="mt-1">{toast.message}</p>
         </div>
-        <button type="button" aria-label={`Dismiss ${toast.type} notification`} onClick={() => dismiss(toast.id)} className="shrink-0 cursor-pointer rounded px-2 py-1 font-semibold hover:bg-white/60 focus-visible:outline-2 focus-visible:outline-offset-2">×</button>
+        <button type="button" aria-label={`Dismiss ${toast.type} notification`} onClick={() => dismiss(toast.id)} className="shrink-0 cursor-pointer rounded px-2 py-1 font-semibold hover:bg-white/60 dark:hover:bg-slate-900/60 focus-visible:outline-2 focus-visible:outline-offset-2">×</button>
       </div>
 }

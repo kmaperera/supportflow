@@ -11,7 +11,7 @@ import { getEmployeeDashboard } from '../../api/dashboardApi'
 import { getApiErrorMessage } from '../../api/apiError'
 import { ticketStatuses, formatTicketDate } from './ticketFormatting'
 
-const actionClass = 'inline-flex rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700'
+const actionClass = 'inline-flex rounded-lg border border-teal-700 dark:border-teal-400 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400'
 const panelClass = 'layout-panel'
 
 export function EmployeeDashboardContent({ data }) {
@@ -26,16 +26,16 @@ export function EmployeeDashboardContent({ data }) {
     {summary.totalTickets === 0 ? <EmptyState titleId="empty-tickets-heading" title="You haven't created any support tickets yet." message="Create your first support ticket to get help." actions={<Link to="/employee/tickets/new" className={actionClass}>Create your first ticket</Link>} /> : <>
       <section className={panelClass} aria-labelledby="recent-tickets-heading">
         <h2 id="recent-tickets-heading" className="text-lg font-semibold">Recent Tickets</h2>
-        <p className="mt-1 text-sm text-slate-500">Your latest support requests, newest first.</p>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Your latest support requests, newest first.</p>
         {tickets.length === 0 ? <EmptyState compact title="No recent tickets available." /> :
-          <ul className="mt-4 divide-y divide-slate-200">
+          <ul className="mt-4 divide-y divide-slate-200 dark:divide-slate-700">
             {tickets.map(ticket => <li key={ticket.id} className="py-4 first:pt-0 last:pb-0">
-              <p className="break-all text-xs font-semibold text-teal-800">{ticket.ticketNumber}</p>
+              <p className="break-all text-xs font-semibold text-teal-800 dark:text-teal-300">{ticket.ticketNumber}</p>
               <h3 className="mt-1 break-words font-medium">{ticket.title}</h3>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
                 <StatusBadge value={ticket.status} />
                 <PriorityBadge value={ticket.priority?.name} />
-                <span className="text-slate-500">Created {formatTicketDate(ticket.createdAt)}</span>
+                <span className="text-slate-500 dark:text-slate-400">Created {formatTicketDate(ticket.createdAt)}</span>
               </div>
             </li>)}
           </ul>}
@@ -44,7 +44,7 @@ export function EmployeeDashboardContent({ data }) {
         <h2 id="ticket-status-heading" className="text-lg font-semibold">Ticket status overview</h2>
         <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
           {ticketStatuses.map(status => <div key={status.value} className="flex justify-between gap-4 text-sm">
-            <dt className="text-slate-600"><StatusBadge value={status.value} /></dt>
+            <dt className="text-slate-600 dark:text-slate-300"><StatusBadge value={status.value} /></dt>
             <dd className="font-semibold tabular-nums">{summary[status.countField]}</dd>
           </div>)}
         </dl>

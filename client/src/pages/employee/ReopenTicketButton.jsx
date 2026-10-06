@@ -25,7 +25,7 @@ export default function ReopenTicketButton({ ticketId, onReopened, onConflict, d
     } finally { pending.current = false; onPendingChange?.(false); setReopening(false) }
   }
   return <div className="space-y-3">
-    <button type="button" disabled={reopening || disabled} onClick={() => { setError(null); setConfirming(true) }} className="rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">{reopening ? 'Reopening...' : 'Reopen Ticket'}</button>
+    <button type="button" disabled={reopening || disabled} onClick={() => { setError(null); setConfirming(true) }} className="rounded-lg border border-teal-700 dark:border-teal-400 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">{reopening ? 'Reopening...' : 'Reopen Ticket'}</button>
     <p role="status" className="sr-only">{reopening ? 'Reopening ticket...' : ''}</p>
     <ConfirmDialog open={confirming} title="Reopen Ticket?" description="The support team will continue working on this issue." confirmLabel="Reopen Ticket" pending={reopening} pendingLabel="Reopening..." onConfirm={handleReopen} onCancel={() => setConfirming(false)}>{error && <AuthFeedback>{error}</AuthFeedback>}</ConfirmDialog>
     {!confirming && error && <AuthFeedback>{error}</AuthFeedback>}

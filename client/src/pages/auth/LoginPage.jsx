@@ -58,10 +58,10 @@ function LoginPage() {
     }
   }
 
-  const inputClass = 'mt-2 block w-full rounded-lg border bg-white px-3.5 py-3 text-base text-slate-900 outline-none transition focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20'
+  const inputClass = 'mt-2 block w-full rounded-lg border bg-white dark:bg-slate-900 px-3.5 py-3 text-base text-slate-900 dark:text-slate-100 outline-none transition focus:border-teal-700 dark:focus:border-teal-400 focus:ring-2 focus:ring-teal-700/20 dark:focus:ring-teal-400/20'
 
   return (
-    <main className="auth-ui min-h-screen bg-slate-50 font-sans text-slate-900 lg:grid lg:grid-cols-[1fr_1fr]">
+    <main className="auth-ui min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 lg:grid lg:grid-cols-[1fr_1fr]">
       <section className="relative hidden flex-col justify-between overflow-hidden bg-slate-900 px-12 py-12 text-white lg:flex xl:px-20" aria-label="About SupportFlow">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-400 text-xl font-bold text-slate-900" aria-hidden="true">S</span>
@@ -76,7 +76,7 @@ function LoginPage() {
             <ol className="mt-6 grid grid-cols-3 gap-3 text-sm">
               {['Request', 'In progress', 'Resolved'].map((step, index) => (
                 <li key={step} className="space-y-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full border border-teal-300/40 text-xs font-semibold text-teal-200" aria-hidden="true">{index + 1}</span>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full border border-teal-300/40 dark:border-teal-800/40 text-xs font-semibold text-teal-200" aria-hidden="true">{index + 1}</span>
                   <span className="block text-slate-300">{step}</span>
                 </li>
               ))}
@@ -89,35 +89,35 @@ function LoginPage() {
       <section className="flex min-h-screen flex-col items-center justify-center px-5 py-10 sm:px-10 lg:px-12" aria-labelledby="login-heading">
         <div className="mb-10 flex items-center gap-3 lg:hidden">
           <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-700 font-bold text-white">S</span>
-          <div><p className="font-semibold">SupportFlow</p><p className="text-xs text-slate-500">IT Helpdesk &amp; Ticket Management</p></div>
+          <div><p className="font-semibold">SupportFlow</p><p className="text-xs text-slate-500 dark:text-slate-400">IT Helpdesk &amp; Ticket Management</p></div>
         </div>
-        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-9">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-teal-700">Your support workspace</p>
+        <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm sm:p-9">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-teal-700 dark:text-teal-300">Your support workspace</p>
           <h2 id="login-heading" className="text-3xl font-semibold tracking-tight">Welcome back</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-600">Sign in to your SupportFlow account.</p>
+          <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Sign in to your SupportFlow account.</p>
           <form onSubmit={handleSubmit} aria-busy={isSubmitting || isLoggingOut} noValidate className="mt-8 space-y-5">
             <p role="status" aria-live="polite" className="sr-only">{isLoggingOut ? 'Logging out...' : isSubmitting ? 'Signing in...' : ''}</p>
             <div>
               <label htmlFor="login-email" className="text-sm font-medium">Email address</label>
-              <input ref={emailInput} id="login-email" name="email" disabled={isSubmitting || isInitializing || isLoggingOut} type="email" autoComplete="email" required value={email} onChange={event => { clearAuthError(); setLoginSucceeded(false); setEmail(event.target.value); setErrors(current => ({ ...current, email: undefined })) }} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'login-email-error' : undefined} className={`${inputClass} ${errors.email ? 'border-red-600' : 'border-slate-300'}`} placeholder="you@company.com" />
+              <input ref={emailInput} id="login-email" name="email" disabled={isSubmitting || isInitializing || isLoggingOut} type="email" autoComplete="email" required value={email} onChange={event => { clearAuthError(); setLoginSucceeded(false); setEmail(event.target.value); setErrors(current => ({ ...current, email: undefined })) }} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'login-email-error' : undefined} className={`${inputClass} ${errors.email ? 'border-red-600 dark:border-red-400' : 'border-slate-300 dark:border-slate-700'}`} placeholder="you@company.com" />
               {errors.email && <FieldError id="login-email-error">{errors.email}</FieldError>}
             </div>
             <div>
               <label htmlFor="login-password" className="text-sm font-medium">Password</label>
               <div className="relative">
-                <input ref={passwordInput} id="login-password" name="password" disabled={isSubmitting || isInitializing || isLoggingOut} type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={event => { clearAuthError(); setLoginSucceeded(false); setPassword(event.target.value); setErrors(current => ({ ...current, password: undefined })) }} aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? 'login-password-error' : undefined} className={`${inputClass} pr-20 ${errors.password ? 'border-red-600' : 'border-slate-300'}`} />
-                <button type="button" onClick={() => setShowPassword(current => !current)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} aria-controls="login-password" className="absolute inset-y-1 right-1 rounded-md px-3 text-sm font-medium text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700">{showPassword ? 'Hide' : 'Show'}</button>
+                <input ref={passwordInput} id="login-password" name="password" disabled={isSubmitting || isInitializing || isLoggingOut} type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={event => { clearAuthError(); setLoginSucceeded(false); setPassword(event.target.value); setErrors(current => ({ ...current, password: undefined })) }} aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? 'login-password-error' : undefined} className={`${inputClass} pr-20 ${errors.password ? 'border-red-600 dark:border-red-400' : 'border-slate-300 dark:border-slate-700'}`} />
+                <button type="button" onClick={() => setShowPassword(current => !current)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} aria-controls="login-password" className="absolute inset-y-1 right-1 rounded-md px-3 text-sm font-medium text-teal-800 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400">{showPassword ? 'Hide' : 'Show'}</button>
               </div>
               {errors.password && <FieldError id="login-password-error">{errors.password}</FieldError>}
             </div>
             {passwordChanged && <AuthFeedback variant="success">Password changed successfully. Please sign in with your new password.</AuthFeedback>}
             {authError && <AuthFeedback>{authError}</AuthFeedback>}
             {loginSucceeded && <AuthFeedback toast={false} variant="success">You are signed in.</AuthFeedback>}
-            <button type="submit" disabled={isSubmitting || isInitializing || isLoggingOut} className="mt-2 w-full rounded-lg bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-60">{isLoggingOut ? 'Logging out...' : isSubmitting ? 'Signing in...' : 'Sign in'}</button>
+            <button type="submit" disabled={isSubmitting || isInitializing || isLoggingOut} className="mt-2 w-full rounded-lg bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400 disabled:cursor-not-allowed disabled:opacity-60">{isLoggingOut ? 'Logging out...' : isSubmitting ? 'Signing in...' : 'Sign in'}</button>
           </form>
-          <p className="mt-7 border-t border-slate-100 pt-6 text-center text-xs leading-5 text-slate-500">Accounts are managed by your SupportFlow administrator.</p>
+          <p className="mt-7 border-t border-slate-100 dark:border-slate-800 pt-6 text-center text-xs leading-5 text-slate-500 dark:text-slate-400">Accounts are managed by your SupportFlow administrator.</p>
         </div>
-        <p className="mt-7 text-xs text-slate-500">Need access? Contact your IT team.</p>
+        <p className="mt-7 text-xs text-slate-500 dark:text-slate-400">Need access? Contact your IT team.</p>
       </section>
     </main>
   )

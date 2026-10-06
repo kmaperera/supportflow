@@ -33,7 +33,7 @@ export default function SessionActions() {
   return <div aria-busy={isLoggingOutAll || isLoggingOut}>
     <p role="status" aria-live="polite" className="sr-only">{isLoggingOutAll ? 'Logging out all sessions...' : ''}</p>
     <LogoutButton disabled={isLoggingOutAll} />
-    <button type="button" onClick={() => { setError(null); setConfirming(true) }} disabled={isLoggingOut || isLoggingOutAll} className="mt-4 ml-3 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-60 disabled:cursor-not-allowed">{isLoggingOutAll ? 'Logging out all sessions...' : 'Log out all sessions'}</button>
+    <button type="button" onClick={() => { setError(null); setConfirming(true) }} disabled={isLoggingOut || isLoggingOutAll} className="mt-4 ml-3 rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400 disabled:opacity-60 disabled:cursor-not-allowed">{isLoggingOutAll ? 'Logging out all sessions...' : 'Log out all sessions'}</button>
     <ConfirmDialog open={confirming} title="Log out of all sessions?" description="You will need to sign in again on this device and your other devices/sessions." confirmLabel="Log Out All Sessions" variant="warning" pending={isLoggingOutAll} pendingLabel="Logging out..." onConfirm={handleLogoutAll} onCancel={() => setConfirming(false)}>{error && <AuthFeedback>{error}</AuthFeedback>}</ConfirmDialog>
   </div>
 }

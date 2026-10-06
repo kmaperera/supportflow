@@ -13,7 +13,7 @@ import { getApiErrorMessage } from '../../api/apiError'
 import { formatTicketDate } from './ticketFormatting'
 import TicketFilters from './TicketFilters'
 
-const actionClass = 'inline-block rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-50'
+const actionClass = 'inline-block rounded-lg border border-teal-700 dark:border-teal-400 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400 disabled:opacity-50'
 
 export default function MyTicketsPage() {
   const { user } = useAuth()
@@ -75,14 +75,14 @@ export function MyTicketsList({ tickets, totalRecords }) {
   if (!tickets.length) return <EmptyState title={totalRecords === 0 ? "You don't have any support tickets yet." : 'No tickets on this page.'} actions={<Link to="/employee/tickets/new" className={actionClass}>Create Ticket</Link>} />
   return <ul className="space-y-4">
     {tickets.map(ticket => <li key={ticket.id} className="min-w-0">
-      <Link to={`/employee/tickets/${encodeURIComponent(ticket.id)}`} aria-labelledby={`ticket-number-${ticket.id} ticket-title-${ticket.id}`} className="block rounded-2xl border border-slate-200 bg-white p-4 transition-colors hover:border-teal-700 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 sm:p-6">
-      <span id={`ticket-number-${ticket.id}`} className="break-all text-sm font-semibold text-teal-800 underline underline-offset-4">{ticket.ticketNumber}</span>
+      <Link to={`/employee/tickets/${encodeURIComponent(ticket.id)}`} aria-labelledby={`ticket-number-${ticket.id} ticket-title-${ticket.id}`} className="block rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 transition-colors hover:border-teal-700 dark:hover:border-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400 sm:p-6">
+      <span id={`ticket-number-${ticket.id}`} className="break-all text-sm font-semibold text-teal-800 dark:text-teal-300 underline underline-offset-4">{ticket.ticketNumber}</span>
       <h2 id={`ticket-title-${ticket.id}`} className="mt-1 break-words text-lg font-semibold">{ticket.title}</h2>
       <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2 xl:grid-cols-4">
-        <div><dt className="text-slate-500">Category</dt><dd className="mt-1 break-words">{ticket.category?.name || 'Not specified'}</dd></div>
-        <div><dt className="text-slate-500">Priority</dt><dd className="mt-1"><PriorityBadge value={ticket.priority?.name} /></dd></div>
-        <div><dt className="text-slate-500">Status</dt><dd className="mt-1 font-medium text-teal-900"><StatusBadge value={ticket.status} /></dd></div>
-        <div><dt className="text-slate-500">Created</dt><dd className="mt-1">{formatTicketDate(ticket.createdAt)}</dd></div>
+        <div><dt className="text-slate-500 dark:text-slate-400">Category</dt><dd className="mt-1 break-words">{ticket.category?.name || 'Not specified'}</dd></div>
+        <div><dt className="text-slate-500 dark:text-slate-400">Priority</dt><dd className="mt-1"><PriorityBadge value={ticket.priority?.name} /></dd></div>
+        <div><dt className="text-slate-500 dark:text-slate-400">Status</dt><dd className="mt-1 font-medium text-teal-900 dark:text-teal-200"><StatusBadge value={ticket.status} /></dd></div>
+        <div><dt className="text-slate-500 dark:text-slate-400">Created</dt><dd className="mt-1">{formatTicketDate(ticket.createdAt)}</dd></div>
       </dl>
       </Link>
     </li>)}

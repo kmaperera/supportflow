@@ -8,8 +8,8 @@ import { getAssignableTechnicians, getTechnicianWorkloads } from '../../api/user
 import { getApiErrorMessage } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
 
-const button = 'min-h-11 w-fit cursor-pointer rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
-const input = 'mt-1 block w-full min-w-0 rounded-lg border border-slate-300 bg-white p-3 focus-visible:outline-2 focus-visible:outline-teal-700'
+const button = 'min-h-11 w-fit cursor-pointer rounded-lg border border-teal-700 dark:border-teal-400 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+const input = 'mt-1 block w-full min-w-0 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 focus-visible:outline-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400'
 const name = person => [person?.firstName, person?.lastName].filter(Boolean).join(' ') || person?.email || 'Technician'
 const canConfirmAssignment = (ticket, selected) => Boolean(selected) && String(selected) !== String(ticket.assignedTo) && !['RESOLVED', 'CLOSED'].includes(ticket.status)
 
@@ -47,16 +47,16 @@ function TechnicianCombobox({ technicians, counts, selected, currentId, disabled
   return <div className="relative min-w-0" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) { setExpanded(false); setActive(-1) } }}>
     <label htmlFor={id} className="block text-sm font-medium">Technician *</label>
     <input id={id} role="combobox" aria-autocomplete="list" aria-expanded={isOpen} aria-controls={`${id}-list`} aria-activedescendant={isOpen && options[active] ? `${id}-option-${active}` : undefined} autoComplete="off" className={input} disabled={disabled} placeholder="Search or select a technician..." value={isOpen ? query : chosen ? name(chosen) : ''} onFocus={open} onClick={open} onKeyDown={keyDown} onChange={event => { setQuery(event.target.value); setExpanded(true); setActive(-1); onSelect('') }} />
-    {isOpen && <div className="absolute inset-x-0 top-full z-20 mt-1 max-h-[min(16rem,45dvh)] overflow-y-auto rounded-lg border border-slate-300 bg-white shadow-lg">
+    {isOpen && <div className="absolute inset-x-0 top-full z-20 mt-1 max-h-[min(16rem,45dvh)] overflow-y-auto rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg">
       <ul id={`${id}-list`} role="listbox" aria-label="Assignable technicians" ref={list}>{options.map((person, index) => {
         const current = String(person.id) === String(currentId)
-        return <li id={`${id}-option-${index}`} key={person.id} role="option" aria-selected={String(person.id) === selected} aria-disabled={current} className={`min-w-0 break-words p-3 text-sm ${current ? 'cursor-not-allowed text-slate-500' : 'cursor-pointer hover:bg-teal-50'} ${active === index ? 'bg-teal-50 ring-1 ring-inset ring-teal-700' : ''}`} onMouseDown={event => event.preventDefault()} onClick={() => select(person)}>
+        return <li id={`${id}-option-${index}`} key={person.id} role="option" aria-selected={String(person.id) === selected} aria-disabled={current} className={`min-w-0 break-words p-3 text-sm ${current ? 'cursor-not-allowed text-slate-500 dark:text-slate-400' : 'cursor-pointer hover:bg-teal-50 dark:hover:bg-teal-950'} ${active === index ? 'bg-teal-50 dark:bg-teal-950 ring-1 ring-inset ring-teal-700 dark:ring-teal-400' : ''}`} onMouseDown={event => event.preventDefault()} onClick={() => select(person)}>
           <p className="font-semibold">{name(person)}{current ? ' (Current technician)' : ''}</p>
-          {person.email && <p className="break-all text-slate-600">{person.email}</p>}
-          {counts.has(String(person.id)) && <p className="text-slate-600">{counts.get(String(person.id))} active tickets</p>}
+          {person.email && <p className="break-all text-slate-600 dark:text-slate-300">{person.email}</p>}
+          {counts.has(String(person.id)) && <p className="text-slate-600 dark:text-slate-300">{counts.get(String(person.id))} active tickets</p>}
         </li>
       })}</ul>
-      {!options.length && <p role="status" className="p-3 text-sm text-slate-600">No technicians found.</p>}
+      {!options.length && <p role="status" className="p-3 text-sm text-slate-600 dark:text-slate-300">No technicians found.</p>}
     </div>}
   </div>
 }
@@ -130,18 +130,18 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
   }
   return <section aria-labelledby="assignment-heading" className="min-w-0 space-y-4 layout-panel">
     <h2 id="assignment-heading" className="text-lg font-semibold">Assignment</h2>
-    <dl><dt className="text-sm text-slate-500">Current technician</dt><dd className="mt-1 break-words">{assigned ? name(ticket.assignee) : 'Unassigned'}</dd></dl>
+    <dl><dt className="text-sm text-slate-500 dark:text-slate-400">Current technician</dt><dd className="mt-1 break-words">{assigned ? name(ticket.assignee) : 'Unassigned'}</dd></dl>
     {notice && <AuthFeedback variant={notice.success ? 'success' : 'error'}>{notice.text}</AuthFeedback>}
     <ConfirmDialog open={Boolean(unassignConfirmation)} title="Unassign ticket?" description={`Current technician: ${unassignConfirmation?.name}. The ticket will return to Open in the unassigned queue. Assignment history will be retained and the removed technician notified.`} variant="warning" confirmLabel="Unassign Ticket" pending={busy} pendingLabel="Unassigning..." onConfirm={removeAssignment} onCancel={() => setUnassignConfirmation(null)}>{notice && !notice.success && <AuthFeedback>{notice.text}</AuthFeedback>}</ConfirmDialog>
     <div className="flex flex-wrap items-start gap-3">
-    {!eligible ? <p className="text-sm text-slate-600">Assignment cannot be changed on resolved or closed tickets.</p> : !open ? <button className={button} disabled={busy} onClick={() => { setOpen(true); setAttempt(value => value + 1); setSelected(''); setConfirm(false) }}>{assigned ? 'Reassign' : 'Assign technician'}</button> : <div className="w-full min-w-0 max-w-lg space-y-3">
-      {!current && <div className="space-y-1" aria-busy="true"><p className="text-sm font-medium">Technician</p><div className="rounded-lg border border-slate-300 bg-slate-50 px-3"><LoadingState>Loading technicians...</LoadingState></div></div>}
+    {!eligible ? <p className="text-sm text-slate-600 dark:text-slate-300">Assignment cannot be changed on resolved or closed tickets.</p> : !open ? <button className={button} disabled={busy} onClick={() => { setOpen(true); setAttempt(value => value + 1); setSelected(''); setConfirm(false) }}>{assigned ? 'Reassign' : 'Assign technician'}</button> : <div className="w-full min-w-0 max-w-lg space-y-3">
+      {!current && <div className="space-y-1" aria-busy="true"><p className="text-sm font-medium">Technician</p><div className="rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3"><LoadingState>Loading technicians...</LoadingState></div></div>}
       {current?.error && <ErrorState compact title="Unable to load technicians"><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></ErrorState>}
       {current?.data && <>
         {!current.data.length ? <EmptyState compact title="No assignable technicians found." /> : <>
           <TechnicianCombobox technicians={current.data} counts={counts} selected={selected} currentId={ticket.assignedTo} disabled={busy || confirm} onSelect={value => { setSelected(value); setConfirm(false) }} />
-          {!chosen && <p className="text-sm text-slate-600">Select an available technician to continue. Reassignment requires a different technician.</p>}
-          {workload?.error && <p className="text-sm text-slate-600">Workload counts are unavailable. You can still choose a technician.</p>}
+          {!chosen && <p className="text-sm text-slate-600 dark:text-slate-300">Select an available technician to continue. Reassignment requires a different technician.</p>}
+          {workload?.error && <p className="text-sm text-slate-600 dark:text-slate-300">Workload counts are unavailable. You can still choose a technician.</p>}
           <ConfirmDialog open={Boolean(confirm && chosen)} title={assigned ? "Reassign ticket?" : "Assign technician?"} description={assigned ? `Current technician: ${name(ticket.assignee)}. New technician: ${chosen ? name(chosen) : ""}.` : `Assign this ticket to ${chosen ? name(chosen) : "the selected technician"}?`} confirmLabel={assigned ? "Reassign Ticket" : "Assign Technician"} pending={busy} pendingLabel={assigned ? "Reassigning..." : "Assigning..."} onConfirm={save} onCancel={() => setConfirm(false)}>{notice && !notice.success && <AuthFeedback>{notice.text}</AuthFeedback>}</ConfirmDialog>
         </>}
       </>}
@@ -150,7 +150,7 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
       <button className={button} disabled={busy} onClick={() => { setOpen(false); setConfirm(false) }}>Cancel</button>
       </div>
     </div>}
-    {!open && canUnassign && <button type="button" className={`${button} border-red-700 text-red-700 hover:bg-red-50`} disabled={busy} onClick={() => { setNotice(null); setUnassignConfirmation({ id: ticket.assignment.id, name: name(ticket.assignee) }) }}>Unassign</button>}
+    {!open && canUnassign && <button type="button" className={`${button} border-red-700 dark:border-red-400 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950`} disabled={busy} onClick={() => { setNotice(null); setUnassignConfirmation({ id: ticket.assignment.id, name: name(ticket.assignee) }) }}>Unassign</button>}
     </div>
   </section>
 }

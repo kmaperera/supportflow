@@ -1,12 +1,12 @@
 const tones = {
-  gray: 'bg-slate-100 text-slate-800',
-  blue: 'bg-blue-50 text-blue-800',
-  indigo: 'bg-indigo-50 text-indigo-800',
-  amber: 'bg-amber-50 text-amber-900',
-  orange: 'bg-orange-50 text-orange-900',
-  green: 'bg-green-50 text-green-800',
-  purple: 'bg-purple-50 text-purple-800',
-  red: 'bg-red-100 text-red-900',
+  gray: 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100',
+  blue: 'bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-300',
+  indigo: 'bg-indigo-50 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300',
+  amber: 'bg-amber-50 dark:bg-amber-950 text-amber-900 dark:text-amber-200',
+  orange: 'bg-orange-50 dark:bg-orange-950 text-orange-900 dark:text-orange-200',
+  green: 'bg-green-50 dark:bg-green-950 text-green-800 dark:text-green-300',
+  purple: 'bg-purple-50 dark:bg-purple-950 text-purple-800 dark:text-purple-300',
+  red: 'bg-red-100 dark:bg-red-950 text-red-900 dark:text-red-200',
 }
 const ticketStates = {
   OPEN: ['Open', 'blue'], ASSIGNED: ['Assigned', 'indigo'],

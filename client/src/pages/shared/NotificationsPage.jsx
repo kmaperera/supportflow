@@ -14,7 +14,7 @@ import AuthFeedback from '../../auth/AuthFeedback'
 import { formatTicketDate } from '../employee/ticketFormatting'
 import { subscribeToNotifications } from '../../api/notificationRealtime'
 
-const buttonClass = 'inline-flex cursor-pointer items-center rounded-lg border border-teal-700 px-3 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+const buttonClass = 'inline-flex cursor-pointer items-center rounded-lg border border-teal-700 dark:border-teal-400 px-3 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 const labels = { TICKET_CREATED: 'Ticket created', TICKET_ASSIGNED: 'Ticket assigned', TICKET_REASSIGNED: 'Ticket reassigned', TICKET_UNASSIGNED: 'Ticket unassigned', STATUS_CHANGED: 'Status changed', PRIORITY_CHANGED: 'Priority changed', PUBLIC_COMMENT: 'New reply', TICKET_RESOLVED: 'Ticket resolved', TICKET_REOPENED: 'Ticket reopened', TICKET_CLOSED: 'Ticket closed', SLA_WARNING: 'Support deadline approaching', SLA_BREACHED: 'Support deadline exceeded' }
 
 export default function NotificationsPage() {
@@ -113,17 +113,17 @@ function Notifications({ role, accessToken }) {
   }
   return <div className="layout-page">
     <PageHeader title="Notifications" />
-    <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-slate-600">{admin ? 'Support activity notifications sent to your admin account.' : technician ? 'Updates about your support work and ticket activity.' : 'Updates about your support requests.'}</p><button type="button" className={buttonClass} disabled={!current || markingAll || pendingIds.length > 0} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Refresh</button></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-slate-600 dark:text-slate-300">{admin ? 'Support activity notifications sent to your admin account.' : technician ? 'Updates about your support work and ticket activity.' : 'Updates about your support requests.'}</p><button type="button" className={buttonClass} disabled={!current || markingAll || pendingIds.length > 0} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Refresh</button></div>
     {error && <AuthFeedback>{error}</AuthFeedback>}
     {!current && <ContentSkeleton initial={!result} variant="cards">Loading notifications...</ContentSkeleton>}
     {current?.error && <ErrorState title="Unable to load notifications" message={<>{current.error}</>}><button type="button" className={buttonClass} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button></ErrorState>}
     {current?.data && <>
       <div className="flex flex-wrap items-center gap-3"><p className="text-sm">{current.data.unreadCount} unread</p>{current.data.unreadCount > 0 && <button type="button" className={buttonClass} disabled={markingAll || pendingIds.length > 0} onClick={markAll}>{markingAll ? 'Marking as read...' : 'Mark all as read'}</button>}</div>
-      {!current.data.notifications.length ? <EmptyState compact title="No notifications yet." /> : <ul className="space-y-3">{current.data.notifications.map(item => item.type === 'INTERNAL_NOTE' && !allowInternal ? null : <li key={item.id} className={`min-w-0 rounded-xl border p-5 ${item.isRead ? 'border-slate-200 bg-white' : 'border-teal-200 bg-teal-50'}`}>
-        <p className="text-xs font-semibold text-slate-600"><StateBadge value={item.isRead ? 'READ' : 'UNREAD'} /> · {item.type === 'INTERNAL_NOTE' ? 'Internal note' : labels[item.type] || 'Support update'}</p>
+      {!current.data.notifications.length ? <EmptyState compact title="No notifications yet." /> : <ul className="space-y-3">{current.data.notifications.map(item => item.type === 'INTERNAL_NOTE' && !allowInternal ? null : <li key={item.id} className={`min-w-0 rounded-xl border p-5 ${item.isRead ? 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900' : 'border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950'}`}>
+        <p className="text-xs font-semibold text-slate-600 dark:text-slate-300"><StateBadge value={item.isRead ? 'READ' : 'UNREAD'} /> · {item.type === 'INTERNAL_NOTE' ? 'Internal note' : labels[item.type] || 'Support update'}</p>
         <h2 className="mt-2 break-words font-semibold">{item.title}</h2>
-        <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-700">{item.message}</p>
-        <p className="mt-2 text-xs text-slate-500">{formatTicketDate(item.createdAt)}</p>
+        <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-700 dark:text-slate-200">{item.message}</p>
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{formatTicketDate(item.createdAt)}</p>
         <div className="mt-3 layout-actions">
           {item.ticketId != null && /^[1-9]\d*$/.test(String(item.ticketId)) && <button type="button" className={buttonClass} disabled={openingId !== null || markingAll || pendingIds.includes(String(item.id))} onClick={() => viewTicket(item)}>{openingId === String(item.id) ? 'Opening...' : 'View Ticket'}</button>}
           {!item.isRead && <button type="button" className={buttonClass} disabled={markingAll || pendingIds.includes(String(item.id))} onClick={() => markOne(item.id)}>{pendingIds.includes(String(item.id)) ? 'Marking as read...' : 'Mark as read'}</button>}

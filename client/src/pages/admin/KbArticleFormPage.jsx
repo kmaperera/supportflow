@@ -45,7 +45,7 @@ function ArticleEditor({ id, categories, article, onSaved }) {
     finally { pending.current = false; if (mounted.current) setSaving(false) }
   }
   return <form noValidate onSubmit={submit} className={kbCard}>
-    <p className="text-sm text-slate-600">{id ? 'Saving preserves the current publication status. Changes to published content are visible to readers immediately.' : 'New articles are saved as drafts. Publish them from KB Articles when ready.'}</p>
+    <p className="text-sm text-slate-600 dark:text-slate-300">{id ? 'Saving preserves the current publication status. Changes to published content are visible to readers immediately.' : 'New articles are saved as drafts. Publish them from KB Articles when ready.'}</p>
     {error && <AuthFeedback>{error}</AuthFeedback>}
     {['title', 'categoryId', 'content'].map(field => <div key={field}>
       <label className="text-sm font-semibold" htmlFor={`kb-${field}`}>{({ title: 'Title', categoryId: 'KB Category', content: 'Content' })[field]} *</label>
@@ -54,7 +54,7 @@ function ArticleEditor({ id, categories, article, onSaved }) {
       </select> : field === 'content' ? <textarea id={`kb-${field}`} required rows={14} disabled={saving} className={input} value={values[field]} onChange={event => change(field, event.target.value)} aria-invalid={Boolean(errors[field])} aria-describedby={`kb-${field}-error`} /> : <input id={`kb-${field}`} maxLength={200} required disabled={saving} className={input} value={values[field]} onChange={event => change(field, event.target.value)} aria-invalid={Boolean(errors[field])} aria-describedby={`kb-${field}-error`} />}
       <FieldError id={`kb-${field}-error`}>{errors[field]}</FieldError>
     </div>)}
-    {!available.length && <p role="status" className="text-sm text-slate-600">Create or activate a KB category before adding an article.</p>}
+    {!available.length && <p role="status" className="text-sm text-slate-600 dark:text-slate-300">Create or activate a KB category before adding an article.</p>}
     <button type="submit" className={button} disabled={saving || !available.length}>{saving ? id ? 'Saving...' : 'Creating...' : id ? 'Save Article' : 'Create Article'}</button>
   </form>
 }

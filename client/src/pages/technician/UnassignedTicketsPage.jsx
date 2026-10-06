@@ -13,7 +13,7 @@ import { getUnassignedTickets, selfAssignTicket } from '../../api/ticketApi'
 import TechnicianTicketCards from './TechnicianTicketCards'
 import QueueFilters from './QueueFilters'
 
-const actionClass = 'inline-flex min-h-11 items-center rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-50'
+const actionClass = 'inline-flex min-h-11 items-center rounded-lg border border-teal-700 dark:border-teal-400 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400 disabled:opacity-50'
 
 export default function UnassignedTicketsPage() {
   const { user } = useAuth()
@@ -100,7 +100,7 @@ function UnassignedQueue() {
 export function SelfAssignAction({ ticket, pending, onAssign }) {
   const eligible = ticket.status === 'OPEN' && ticket.assignedTo === null
   return <>
-    {!eligible && <p id={`assignment-help-${ticket.id}`} className="text-sm text-slate-600">Only open, unassigned tickets can be self-assigned.</p>}
+    {!eligible && <p id={`assignment-help-${ticket.id}`} className="text-sm text-slate-600 dark:text-slate-300">Only open, unassigned tickets can be self-assigned.</p>}
     <button type="button" disabled={pending || !eligible} aria-label={`${pending ? 'Assigning' : 'Assign to me'}: ${ticket.ticketNumber}`} aria-describedby={!eligible ? `assignment-help-${ticket.id}` : undefined} onClick={() => onAssign(ticket)} className={`${actionClass} w-full cursor-pointer justify-center disabled:cursor-not-allowed sm:w-auto`}>{pending ? 'Assigning...' : 'Assign to me'}</button>
   </>
 }

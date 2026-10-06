@@ -27,8 +27,8 @@ export default function ReportExportActions({ type, criteria, disabled }) {
     } finally { pending.current = false; if (!controller.signal.aborted) setBusy(null) }
   }
   return <div className="space-y-2">
-    <div className="layout-actions">{(type === 'tickets' ? ['csv', 'pdf'] : ['csv']).map(format => <button key={format} type="button" disabled={Boolean(busy) || disabled || invalid} onClick={() => download(format)} className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50">{busy === format ? `Exporting ${format.toUpperCase()}...` : `Export ${format.toUpperCase()}`}</button>)}</div>
-    <p className="text-xs text-slate-500">Exports include the complete report matching the generated criteria, not just this page. Data is read again when exporting.</p>
+    <div className="layout-actions">{(type === 'tickets' ? ['csv', 'pdf'] : ['csv']).map(format => <button key={format} type="button" disabled={Boolean(busy) || disabled || invalid} onClick={() => download(format)} className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-teal-700 dark:border-teal-400 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50">{busy === format ? `Exporting ${format.toUpperCase()}...` : `Export ${format.toUpperCase()}`}</button>)}</div>
+    <p className="text-xs text-slate-500 dark:text-slate-400">Exports include the complete report matching the generated criteria, not just this page. Data is read again when exporting.</p>
     {error && <AuthFeedback>{error}</AuthFeedback>}
   </div>
 }

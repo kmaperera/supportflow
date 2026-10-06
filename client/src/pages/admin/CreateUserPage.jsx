@@ -10,8 +10,8 @@ import { validateCreateUser } from './createUserValidation'
 
 const initial = { firstName: '', lastName: '', email: '', role: 'EMPLOYEE', password: '', confirmPassword: '', phone: '', department: '' }
 const labels = { firstName: 'First name', lastName: 'Last name', email: 'Email', role: 'Role', password: 'Password', confirmPassword: 'Confirm Password', phone: 'Phone', department: 'Department' }
-const control = 'mt-1 block w-full min-w-0 rounded-lg border border-slate-300 bg-white p-3 focus-visible:outline-2 focus-visible:outline-teal-700 disabled:opacity-60'
-const button = 'min-h-11 cursor-pointer rounded-lg border border-teal-700 px-4 py-2 font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+const control = 'mt-1 block w-full min-w-0 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 focus-visible:outline-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400 disabled:opacity-60'
+const button = 'min-h-11 cursor-pointer rounded-lg border border-teal-700 dark:border-teal-400 px-4 py-2 font-semibold text-teal-800 dark:text-teal-300 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 
 export default function CreateUserPage() {
   const navigate = useNavigate()
@@ -54,7 +54,7 @@ export default function CreateUserPage() {
         const optional = ['phone', 'department'].includes(field)
         return <div key={field} className="min-w-0"><label htmlFor={`create-user-${field}`} className="text-sm font-semibold">{label}{optional ? ' (optional)' : ' *'}</label>
           {field === 'role' ? <select id={`create-user-${field}`} className={control} required disabled={creating} value={values.role} aria-invalid={Boolean(errors.role)} aria-describedby={`create-user-${field}-error`} onChange={event => { setValues(previous => ({ ...previous, role: event.target.value })); setErrors(previous => ({ ...previous, role: null })) }}>{[['EMPLOYEE', 'Employee'], ['TECHNICIAN', 'Technician'], ['ADMIN', 'Admin']].map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select> : <input id={`create-user-${field}`} className={control} type={field.toLowerCase().includes('password') ? 'password' : field === 'email' ? 'email' : field === 'phone' ? 'tel' : 'text'} autoComplete={field.toLowerCase().includes('password') ? 'new-password' : 'off'} required={!optional} maxLength={({ firstName: 100, lastName: 100, email: 255, phone: 30, department: 150 })[field]} disabled={creating} value={values[field]} aria-invalid={Boolean(errors[field])} aria-describedby={`create-user-${field}-error${field === 'password' ? ' password-help' : ''}`} onChange={event => { setValues(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [field]: null })) }} />}
-          {field === 'password' && <p id="password-help" className="mt-1 text-xs text-slate-600">At least 8 characters, including uppercase, lowercase, and a number.</p>}
+          {field === 'password' && <p id="password-help" className="mt-1 text-xs text-slate-600 dark:text-slate-300">At least 8 characters, including uppercase, lowercase, and a number.</p>}
           <div id={`create-user-${field}-error`}>{errors[field] && <FieldError>{errors[field]}</FieldError>}</div>
         </div>
       })}</div>

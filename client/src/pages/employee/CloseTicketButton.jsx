@@ -25,7 +25,7 @@ export default function CloseTicketButton({ ticketId, onClosed, onConflict, disa
     } finally { pending.current = false; onPendingChange?.(false); setClosing(false) }
   }
   return <div className="space-y-3">
-    <button type="button" disabled={closing || disabled} onClick={() => { setError(null); setConfirming(true) }} className="rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">{closing ? 'Closing...' : 'Close Ticket'}</button>
+    <button type="button" disabled={closing || disabled} onClick={() => { setError(null); setConfirming(true) }} className="rounded-lg border border-teal-700 dark:border-teal-400 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">{closing ? 'Closing...' : 'Close Ticket'}</button>
     <p role="status" className="sr-only">{closing ? 'Closing ticket...' : ''}</p>
     <ConfirmDialog open={confirming} title="Close Ticket?" description="This will mark your support request as closed." confirmLabel="Close Ticket" pending={closing} pendingLabel="Closing..." onConfirm={handleClose} onCancel={() => setConfirming(false)}>{error && <AuthFeedback>{error}</AuthFeedback>}</ConfirmDialog>
     {!confirming && error && <AuthFeedback>{error}</AuthFeedback>}

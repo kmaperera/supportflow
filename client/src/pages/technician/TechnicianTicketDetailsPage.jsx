@@ -21,7 +21,7 @@ import TicketInternalNotes from './TicketInternalNotes'
 import TicketAttachments from '../employee/TicketAttachments'
 import { formatTicketDate } from '../employee/ticketFormatting'
 
-const actionClass = 'inline-flex min-h-11 items-center rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-50'
+const actionClass = 'inline-flex min-h-11 items-center rounded-lg border border-teal-700 dark:border-teal-400 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400 disabled:opacity-50'
 const panelClass = 'min-w-0 layout-panel'
 const personName = person => [person?.firstName, person?.lastName].filter(value => typeof value === 'string' && value.trim()).map(value => value.trim()).join(' ')
 
@@ -188,18 +188,18 @@ export function TechnicianTicketDetailsContent({ ticket, userId }) {
   ]
   return <>
     <header className={panelClass}>
-      <p className="text-sm font-semibold text-teal-800">{ticket.ticketNumber}</p>
+      <p className="text-sm font-semibold text-teal-800 dark:text-teal-300">{ticket.ticketNumber}</p>
       <h1 className="mt-2 text-2xl font-semibold">{ticket.title}</h1>
       <p className="mt-3 text-sm font-medium">{assignment}</p>
       <dl className="mt-4 flex flex-wrap gap-6 text-sm">
-        <div className="min-w-0"><dt className="text-slate-500">Status</dt><dd className="mt-1 font-semibold text-teal-900"><StatusBadge value={ticket.status} /></dd></div>
-        <div className="min-w-0"><dt className="text-slate-500">Priority</dt><dd className="mt-1 font-semibold"><PriorityBadge value={ticket.priority?.name} /></dd></div>
+        <div className="min-w-0"><dt className="text-slate-500 dark:text-slate-400">Status</dt><dd className="mt-1 font-semibold text-teal-900 dark:text-teal-200"><StatusBadge value={ticket.status} /></dd></div>
+        <div className="min-w-0"><dt className="text-slate-500 dark:text-slate-400">Priority</dt><dd className="mt-1 font-semibold"><PriorityBadge value={ticket.priority?.name} /></dd></div>
       </dl>
     </header>
     <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <section className={panelClass} aria-labelledby="workspace-description-heading">
         <h2 id="workspace-description-heading" className="text-lg font-semibold">Description</h2>
-        <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-700">{ticket.description}</p>
+        <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-700 dark:text-slate-200">{ticket.description}</p>
         {ticket.resolutionSummary && <div className="mt-6"><h3 className="font-semibold">Resolution summary</h3><p className="mt-2 whitespace-pre-wrap text-sm leading-7">{ticket.resolutionSummary}</p></div>}
       </section>
       <section className={panelClass} aria-labelledby="workspace-information-heading">

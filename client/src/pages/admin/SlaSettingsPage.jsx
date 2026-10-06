@@ -13,7 +13,7 @@ import AuthFeedback from '../../auth/AuthFeedback'
 import { formatTicketDate } from '../employee/ticketFormatting'
 import { formatPolicyMinutes, validateSlaDurations } from './slaPolicyForm'
 
-const button = 'min-h-11 w-fit cursor-pointer rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+const button = 'min-h-11 w-fit cursor-pointer rounded-lg border border-teal-700 dark:border-teal-400 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 export default function SlaSettingsPage() {
   const toast = useToast()
   const [attempt, setAttempt] = useState(0)
@@ -26,7 +26,7 @@ export default function SlaSettingsPage() {
   const current = result?.attempt === attempt ? result : null
   return <div className="layout-page">
     <PageHeader title="SLA Settings" description="Configure response and resolution targets by priority." />
-    <p className="text-sm text-slate-600">Changes apply to new tickets and future SLA recalculations triggered by priority changes. Existing ticket deadlines are not automatically rewritten.</p>
+    <p className="text-sm text-slate-600 dark:text-slate-300">Changes apply to new tickets and future SLA recalculations triggered by priority changes. Existing ticket deadlines are not automatically rewritten.</p>
 
     {!current && <ContentSkeleton initial={!result} variant="cards" columns="xl:grid-cols-2">Loading SLA settings...</ContentSkeleton>}
     {current?.error && <ErrorState title="Unable to load SLA settings."><button className={button} onClick={() => setAttempt(value => value + 1)}>Retry</button></ErrorState>}
@@ -64,11 +64,11 @@ function PolicyCard({ policy, onSaved }) {
   }
   return <section className="min-w-0 space-y-4 layout-panel">
     <h2 className="text-lg font-semibold"><PriorityBadge value={policy.priorityName} /></h2>
-    <dl className="grid gap-4 text-sm sm:grid-cols-2">{[['Response target', formatPolicyMinutes(policy.responseTimeMinutes)], ['Resolution target', formatPolicyMinutes(policy.resolutionTimeMinutes)], ['Status', <ActiveBadge key="status" value={policy.isActive} />], ['Updated', formatTicketDate(policy.updatedAt)]].map(([label, value]) => <div key={label}><dt className="text-slate-500">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
-    {!editing ? <button className={button} onClick={() => { setEditing(true); setError(null); setErrors({}) }}>Edit</button> : <form onSubmit={submit} noValidate className="space-y-4 border-t border-slate-200 pt-4">
+    <dl className="grid gap-4 text-sm sm:grid-cols-2">{[['Response target', formatPolicyMinutes(policy.responseTimeMinutes)], ['Resolution target', formatPolicyMinutes(policy.resolutionTimeMinutes)], ['Status', <ActiveBadge key="status" value={policy.isActive} />], ['Updated', formatTicketDate(policy.updatedAt)]].map(([label, value]) => <div key={label}><dt className="text-slate-500 dark:text-slate-400">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
+    {!editing ? <button className={button} onClick={() => { setEditing(true); setError(null); setErrors({}) }}>Edit</button> : <form onSubmit={submit} noValidate className="space-y-4 border-t border-slate-200 dark:border-slate-700 pt-4">
       {error && <AuthFeedback>{error}</AuthFeedback>}
-      <p className="text-sm text-slate-600">Enter whole minutes (60 minutes = 1 hour; 1,440 minutes = 24 hours).</p>
-      {['responseTimeMinutes', 'resolutionTimeMinutes'].map(field => <div key={field}><label className="text-sm font-medium" htmlFor={`${policy.id}-${field}`}>{field === 'responseTimeMinutes' ? 'Response' : 'Resolution'} target (minutes) *</label><input id={`${policy.id}-${field}`} type="number" min="1" max="4294967295" step="1" required disabled={saving} className="mt-1 block w-full min-w-0 rounded-lg border border-slate-300 p-3 focus-visible:outline-2 focus-visible:outline-teal-700 disabled:opacity-50" value={values[field]} aria-invalid={Boolean(errors[field])} aria-describedby={`${policy.id}-${field}-error`} onChange={event => { setValues(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [field]: null })) }} /><div id={`${policy.id}-${field}-error`}>{errors[field] && <FieldError>{errors[field]}</FieldError>}</div></div>)}
+      <p className="text-sm text-slate-600 dark:text-slate-300">Enter whole minutes (60 minutes = 1 hour; 1,440 minutes = 24 hours).</p>
+      {['responseTimeMinutes', 'resolutionTimeMinutes'].map(field => <div key={field}><label className="text-sm font-medium" htmlFor={`${policy.id}-${field}`}>{field === 'responseTimeMinutes' ? 'Response' : 'Resolution'} target (minutes) *</label><input id={`${policy.id}-${field}`} type="number" min="1" max="4294967295" step="1" required disabled={saving} className="mt-1 block w-full min-w-0 rounded-lg border border-slate-300 dark:border-slate-700 p-3 focus-visible:outline-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400 disabled:opacity-50" value={values[field]} aria-invalid={Boolean(errors[field])} aria-describedby={`${policy.id}-${field}-error`} onChange={event => { setValues(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [field]: null })) }} /><div id={`${policy.id}-${field}-error`}>{errors[field] && <FieldError>{errors[field]}</FieldError>}</div></div>)}
       <div className="layout-actions"><button type="submit" className={button} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button><button type="button" className={button} disabled={saving} onClick={() => { setEditing(false); setValues({ responseTimeMinutes: String(policy.responseTimeMinutes), resolutionTimeMinutes: String(policy.resolutionTimeMinutes) }) }}>Cancel</button></div>
     </form>}
   </section>

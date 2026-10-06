@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { getTicketCategories, getTicketPriorities } from '../../api/ticketApi'
 import { ticketStatuses, formatTicketPriority } from './ticketFormatting'
 
-const controlClass = 'mt-1 w-full min-w-0 rounded-lg border border-slate-300 bg-white p-2 text-sm focus-visible:outline-2 focus-visible:outline-teal-700'
+const controlClass = 'mt-1 w-full min-w-0 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 text-sm focus-visible:outline-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400'
 
 export function MetadataFilter({ label, value, onChange, fetchOptions }) {
   const [state, setState] = useState({ loading: true, options: [], error: false })
@@ -26,7 +26,7 @@ export function MetadataFilter({ label, value, onChange, fetchOptions }) {
         {state.options.map(option => <option key={option.id} value={option.id}>{label === 'Priority' ? formatTicketPriority(option.name) : option.name}</option>)}
       </select>
     </label>
-    {state.error && <ErrorState compact className="mt-2" title={`Unable to load ${plural}.`}><button type="button" className="cursor-pointer rounded text-teal-800 underline focus-visible:outline-2" onClick={() => { setState({ loading: true, options: [], error: false }); setAttempt(value => value + 1) }}>Retry {plural}</button></ErrorState>}
+    {state.error && <ErrorState compact className="mt-2" title={`Unable to load ${plural}.`}><button type="button" className="cursor-pointer rounded text-teal-800 dark:text-teal-300 underline focus-visible:outline-2" onClick={() => { setState({ loading: true, options: [], error: false }); setAttempt(value => value + 1) }}>Retry {plural}</button></ErrorState>}
   </div>
 }
 
@@ -38,7 +38,7 @@ export default function TicketFilters({ query, search, setSearch, onChange, onSe
       </label>
       <button type="submit" className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2">Search</button>
     </div>
-    <p id="ticket-search-hint" className="text-xs text-slate-500">Search ticket number, title, or description. Press Enter or select Search.</p>
+    <p id="ticket-search-hint" className="text-xs text-slate-500 dark:text-slate-400">Search ticket number, title, or description. Press Enter or select Search.</p>
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <label className="text-sm font-medium">Status<select className={controlClass} value={query.status || ''} onChange={event => onChange({ status: event.target.value })}>
         <option value="">All statuses</option>{statuses.map(status => <option key={status.value} value={status.value}>{status.label}</option>)}

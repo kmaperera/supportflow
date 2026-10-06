@@ -1,4 +1,35 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+  --page-bg: #f8fafc;
+  --page-text: #0f172a;
+  --chart-text: #475569;
+  --chart-grid: #cbd5e1;
+  --chart-surface: #ffffff;
+  --chart-series: #0f766e;
+}
+:root.dark {
+  color-scheme: dark;
+  --page-bg: #020617;
+  --page-text: #f1f5f9;
+  --chart-text: #cbd5e1;
+  --chart-grid: #334155;
+  --chart-surface: #0f172a;
+  --chart-series: #5eead4;
+}
+html, body { background: var(--page-bg); color: var(--page-text); }
+@layer base {
+  input, select, textarea { @apply bg-white dark:bg-slate-900; }
+  input::placeholder, textarea::placeholder { @apply text-slate-500 dark:text-slate-400; }
+}
+.dark :is(input, select, textarea)[aria-invalid="true"] {
+  border-color: var(--color-red-400);
+  outline-color: var(--color-red-400);
+}
+.dark .filter-bar input::placeholder { color: var(--color-slate-400); }
+
 
 /* Controlled field errors only: untouched required controls stay neutral. */
 :is(input, select, textarea)[aria-invalid="true"] {
@@ -17,7 +48,7 @@
 }
 
 @utility layout-panel {
-  @apply min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6;
+  @apply min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 dark:border-slate-700 dark:bg-slate-900;
 }
 
 @utility layout-actions {

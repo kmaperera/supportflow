@@ -1,0 +1,49 @@
+﻿<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><script>localStorage.setItem('supportflow-theme','dark')</script><script src="/theme-init.js"></script><script>window.earlyDark=document.documentElement.classList.contains('dark')</script></head><body><div id="root"></div><pre id="result">RUNNING</pre>
+<script type="module">
+import React from 'react'
+import {createRoot} from 'react-dom/client'
+import ThemeProvider from '/src/theme/ThemeProvider.jsx'
+import {useTheme} from '/src/theme/ThemeContext.js'
+import AppearanceSettings from '/src/theme/AppearanceSettings.jsx'
+import {PriorityBadge,StatusBadge} from '/src/components/Badges.jsx'
+import {ClearFilters} from '/src/components/FilterBar.jsx'
+import EmptyState from '/src/components/EmptyState.jsx'
+import ErrorState from '/src/components/ErrorState.jsx'
+import {Skeleton} from '/src/components/ContentSkeleton.jsx'
+import '/src/index.css'
+const h=React.createElement,wait=ms=>new Promise(r=>setTimeout(r,ms)),check=(ok,msg)=>{if(!ok)throw Error(msg)}
+let state,osDark=false,listeners=new Set()
+const media={get matches(){return osDark},addEventListener:(event,fn)=>listeners.add(fn),removeEventListener:(event,fn)=>listeners.delete(fn)}
+const originalMedia=window.matchMedia
+window.matchMedia=q=>q==='(prefers-color-scheme: dark)'?media:originalMedia.call(window,q)
+function Fixture(){state=useTheme();return h('div',{className:'p-4 space-y-4'},h(AppearanceSettings),h('div',{className:'layout-panel space-y-3',id:'panel'},h('h2',null,'Ticket workspace'),h(StatusBadge,{value:'WAITING_FOR_USER'}),h(PriorityBadge,{value:'CRITICAL'}),h('label',null,'Reply',h('textarea',{className:'block w-full rounded border border-slate-300 dark:border-slate-700',placeholder:'Write a reply'})),h(ClearFilters,{onClick:()=>{}}),h(ClearFilters,{disabled:true}),h(Skeleton,{className:'h-5 w-32'})),h(EmptyState,{title:'No tickets match your filters.'}),h(ErrorState,{title:'Unable to load tickets',message:'Try again.'}))}
+const root=createRoot(document.querySelector('#root'))
+try{
+ check(window.earlyDark,'startup script applied saved dark before React')
+ root.render(h(ThemeProvider,null,h(Fixture)));await wait(100)
+ check(state.theme==='dark'&&state.resolvedTheme==='dark','saved dark restored')
+ const darkPanel=getComputedStyle(document.querySelector('#panel')).backgroundColor
+ state.setTheme('light');await wait(50)
+ check(localStorage.getItem('supportflow-theme')==='light'&&!document.documentElement.classList.contains('dark'),'manual light persists')
+ check(getComputedStyle(document.querySelector('#panel')).backgroundColor!==darkPanel,'panel changes theme')
+ state.setTheme('system');await wait(50);osDark=true;listeners.forEach(fn=>fn());await wait(50)
+ check(state.theme==='system'&&state.resolvedTheme==='dark'&&localStorage.getItem('supportflow-theme')==='system','OS change preserves system preference')
+ state.setTheme('light');await wait(50);osDark=false;listeners.forEach(fn=>fn());osDark=true;listeners.forEach(fn=>fn());await wait(50)
+ check(state.resolvedTheme==='light','explicit preference ignores OS')
+ window.dispatchEvent(new StorageEvent('storage',{key:'supportflow-theme',newValue:'dark'}));await wait(50)
+ check(state.theme==='dark','cross-tab change applied')
+ window.dispatchEvent(new StorageEvent('storage',{key:'supportflow-theme',newValue:'invalid'}));await wait(50)
+ check(state.theme==='system'&&state.resolvedTheme==='dark','invalid cross-tab value falls back to system')
+ for(const theme of ['light','dark']){state.setTheme(theme);await wait(50);for(const width of [320,375,768,1440]){document.querySelector('#root').style.width=width+'px';await wait(30);check(document.querySelector('#root').scrollWidth<=width,'no overflow '+theme+' '+width)}}
+ const buttons=[...document.querySelectorAll('button')].filter(b=>b.textContent==='Clear filters')
+ check(getComputedStyle(buttons[0]).cursor==='pointer'&&getComputedStyle(buttons[1]).cursor==='not-allowed','clear cursor retained')
+ root.render(null);await wait(50);check(listeners.size===0,'media listener cleaned up')
+ localStorage.setItem('supportflow-theme','invalid');root.render(h(ThemeProvider,null,h(Fixture)));await wait(50);check(state.theme==='system','invalid saved preference safe')
+ root.render(null);await wait(50)
+ const get=Storage.prototype.getItem,set=Storage.prototype.setItem
+ Storage.prototype.getItem=()=>{throw Error('blocked')};Storage.prototype.setItem=()=>{throw Error('blocked')}
+ root.render(h(ThemeProvider,null,h(Fixture)));await wait(50);check(state.theme==='system','blocked storage defaults to system');state.setTheme('light');await wait(50);check(state.theme==='light','blocked persistence still allows selection')
+ Storage.prototype.getItem=get;Storage.prototype.setItem=set
+ document.querySelector('#result').textContent='PASS: startup, persistence, Light/Dark/System, OS changes, cross-tab, invalid/blocked storage, cleanup, shared surfaces and 320/375/768/1440px'
+}catch(e){document.querySelector('#result').textContent='FAIL: '+e.message}
+</script></body></html>

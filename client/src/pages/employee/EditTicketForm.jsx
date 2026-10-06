@@ -50,11 +50,11 @@ export default function EditTicketForm({ ticket, onCancel, onSaved, onIneligible
     setValues(previous => ({ ...previous, [name]: value }))
     setErrors(previous => ({ ...previous, [name]: undefined }))
   }
-  const inputClass = 'mt-2 block w-full min-w-0 rounded-lg border border-slate-300 bg-white p-3 text-sm focus-visible:outline-2 focus-visible:outline-teal-700'
+  const inputClass = 'mt-2 block w-full min-w-0 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-sm focus-visible:outline-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400'
   return <section className="layout-panel" aria-labelledby="edit-ticket-heading">
     <h2 id="edit-ticket-heading" className="text-lg font-semibold">Edit Ticket</h2>
     {!options && !lookupError && <LoadingState className="mt-3 text-sm">Loading categories and priorities...</LoadingState>}
-    {lookupError && <ErrorState compact className="mt-4" title="Unable to load categories and priorities."><button type="button" className="mt-2 rounded text-teal-800 underline focus-visible:outline-2" onClick={() => { setLookupError(false); setAttempt(value => value + 1) }}>Retry options</button></ErrorState>}
+    {lookupError && <ErrorState compact className="mt-4" title="Unable to load categories and priorities."><button type="button" className="mt-2 rounded text-teal-800 dark:text-teal-300 underline focus-visible:outline-2" onClick={() => { setLookupError(false); setAttempt(value => value + 1) }}>Retry options</button></ErrorState>}
     <form ref={form} onSubmit={submit} noValidate className="mt-5 space-y-4">
       {error && <AuthFeedback>{error}</AuthFeedback>}
       <fieldset disabled={saving} className="space-y-4">
@@ -77,7 +77,7 @@ export default function EditTicketForm({ ticket, onCancel, onSaved, onIneligible
       </fieldset>
       <div className="layout-actions">
         <button type="submit" disabled={saving || !options} className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">{saving ? 'Saving...' : 'Save Changes'}</button>
-        <button type="button" disabled={saving} onClick={onCancel} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 disabled:opacity-50 disabled:cursor-not-allowed">Cancel</button>
+        <button type="button" disabled={saving} onClick={onCancel} className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-semibold focus-visible:outline-2 disabled:opacity-50 disabled:cursor-not-allowed">Cancel</button>
       </div>
       <p role="status" className="sr-only">{saving ? 'Saving changes...' : ''}</p>
     </form>

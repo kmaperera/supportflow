@@ -72,15 +72,15 @@ export default function TicketConversation({ ticketId, status, assignedTo, disab
   return <section aria-labelledby="conversation-heading" className="min-w-0 layout-panel">
     <h2 id="conversation-heading" className="text-lg font-semibold">Conversation</h2>
     {conversation.loading ? <ContentSkeleton initial={attempt === 0 && !conversation.comments.length} variant="rows">Loading conversation...</ContentSkeleton> : conversation.error ? <ErrorState compact className="mt-4" title="Unable to load conversation.">
-      <button type="button" className="mt-3 rounded text-sm font-semibold text-teal-800 underline focus-visible:outline-2" onClick={() => { setConversation(previous => ({ ...previous, loading: true, error: false })); setAttempt(value => value + 1) }}>Retry conversation</button>
+      <button type="button" className="mt-3 rounded text-sm font-semibold text-teal-800 dark:text-teal-300 underline focus-visible:outline-2" onClick={() => { setConversation(previous => ({ ...previous, loading: true, error: false })); setAttempt(value => value + 1) }}>Retry conversation</button>
     </ErrorState> : <PublicCommentList comments={conversation.comments} userId={user?.id} />}
     {canReply ? <form onSubmit={submit} noValidate className="mt-6 space-y-3">
       <label htmlFor="public-reply" className="block text-sm font-semibold">Add a reply *</label>
-      <textarea id="public-reply" value={content} onChange={event => { setContent(event.target.value); setError(null); setSent(false) }} required maxLength={5000} rows={4} placeholder="Write a public reply..." disabled={sending || disabled} aria-describedby="reply-feedback" aria-invalid={Boolean(error)} className="block w-full min-w-0 resize-y rounded-lg border border-slate-300 p-3 text-sm focus-visible:outline-2 focus-visible:outline-teal-700 disabled:opacity-60" />
+      <textarea id="public-reply" value={content} onChange={event => { setContent(event.target.value); setError(null); setSent(false) }} required maxLength={5000} rows={4} placeholder="Write a public reply..." disabled={sending || disabled} aria-describedby="reply-feedback" aria-invalid={Boolean(error)} className="block w-full min-w-0 resize-y rounded-lg border border-slate-300 dark:border-slate-700 p-3 text-sm focus-visible:outline-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400 disabled:opacity-60" />
       <div id="reply-feedback">{error && <AuthFeedback>{error}</AuthFeedback>}</div>
       <button type="submit" disabled={sending} className="cursor-pointer disabled:cursor-not-allowed rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60">{sending ? 'Sending...' : 'Send Reply'}</button>
       {sent && <AuthFeedback variant="success">Reply sent.</AuthFeedback>}
-    </form> : <p className="mt-6 text-sm text-slate-600">This ticket is {status === 'CLOSED' ? 'closed' : status === 'RESOLVED' ? 'resolved' : 'not available for you to reply to'}. Public replies are unavailable.</p>}
+    </form> : <p className="mt-6 text-sm text-slate-600 dark:text-slate-300">This ticket is {status === 'CLOSED' ? 'closed' : status === 'RESOLVED' ? 'resolved' : 'not available for you to reply to'}. Public replies are unavailable.</p>}
   </section>
 }
 
@@ -92,9 +92,9 @@ export function PublicCommentList({ comments, userId }) {
       const name = [comment.author?.firstName, comment.author?.lastName].filter(value => typeof value === 'string' && value.trim()).map(value => value.trim()).join(' ')
       const role = { EMPLOYEE: 'Employee', TECHNICIAN: 'Technician', ADMIN: 'Admin' }[comment.author?.role]
       const own = userId != null && String(comment.author?.id) === String(userId)
-      return <li key={comment.id} className="min-w-0 rounded-xl bg-slate-50 p-4">
+      return <li key={comment.id} className="min-w-0 rounded-xl bg-slate-50 dark:bg-slate-950 p-4">
         <p className="break-words text-sm font-semibold">{own ? 'You' : name || 'Support participant'}{role ? ` (${role})` : ''}</p>
-        <p className="mt-1 text-xs text-slate-500">{formatTicketDate(comment.createdAt)}</p>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{formatTicketDate(comment.createdAt)}</p>
         <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6">{comment.content}</p>
       </li>
     })}

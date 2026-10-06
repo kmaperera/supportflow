@@ -37,7 +37,7 @@ function TicketDetails({ ticketId }) {
   }, [ticketId, attempt])
   const current = result?.attempt === attempt ? result : null
   const ticket = current?.ticket
-  const action = 'inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50 focus-visible:outline-2 focus-visible:outline-offset-2'
+  const action = 'inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-teal-700 dark:border-teal-400 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950 focus-visible:outline-2 focus-visible:outline-offset-2'
   return <div className="layout-page">
     <NotificationReadNotice />
     <Link className={action} to="/admin/tickets">Back to tickets</Link>
@@ -46,7 +46,7 @@ function TicketDetails({ ticketId }) {
     {current?.error && <ErrorState title={current.errorTitle} message={current.error}>{!current.unavailable && <button className={action} onClick={() => setAttempt(value => value + 1)}>Retry</button>}</ErrorState>}
     {ticket && <>
       {refreshError && <ErrorState compact title="Unable to refresh ticket details" message={refreshError} onRetry={refresh} />}
-      <section className="min-w-0 layout-panel"><p className="break-all text-sm font-semibold text-teal-800">{ticket.ticketNumber}</p><h2 className="mt-1 break-words text-xl font-semibold">{ticket.title}</h2><AdminTicketMetadata ticket={ticket} detail /><h3 className="mt-6 font-semibold">Description</h3><p className="mt-2 whitespace-pre-wrap break-words text-slate-700">{ticket.description}</p></section>
+      <section className="min-w-0 layout-panel"><p className="break-all text-sm font-semibold text-teal-800 dark:text-teal-300">{ticket.ticketNumber}</p><h2 className="mt-1 break-words text-xl font-semibold">{ticket.title}</h2><AdminTicketMetadata ticket={ticket} detail /><h3 className="mt-6 font-semibold">Description</h3><p className="mt-2 whitespace-pre-wrap break-words text-slate-700 dark:text-slate-200">{ticket.description}</p></section>
       {!refreshError && <AdminTicketAssignment ticket={ticket} refresh={refresh} />}
       <TicketStatusTimeline key={revision} ticketId={ticket.id} />
     </>}

@@ -1,11 +1,11 @@
 import LoadingState from './LoadingState'
 
 export function Skeleton({ className = '' }) {
-  return <div aria-hidden="true" className={`max-w-full animate-pulse rounded bg-slate-200 motion-reduce:animate-none ${className}`} />
+  return <div aria-hidden="true" className={`max-w-full animate-pulse rounded bg-slate-200 dark:bg-slate-700 motion-reduce:animate-none ${className}`} />
 }
 
 export function SkeletonCard({ compact = false }) {
-  return <div className={compact ? 'min-w-0 space-y-3 rounded-xl bg-slate-50 p-4' : 'layout-panel space-y-4'}>
+  return <div className={compact ? 'min-w-0 space-y-3 rounded-xl bg-slate-50 dark:bg-slate-950 p-4' : 'layout-panel space-y-4'}>
     <Skeleton className="h-4 w-1/3" />
     <Skeleton className="h-5 w-3/4" />
     <Skeleton className="h-4 w-full" />
@@ -20,9 +20,9 @@ export function SummarySkeleton({ count = 4, columns = 'sm:grid-cols-2 xl:grid-c
 }
 
 export function SkeletonTable({ headers }) {
-  return <div className="layout-table rounded-lg border border-slate-200">
-    <table className="w-full text-left text-sm"><thead className="bg-slate-50"><tr>{headers.map(header => <th key={header} scope="col" className="whitespace-nowrap p-3">{header}</th>)}</tr></thead>
-      <tbody>{[0, 1, 2].map(row => <tr key={row} className="border-t border-slate-200">{headers.map(header => <td key={header} className="min-w-28 p-3"><Skeleton className="h-5 w-full" /></td>)}</tr>)}</tbody>
+  return <div className="layout-table rounded-lg border border-slate-200 dark:border-slate-700">
+    <table className="w-full text-left text-sm"><thead className="bg-slate-50 dark:bg-slate-950"><tr>{headers.map(header => <th key={header} scope="col" className="whitespace-nowrap p-3">{header}</th>)}</tr></thead>
+      <tbody>{[0, 1, 2].map(row => <tr key={row} className="border-t border-slate-200 dark:border-slate-700">{headers.map(header => <td key={header} className="min-w-28 p-3"><Skeleton className="h-5 w-full" /></td>)}</tr>)}</tbody>
     </table>
   </div>
 }

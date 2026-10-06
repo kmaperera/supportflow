@@ -30,7 +30,7 @@ export default function AdminKnowledgeBasePage() {
   return <div className="layout-page">
     <PageHeader title="Knowledge Base Management" description="Manage help articles and their Knowledge Base categories." />
     <nav aria-label="Knowledge Base sections" className="layout-actions">
-      {[['articles', 'KB Articles'], ['categories', 'KB Categories']].map(([value, label]) => <button key={value} type="button" className={`${button} ${tab === value ? 'bg-teal-50 ring-1 ring-teal-700' : ''}`} aria-pressed={tab === value} onClick={() => { setTab(value); setMessage('') }}>{label}</button>)}
+      {[['articles', 'KB Articles'], ['categories', 'KB Categories']].map(([value, label]) => <button key={value} type="button" className={`${button} ${tab === value ? 'bg-teal-50 dark:bg-teal-950 ring-1 ring-teal-700 dark:ring-teal-400' : ''}`} aria-pressed={tab === value} onClick={() => { setTab(value); setMessage('') }}>{label}</button>)}
     </nav>
     {message && <AuthFeedback variant="success">{message}</AuthFeedback>}
     {tab === 'articles' ? <Articles categories={categories} /> : <Categories resource={categories} />}
@@ -77,7 +77,7 @@ function Articles({ categories }) {
         <div><label htmlFor="kb-filter-category" className="text-sm font-semibold">KB Category</label><select id="kb-filter-category" className={input} value={query.categoryId} disabled={categories.loading || categories.error} onChange={event => setQuery(previous => ({ ...previous, categoryId: event.target.value, search: search.trim(), page: 1 }))}><option value="">All categories</option>{categories.data?.map(category => <option key={category.id} value={String(category.id)}>{category.name}{!category.isActive ? ' (inactive)' : ''}</option>)}</select></div>
         <ClearFilters disabled={!search && !query.search && !query.categoryId} onClick={clear} />
       </div>
-      <p id="kb-search-help" className="text-sm text-slate-500">Search title and content. Newest articles appear first.</p>
+      <p id="kb-search-help" className="text-sm text-slate-500 dark:text-slate-400">Search title and content. Newest articles appear first.</p>
       <CategoryLoadNotice resource={categories} />
     </FilterBar>
     {error && <AuthFeedback>{error}</AuthFeedback>}{message && <AuthFeedback variant="success">{message}</AuthFeedback>}
@@ -86,8 +86,8 @@ function Articles({ categories }) {
     {resource.data && <div className="space-y-3" aria-busy={resource.loading}>
       {!resource.loading && !resource.error && !resource.data.articles.length && <EmptyState title={query.search || query.categoryId ? 'No articles match your current filters.' : 'No knowledge base articles found.'} actions={query.search || query.categoryId ? <ClearFilters onClick={clear} /> : <Link className={button} to="/admin/knowledge-base/articles/new">Add Article</Link>} />}
       {resource.data.articles.map(article => <article key={article.id} className={kbCard}>
-        <div><h3 className="text-lg font-semibold break-words">{article.title}</h3><p className="mt-1 text-sm text-slate-600">{article.categoryName} · <StateBadge value={article.status} /> · {article.viewCount} views</p></div>
-        <p className="text-sm text-slate-500">Created {formatTicketDate(article.createdAt)} · Updated {formatTicketDate(article.updatedAt)}</p>
+        <div><h3 className="text-lg font-semibold break-words">{article.title}</h3><p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{article.categoryName} · <StateBadge value={article.status} /> · {article.viewCount} views</p></div>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Created {formatTicketDate(article.createdAt)} · Updated {formatTicketDate(article.updatedAt)}</p>
         <div className="layout-actions">
           <Link className={button} to={`/admin/knowledge-base/articles/${encodeURIComponent(article.id)}/edit`}>Edit<span className="sr-only"> {article.title}</span></Link>
           {article.status !== 'ARCHIVED' && <>
@@ -126,7 +126,7 @@ function Categories({ resource }) {
   }
   return <section aria-labelledby="kb-categories-heading" className="space-y-4">
     <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="kb-categories-heading" className="text-xl font-semibold">KB Categories</h2><button className={button} disabled={Boolean(editor) || Boolean(busy)} onClick={() => { setEditor({ category: null }); setMessage('') }}>Add KB Category</button></div>
-    <p className="text-sm text-slate-600">Inactive categories remain here for management. Their articles are hidden from employees and technicians until the category is active again.</p>
+    <p className="text-sm text-slate-600 dark:text-slate-300">Inactive categories remain here for management. Their articles are hidden from employees and technicians until the category is active again.</p>
     {message && <AuthFeedback variant="success">{message}</AuthFeedback>}{error && <AuthFeedback>{error}</AuthFeedback>}
     {editor && <KbCategoryEditor key={editor.category?.id || 'new'} category={editor.category} onCancel={() => setEditor(null)} onSaved={() => { setMessage(editor.category ? 'KB category updated successfully.' : 'KB category created successfully.'); setEditor(null); resource.reload() }} />}
     <ConfirmDialog open={Boolean(deactivating)} title="Deactivate KB category?" description={`Articles in ${deactivating?.name} will be hidden from employees and technicians until the category is active again.`} variant="warning" confirmLabel="Deactivate Category" pending={Boolean(busy)} pendingLabel="Deactivating..." onConfirm={() => toggle(deactivating)} onCancel={() => setDeactivating(null)}>{error && <AuthFeedback>{error}</AuthFeedback>}</ConfirmDialog>
@@ -139,7 +139,7 @@ function Categories({ resource }) {
     {!resource.loading && !resource.error && !rows.length && <EmptyState compact title={filtered ? 'No KB categories match your current filters.' : 'No knowledge base categories found.'} actions={filtered && <ClearFilters onClick={clear} />} />}
     <div className="grid gap-4 xl:grid-cols-2">{rows.map(category => <article key={category.id} className={kbCard}>
       <div><h3 className="text-lg font-semibold">{category.name}</h3><p className="mt-1 text-sm font-medium"><ActiveBadge value={category.isActive} /></p></div>
-      {category.description && <p className="whitespace-pre-wrap text-sm text-slate-600">{category.description}</p>}
+      {category.description && <p className="whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">{category.description}</p>}
       <div className="layout-actions"><button className={button} disabled={Boolean(editor) || Boolean(busy) || resource.loading || resource.error} onClick={() => { setEditor({ category }); setMessage('') }}>Edit<span className="sr-only"> {category.name}</span></button><button className={button} disabled={Boolean(editor) || Boolean(busy) || resource.loading || resource.error} onClick={() => { setError(""); if (category.isActive) setDeactivating(category); else toggle(category) }}>{busy === category.id ? category.isActive ? 'Deactivating...' : 'Activating...' : category.isActive ? 'Deactivate' : 'Activate'}<span className="sr-only"> {category.name}</span></button></div>
     </article>)}</div>
   </section>

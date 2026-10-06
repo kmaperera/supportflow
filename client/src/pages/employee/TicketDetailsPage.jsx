@@ -43,7 +43,7 @@ function TicketDetails({ ticketId }) {
     return () => controller.abort()
   }, [ticketId, attempt])
   return <div className="layout-page">
-    <Link to="/employee/tickets" className="inline-block rounded text-sm font-semibold text-teal-800 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2">Back to My Tickets</Link>
+    <Link to="/employee/tickets" className="inline-block rounded text-sm font-semibold text-teal-800 dark:text-teal-300 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2">Back to My Tickets</Link>
     {notice && <AuthFeedback variant={notice.error ? 'error' : 'success'}>{notice.text}</AuthFeedback>}
     {state.ticket?.status === 'RESOLVED' && user?.id != null && String(state.ticket.createdBy) === String(user.id) && <div className="flex flex-wrap items-start gap-3"><CloseTicketButton disabled={actionPending} onPendingChange={setActionPending} ticketId={ticketId} onClosed={ticket => {
       setState({ loading: false, ticket, error: null })
@@ -62,11 +62,11 @@ function TicketDetails({ ticketId }) {
       setState({ loading: true, ticket: null, error: null })
       setAttempt(value => value + 1)
     }} /></div>}
-    {state.ticket && ['OPEN', 'ASSIGNED'].includes(state.ticket.status) && user?.id != null && String(state.ticket.createdBy) === String(user.id) && !editing && <div><button type="button" onClick={() => { setEditing(true); setNotice(null) }} className="rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2">Edit Ticket</button></div>}
+    {state.ticket && ['OPEN', 'ASSIGNED'].includes(state.ticket.status) && user?.id != null && String(state.ticket.createdBy) === String(user.id) && !editing && <div><button type="button" onClick={() => { setEditing(true); setNotice(null) }} className="rounded-lg border border-teal-700 dark:border-teal-400 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 focus-visible:outline-2 focus-visible:outline-offset-2">Edit Ticket</button></div>}
     {editing && state.ticket && <EditTicketForm ticket={state.ticket} onCancel={() => setEditing(false)} onSaved={ticket => { setState({ loading: false, ticket, error: null }); setEditing(false); setNotice({ text: 'Ticket updated successfully.' }) }} onIneligible={() => { setEditing(false); setNotice({ error: true, text: 'This ticket can no longer be edited. Refreshing ticket details.' }); setState({ loading: true, ticket: null, error: null }); setAttempt(value => value + 1) }} />}
     {state.loading && <ContentSkeleton initial={!state.ticket && attempt === 0} variant="detail">Loading ticket...</ContentSkeleton>}
     {state.error && <ErrorState title={state.errorTitle} message={state.error}>
-      {!state.unavailable && <button type="button" onClick={() => { setState({ loading: true, ticket: null, error: null }); setAttempt(value => value + 1) }} className="rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2">Retry</button>}
+      {!state.unavailable && <button type="button" onClick={() => { setState({ loading: true, ticket: null, error: null }); setAttempt(value => value + 1) }} className="rounded-lg border border-teal-700 dark:border-teal-400 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 focus-visible:outline-2 focus-visible:outline-offset-2">Retry</button>}
     </ErrorState>}
     {state.ticket && <><TicketDetailsContent ticket={state.ticket} /><TicketStatusTimeline key={`${ticketId}:${historyRevision}`} ticketId={ticketId} /><TicketConversation key={ticketId} ticketId={ticketId} status={state.ticket.status} /><TicketAttachments key={`attachments:${ticketId}`} ticketId={ticketId} status={state.ticket.status} /></>}
     {state.ticket?.status === 'CLOSED' && user?.id != null && String(state.ticket.createdBy) === String(user.id) && <TicketRating key={`rating:${ticketId}`} ticketId={ticketId} onConflict={() => {
@@ -90,11 +90,11 @@ export function TicketDetailsContent({ ticket }) {
   ]
   return <>
     <header className="layout-panel">
-      <p className="break-all text-sm font-semibold text-teal-800">{ticket.ticketNumber}</p>
+      <p className="break-all text-sm font-semibold text-teal-800 dark:text-teal-300">{ticket.ticketNumber}</p>
       <h1 className="mt-2 break-words text-2xl font-semibold">{ticket.title}</h1>
       <dl className="mt-4 flex flex-wrap gap-6 text-sm">
-        <div><dt className="text-slate-500">Status</dt><dd className="mt-1 font-semibold text-teal-900"><StatusBadge value={ticket.status} /></dd></div>
-        <div><dt className="text-slate-500">Priority</dt><dd className="mt-1 font-semibold"><PriorityBadge value={ticket.priority?.name} /></dd></div>
+        <div><dt className="text-slate-500 dark:text-slate-400">Status</dt><dd className="mt-1 font-semibold text-teal-900 dark:text-teal-200"><StatusBadge value={ticket.status} /></dd></div>
+        <div><dt className="text-slate-500 dark:text-slate-400">Priority</dt><dd className="mt-1 font-semibold"><PriorityBadge value={ticket.priority?.name} /></dd></div>
       </dl>
     </header>
     <section aria-labelledby="ticket-metadata-heading" className="layout-panel">
@@ -103,7 +103,7 @@ export function TicketDetailsContent({ ticket }) {
     </section>
     <section aria-labelledby="ticket-description-heading" className="layout-panel">
       <h2 id="ticket-description-heading" className="text-lg font-semibold">Description</h2>
-      <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">{ticket.description}</p>
+      <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-700 dark:text-slate-200">{ticket.description}</p>
     </section>
   </>
 }

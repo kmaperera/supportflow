@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { getTechnicianStatisticsSection } from '../../api/dashboardApi'
 
-const buttonClass = 'inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2'
+const buttonClass = 'inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-teal-700 dark:border-teal-400 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 focus-visible:outline-2 focus-visible:outline-offset-2'
 const sections = [['status', 'Workload by status'], ['priority', 'Workload by priority'], ['response', 'First-response performance'], ['resolution', 'Resolution performance'], ['sla', 'SLA summary']]
 
 export default function TechnicianWorkloadPage() {
@@ -44,14 +44,14 @@ function StatisticsContent({ kind, data }) {
     const active = kind === 'status' ? data.filter(row => ['ASSIGNED', 'IN_PROGRESS', 'WAITING_FOR_USER', 'REOPENED'].includes(row.status)).reduce((sum, row) => sum + row.count, 0) : null
     return <>
       {kind === 'status' && <dl className="grid gap-4 sm:grid-cols-2"><div><dt>Total assigned (all statuses)</dt><dd className="text-2xl font-semibold">{total}</dd></div><div><dt>Active</dt><dd className="text-2xl font-semibold">{active}</dd></div></dl>}
-      <dl className="space-y-3">{data.map(row => <div key={row.status || row.priorityId} className="flex flex-wrap justify-between gap-3 border-b border-slate-100 pb-2"><dt>{kind === 'status' ? <StatusBadge value={row.status} /> : <PriorityBadge value={row.priorityName} />}</dt><dd className="font-semibold tabular-nums">{row.count}</dd></div>)}</dl>
+      <dl className="space-y-3">{data.map(row => <div key={row.status || row.priorityId} className="flex flex-wrap justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-2"><dt>{kind === 'status' ? <StatusBadge value={row.status} /> : <PriorityBadge value={row.priorityName} />}</dt><dd className="font-semibold tabular-nums">{row.count}</dd></div>)}</dl>
     </>
   }
   if (kind === 'response' || kind === 'resolution') {
     const minutes = kind === 'response' ? data.averageFirstResponseMinutes : data.averageResolutionMinutes
     const count = kind === 'response' ? data.respondedTickets : data.resolvedTickets
     if (minutes === null) return <EmptyState compact title="No workload statistics are available yet." message="Completed ticket samples will appear here when available." />
-    return <><p className="text-2xl font-semibold">{`${minutes.toLocaleString(undefined, { maximumFractionDigits: 2 })} minutes`}</p><p className="text-sm text-slate-600">Average elapsed time from ticket creation. Based on {count} {kind === 'response' ? 'responded' : 'resolved'} tickets.</p></>
+    return <><p className="text-2xl font-semibold">{`${minutes.toLocaleString(undefined, { maximumFractionDigits: 2 })} minutes`}</p><p className="text-sm text-slate-600 dark:text-slate-300">Average elapsed time from ticket creation. Based on {count} {kind === 'response' ? 'responded' : 'resolved'} tickets.</p></>
   }
-  return <><p className="text-sm text-slate-600">Compliance covers completed milestones only. Pending milestones may already be overdue.</p><div className="grid gap-6 sm:grid-cols-2">{['response', 'resolution'].map(target => <div key={target}><h3 className="font-semibold">{target === 'response' ? 'First response' : 'Resolution'}</h3>{data[target].trackedTickets === 0 ? <EmptyState compact title="No SLA statistics are available yet." /> : <dl className="mt-3 space-y-2">{[['Tracked', 'trackedTickets'], ['Met', 'metTickets'], ['Missed', 'missedTickets'], ['Pending', 'pendingTickets'], ['Completed', 'completedTickets']].map(([label, field]) => <div key={field} className="flex justify-between gap-3"><dt>{label}</dt><dd className="font-semibold">{data[target][field]}</dd></div>)}<div className="flex flex-wrap justify-between gap-3"><dt>Compliance</dt><dd className="font-semibold">{data[target].compliancePercentage === null ? 'Not available' : `${data[target].compliancePercentage}%`}</dd></div></dl>}</div>)}</div></>
+  return <><p className="text-sm text-slate-600 dark:text-slate-300">Compliance covers completed milestones only. Pending milestones may already be overdue.</p><div className="grid gap-6 sm:grid-cols-2">{['response', 'resolution'].map(target => <div key={target}><h3 className="font-semibold">{target === 'response' ? 'First response' : 'Resolution'}</h3>{data[target].trackedTickets === 0 ? <EmptyState compact title="No SLA statistics are available yet." /> : <dl className="mt-3 space-y-2">{[['Tracked', 'trackedTickets'], ['Met', 'metTickets'], ['Missed', 'missedTickets'], ['Pending', 'pendingTickets'], ['Completed', 'completedTickets']].map(([label, field]) => <div key={field} className="flex justify-between gap-3"><dt>{label}</dt><dd className="font-semibold">{data[target][field]}</dd></div>)}<div className="flex flex-wrap justify-between gap-3"><dt>Compliance</dt><dd className="font-semibold">{data[target].compliancePercentage === null ? 'Not available' : `${data[target].compliancePercentage}%`}</dd></div></dl>}</div>)}</div></>
 }
