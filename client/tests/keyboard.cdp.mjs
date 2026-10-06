@@ -60,9 +60,9 @@ try{
    await key('Escape');assert.equal(await evaluate('document.activeElement.getAttribute("aria-controls")'),`${role}-navigation`,'menu Escape restores trigger')
    await key('Enter')
   }else assert.equal(await evaluate('document.activeElement.tagName'),'A','desktop sidebar Tab')
-  await focus('nav a');await key('Enter');await wait(70);assert.equal(await active(),'main-content','role route main focus')
+  await focus(width<1024?'dialog[open] nav a':'aside nav a');await key('Enter');await wait(70);assert.equal(await active(),'main-content','role route main focus')
   if(width<1024){await focus(`button[aria-controls="${role}-navigation"]`);await key('Enter')}
-  await evaluate(`[...document.querySelectorAll('button')].find(b=>b.textContent==='Logout').focus()`)
+  await evaluate(`[...document.querySelectorAll('button')].find(b=>b.textContent==='Logout'&&b.getClientRects().length).focus()`)
   await key(' ');assert.equal(await evaluate('testState.logout'),1,'native logout once')
  }
  console.log('PASS: all three role shells: sidebar tab order, collapsed links skipped, menu Escape, route focus and Logout at 375/768/1440px.')

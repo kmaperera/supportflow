@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './useAuth'
 
-export default function LogoutButton({ disabled = false }) {
+export default function LogoutButton({ disabled = false, onLogout }) {
   const { logoutUser, isLoggingOut } = useAuth()
   const navigate = useNavigate()
   function handleLogout() {
     if (isLoggingOut) return
+    onLogout?.()
     void logoutUser()
     navigate('/login', { replace: true })
   }

@@ -17,7 +17,7 @@ try {
     const html = render(path)
     assert.match(html, /Technician navigation/)
     assert.match(html, /Alex Lee/)
-    assert.match(html, /aria-label="Open technician menu" aria-expanded="false" aria-controls="technician-navigation"/)
+    assert.match(html, /aria-label="Open navigation menu" aria-expanded="false" aria-controls="technician-navigation"/)
     assert.equal((html.match(/<main\b/g) || []).length, 1)
     const active = html.match(/<a\b[^>]*aria-current="page"[^>]*>/g) || []
     assert.equal(active.length, 1)
@@ -26,7 +26,7 @@ try {
       if (path === '/technician') assert.match(html, /Loading dashboard/)
       else if (path === '/technician/tickets/assigned') assert.match(html, /Loading assigned tickets/)
       else if (path === '/technician/tickets/unassigned') assert.match(html, /Loading unassigned tickets/)
-      else assert.ok(html.includes(`Coming in Phase ${phase}.`))
+      else if (path === '/technician/notifications') assert.match(html, /Loading notifications/)
       assert.ok(!html.includes('Log out all sessions'))
     } else {
       assert.match(html, /My Profile/)

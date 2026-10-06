@@ -126,7 +126,7 @@ try {
   await key('Home'); await key(' ')
   assert.equal(role(await tree(), 'tabpanel')[0].name.value, 'KB Articles')
   await evaluate(`Array.from(document.querySelectorAll('button')).find(button=>button.textContent.startsWith('Archive')).focus()`)
-  await key('Enter'); await evaluate(`document.querySelector('dialog button:last-child').focus()`); await key('Enter')
+  await key('Enter'); await evaluate(`document.querySelector('dialog[open] button:last-child').focus()`); await key('Enter')
   assert.equal(await evaluate('document.querySelectorAll("[role=alert]").length'), 1, 'mutation failure is not duplicated behind dialog')
   await key('Escape')
 

@@ -1,4 +1,5 @@
 import { dialogTabStops, restoreFocus } from './focusManagement'
+import { lockBodyScroll } from './lockBodyScroll'
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -13,13 +14,12 @@ export default function ConfirmDialog({ open, title, description, confirmLabel, 
     if (!open) return
     const element = dialog.current
     const trigger = document.activeElement
-    const overflow = document.body.style.overflow
     element.showModal()
-    document.body.style.overflow = 'hidden'
+    const unlock = lockBodyScroll()
     cancel.current?.focus()
     return () => {
       element.close()
-      document.body.style.overflow = overflow
+      unlock()
       restoreFocus(trigger)
     }
   }, [open])

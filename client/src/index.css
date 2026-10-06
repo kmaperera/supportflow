@@ -1,6 +1,16 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Native modal drawer sits in the top layer, above the sticky workspace header. */
+.mobile-navigation[open] { animation: navigation-enter 200ms ease-out; }
+@keyframes navigation-enter {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-navigation[open] { animation: none; }
+}
+
 :root {
   color-scheme: light;
   --page-bg: #f8fafc;

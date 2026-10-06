@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
 export function useWorkspaceMenu() {
@@ -7,10 +7,9 @@ export function useWorkspaceMenu() {
   const menuButton = useRef(null)
   const menuOpen = openLocation === location
 
-  function closeMenu() {
+  const closeMenu = useCallback(() => {
     setOpenLocation(null)
-    menuButton.current?.focus()
-  }
+  }, [])
 
   return {
     location, menuButton, menuOpen, closeMenu,
