@@ -107,6 +107,6 @@ export function SelfAssignAction({ ticket, pending, onAssign }) {
 
 export function UnassignedTicketsList({ tickets, totalRecords, filtered = false, onReset, renderAction }) {
   if (tickets.length) return <TechnicianTicketCards tickets={tickets} renderAction={renderAction} />
-  if (filtered) return <EmptyState title="No unassigned tickets match your current search or filters." actions={<button type="button" onClick={onReset} className={actionClass}>Clear filters</button>} />
+  if (filtered) return <EmptyState title="No unassigned tickets match your current search or filters." actions={<button type="button" onClick={onReset} className={`${actionClass} cursor-pointer`}>Clear filters</button>} />
   return <EmptyState title={totalRecords === 0 ? 'There are no unassigned tickets right now.' : 'No unassigned tickets on this page.'} actions={<Link to="/technician/tickets/assigned" className={actionClass}>View My Assigned Tickets</Link>} />
 }

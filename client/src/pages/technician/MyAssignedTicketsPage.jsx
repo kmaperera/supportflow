@@ -49,7 +49,7 @@ function AssignedTickets() {
       <button type="button" className={actionClass} onClick={() => setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))}>Retry</button>
     </ErrorState>}
     {current?.data && <>
-      <>{filtered && !current.data.tickets.length ? <EmptyState title="No assigned tickets match your current filters." actions={<button type="button" className={actionClass} onClick={resetFilters}>Clear filters</button>} /> : <AssignedTicketsList tickets={current.data.tickets} totalRecords={current.data.pagination.totalRecords} />}</>
+      <>{filtered && !current.data.tickets.length ? <EmptyState title="No assigned tickets match your current filters." actions={<button type="button" className={`${actionClass} cursor-pointer`} onClick={resetFilters}>Clear filters</button>} /> : <AssignedTicketsList tickets={current.data.tickets} totalRecords={current.data.pagination.totalRecords} />}</>
       <Pagination metadata={current.data.pagination} noun="assigned tickets" label="assigned tickets" disabled={false} onPageChange={page => setRequest(previous => ({ ...previous, page }))} />
     </>}
   </div>
