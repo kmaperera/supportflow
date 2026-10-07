@@ -20,7 +20,8 @@ function normalizeQuery(params = {}) {
     filters[key] = String(value);
   }
   for (const key of ['search', 'action', 'entityType']) if (params[key] !== undefined) {
-    if (typeof params[key] !== 'string' || !params[key].trim() || params[key].trim().length > (key === 'search' ? 200 : 100)) invalid();
+    if (typeof params[key] !== 'string' || (key !== 'search' && !params[key].trim()) || params[key].trim().length > (key === 'search' ? 200 : 100)) invalid();
+    if (key === 'search' && !params[key].trim()) continue;
     filters[key] = params[key].trim();
   }
   if (params.startDate !== undefined) filters.startAt = dateBoundary(params.startDate);

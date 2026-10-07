@@ -72,11 +72,12 @@ test("archive endpoint requires ADMIN, returns mapped data and exposes no deleti
   const headers = actor => ({ "content-type": "application/json", ...(actor ? {
     authorization: `Bearer ${jwt.sign({ role: "ADMIN" }, process.env.JWT_ACCESS_SECRET, { subject: String(actor), expiresIn: "5m" })}`,
   } : {}) });
-  const archive = (actor = 1, id = "10") => fetch(`${base}/${id}/archive`, { method: "PATCH", headers: headers(actor),
-    body: JSON.stringify({ role: "ADMIN", status: "PUBLISHED", slug: "changed", viewCount: 0 }) });
+  const archive = (actor = 1, id = "10", body = {}) => fetch(`${base}/${id}/archive`, { method: "PATCH", headers: headers(actor),
+    body: JSON.stringify(body) });
   assert.equal((await archive(null)).status, 401);
   for (const actor of [2, 3]) assert.equal((await archive(actor)).status, 403);
   for (const id of ["0", "-1", "1.5", "abc", "18446744073709551616"]) assert.equal((await archive(1, id)).status, 422);
+  assert.equal((await archive(1, "10", { status: "PUBLISHED", createdBy: 1 })).status, 422);
   assert.equal(query.mock.callCount(), 0);
   assert.equal((await archive(1, "99")).status, 404);
   for (let i = 0; i < 2; i++) {

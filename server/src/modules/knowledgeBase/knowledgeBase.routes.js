@@ -11,8 +11,10 @@ const { createArticleValidation, updateArticleValidation, articleStatusValidatio
 const { createCategoryValidation, updateCategoryValidation, setCategoryActiveStatusValidation } = require("./knowledgeBaseCategory.validation");
 
 const router = express.Router();
+const { emptyBody } = require('../../middleware/inputValidation');
+const { listArticlesValidation, suggestionsValidation } = require('./knowledgeBaseArticle.validation');
 router.post("/articles/suggestions", authenticate,
-  authorizeRoles(USER_ROLES.EMPLOYEE, USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN), articleController.getSuggestedArticles);
+  authorizeRoles(USER_ROLES.EMPLOYEE, USER_ROLES.TECHNICIAN, USER_ROLES.ADMIN), suggestionsValidation, validate, articleController.getSuggestedArticles);
 
 router.get("/categories", authenticate, authorizeRoles(USER_ROLES.ADMIN), controller.getCategories);
 
@@ -31,14 +33,14 @@ router.patch("/articles/:articleId", authenticate, authorizeRoles(USER_ROLES.ADM
   updateArticleValidation, validate, articleController.updateArticle);
 
 router.patch("/articles/:articleId/publish", authenticate, authorizeRoles(USER_ROLES.ADMIN),
-  articleStatusValidation, validate, articleController.publishArticle);
+  articleStatusValidation, emptyBody(), validate, articleController.publishArticle);
 router.patch("/articles/:articleId/unpublish", authenticate, authorizeRoles(USER_ROLES.ADMIN),
-  articleStatusValidation, validate, articleController.unpublishArticle);
+  articleStatusValidation, emptyBody(), validate, articleController.unpublishArticle);
 
 router.patch("/articles/:articleId/archive", authenticate, authorizeRoles(USER_ROLES.ADMIN),
-  articleStatusValidation, validate, articleController.archiveArticle);
+  articleStatusValidation, emptyBody(), validate, articleController.archiveArticle);
 
-router.get("/articles", authenticate, articleController.listArticles);
+router.get("/articles", authenticate, listArticlesValidation, validate, articleController.listArticles);
 router.get("/articles/:articleId", authenticate,
   articleStatusValidation, validate, articleController.getArticleById);
 

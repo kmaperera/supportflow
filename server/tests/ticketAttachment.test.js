@@ -345,7 +345,7 @@ test("Cloudinary helper streams memory, maps output and sanitizes failures", asy
   await assert.rejects(upload.uploadAttachmentBuffer({ buffer: file.buffer }), { statusCode: 502, message: "Attachment upload failed" });
 });
 
-test("route parses one file, ignores spoofed fields and normalizes Multer errors", async (t) => {
+test("route parses one file, rejects spoofed fields and normalizes Multer errors", async (t) => {
   const express = require("express");
   const authPath = require.resolve("../src/middleware/authenticate");
   require.cache[authPath] = { id: authPath, filename: authPath, loaded: true, exports(req, res, next) {
@@ -366,12 +366,14 @@ test("route parses one file, ignores spoofed fields and normalizes Multer errors
   await new Promise(resolve => server.once("listening", resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   const url = `http://127.0.0.1:${server.address().port}/api/v1/tickets`;
-  async function request({ id = "5", field = "attachment", size = 3, count = 1, auth = true } = {}) {
+  async function request({ id = "5", field = "attachment", size = 3, count = 1, auth = true, spoof = false } = {}) {
     const form = new FormData();
-    for (const key of ["uploadedBy", "ticketId", "commentId", "publicId", "fileUrl", "mimeType", "fileSize", "resourceType"]) form.append(key, "spoofed");
+    if (spoof) for (const key of ["uploadedBy", "ticketId", "commentId", "publicId", "fileUrl", "mimeType", "fileSize", "resourceType"]) form.append(key, "spoofed");
     for (let i = 0; i < count; i++) form.append(field, new Blob([Buffer.alloc(size)], { type: "text/plain" }), "report.txt");
     return fetch(`${url}/${id}/attachments`, { method: "POST", headers: auth ? { authorization: "test" } : {}, body: form });
   }
+  assert.equal((await request({ spoof: true })).status, 422);
+  assert.equal(calls.mock.callCount(), 0);
   const success = await request();
   assert.equal(success.status, 201);
   assert.deepEqual(await success.json(), { success: true, message: "Attachment uploaded successfully", data: { attachment: { id: 10, ticketId: 5, commentId: null, uploadedBy: { id: 3 } } } });
@@ -398,7 +400,7 @@ test("route parses one file, ignores spoofed fields and normalizes Multer errors
   for (const [commentId, field, status] of [["22", "attachment", 201], ["0", "attachment", 422],
     ["18446744073709551616", "attachment", 422], ["22", "wrong", 422]]) {
     const form = new FormData();
-    for (const key of ["ticketId", "commentId", "uploadedBy", "visibility", "isInternal", "publicId"]) form.append(key, "spoofed");
+    // Only the attachment file is part of the accepted multipart contract.
     form.append(field, new Blob(["abc"], { type: "text/plain" }), "report.txt");
     const response = await fetch(`${url}/5/comments/${commentId}/attachments`, {
       method: "POST", headers: { authorization: "test" }, body: form,

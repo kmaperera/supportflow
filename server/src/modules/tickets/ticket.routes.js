@@ -56,7 +56,7 @@ router.post("/:id/internal-notes", authenticate, authorizeRoles(USER_ROLES.TECHN
 
 router.patch("/:id", authenticate, authorizeRoles(USER_ROLES.EMPLOYEE), updateEmployeeTicketValidation, validate, updateEmployeeTicket);
 
-router.post("/:id/self-assign", authenticate, authorizeRoles(USER_ROLES.TECHNICIAN), ticketIdValidation, validate, selfAssignTicket);
+router.post("/:id/self-assign", authenticate, authorizeRoles(USER_ROLES.TECHNICIAN), require("./ticket.validation").selfAssignValidation, validate, selfAssignTicket);
 
 router.patch("/:id/assign", authenticate, authorizeRoles(USER_ROLES.ADMIN), adminAssignTicketValidation, validate, assignTicketByAdmin);
 router.patch("/:id/unassign", authenticate, authorizeRoles(USER_ROLES.ADMIN), unassignTicketValidation, validate, unassignTicketByAdmin);

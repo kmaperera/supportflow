@@ -1,6 +1,8 @@
 const { query, param } = require("express-validator");
 
+const { pagination } = require('../../middleware/inputValidation');
 const getNotificationsValidation = [
+  ...pagination(20),
   query().custom((value) => {
     if (Object.keys(value).some((key) => !["page", "limit", "unreadOnly"].includes(key))) {
       throw new Error("Unsupported notification query parameter");

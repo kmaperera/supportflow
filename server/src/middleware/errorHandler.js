@@ -1,4 +1,12 @@
 ﻿const errorHandler = (err, req, res, next) => {
+  // Parser errors may contain fragments of submitted credentials or content.
+  if (!res.headersSent && ['entity.parse.failed', 'entity.too.large'].includes(err.type)) {
+    return res.status(err.type === 'entity.too.large' ? 413 : 400).json({
+      success: false,
+      message: err.type === 'entity.too.large' ? 'Request body exceeds the 10 KB limit' : 'Malformed JSON request body',
+      errors: [],
+    });
+  }
   const statusCode =
     Number.isInteger(err.statusCode) && err.statusCode >= 400 && err.statusCode <= 599
       ? err.statusCode

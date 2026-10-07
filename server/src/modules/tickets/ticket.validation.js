@@ -1,14 +1,9 @@
-const { TICKET_SORT_FIELDS, TICKET_SORT_DIRECTIONS, MAX_LIMIT } = require("../../constants/ticketQuery");
+const { TICKET_SORT_FIELDS, TICKET_SORT_DIRECTIONS } = require("../../constants/ticketQuery");
 const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
 ﻿const { body, query, param } = require("express-validator");
 
-const positiveId = (value) => {
-  if (!(["string", "number"].includes(typeof value)) ||
-      (typeof value === "number" && !Number.isSafeInteger(value))) return false;
-  const id = String(value);
-  return /^[1-9]\d*$/.test(id) && id.length <= 20 && BigInt(id) <= 18446744073709551615n;
-};
-
+const { positiveId, bodyFields, pagination, emptyBody } = require('../../middleware/inputValidation');
+const { parseCalendarDate } = require('../reports/reports.validation');
 const createTicketValidation = [
   body().custom((value) => {
     const allowed = ["categoryId", "priorityId", "title", "description"];
@@ -29,7 +24,7 @@ const createTicketValidation = [
 function ticketDateValidation() {
   return [
     ...["fromDate", "toDate"].map((field) => query(field).optional().isString().bail()
-      .matches(/^\d{4}-\d{2}-\d{2}$/).bail().isISO8601({ strict: true })
+      .custom(value => { parseCalendarDate(value); return true; })
       .withMessage("Date must be a valid YYYY-MM-DD date")),
     query().custom((value) => {
       if (typeof value.fromDate === "string" && typeof value.toDate === "string" &&
@@ -40,6 +35,7 @@ function ticketDateValidation() {
 }
 
 const getMyTicketsValidation = [
+  ...pagination(10),
   query().custom((value) => {
     const allowed = ["page", "limit", "search", "status", "categoryId", "priorityId", "fromDate", "toDate", "sortBy", "order"];
     if (Object.keys(value).some((key) => !allowed.includes(key))) {
@@ -47,10 +43,6 @@ const getMyTicketsValidation = [
     }
     return true;
   }),
-  query("page").optional().custom((value) => positiveId(value) && Number.isSafeInteger(Number(value)))
-    .withMessage("Page must be a positive integer"),
-  query("limit").optional().custom((value) => positiveId(value) && Number(value) <= MAX_LIMIT)
-    .withMessage("Limit must be between 1 and 100"),
   query("search").optional().isString().bail().trim().isLength({ max: 200 }),
   query("categoryId").optional().custom(positiveId).withMessage("Invalid category ID"),
   query("priorityId").optional().custom(positiveId).withMessage("Invalid priority ID"),
@@ -75,6 +67,7 @@ const ticketIdValidation = [
 ];
 
 const unassignTicketValidation = [
+  bodyFields(['expectedAssignmentId']),
   ...ticketIdValidation,
   body("expectedAssignmentId").custom(positiveId)
     .withMessage("Expected assignment ID must be a positive integer"),
@@ -99,15 +92,12 @@ const updateEmployeeTicketValidation = [
 ];
 
 const ticketQueueValidation = [
+  ...pagination(10),
   query().custom((value) => {
     const allowed = ["page", "limit", "search", "status", "categoryId", "priorityId", "assignedTo", "assignment", "fromDate", "toDate", "sortBy", "order"];
     if (Object.keys(value).some((key) => !allowed.includes(key))) throw new Error("Unsupported queue query parameter");
     return true;
   }),
-  query("page").optional().custom((value) => positiveId(value) && Number.isSafeInteger(Number(value)))
-    .withMessage("Page must be a positive integer"),
-  query("limit").optional().custom((value) => positiveId(value) && Number(value) <= MAX_LIMIT)
-    .withMessage("Limit must be between 1 and 100"),
   query("search").optional().isString().bail().trim().isLength({ max: 200 }),
   query("categoryId").optional().custom(positiveId),
   query("priorityId").optional().custom(positiveId),
@@ -122,6 +112,7 @@ const ticketQueueValidation = [
 ];
 
 const adminAssignTicketValidation = [
+  bodyFields(['technicianId']),
   ...ticketIdValidation,
   body("technicianId").custom(positiveId).withMessage("Technician ID must be a positive integer"),
 ];
@@ -189,7 +180,9 @@ const reopenTicketValidation = [
   }),
 ];
 
-module.exports = { assignedTicketsValidation, unassignTicketValidation, reopenTicketValidation, closeTicketValidation, resolveTicketValidation, updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
+const selfAssignValidation = [...ticketIdValidation, emptyBody()];
+
+module.exports = { selfAssignValidation, assignedTicketsValidation, unassignTicketValidation, reopenTicketValidation, closeTicketValidation, resolveTicketValidation, updateTicketPriorityValidation, updateTicketStatusValidation, adminAssignTicketValidation, ticketQueueValidation, createTicketValidation, getMyTicketsValidation, ticketIdValidation, updateEmployeeTicketValidation };
 
 
 

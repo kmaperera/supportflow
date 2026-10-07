@@ -2,6 +2,18 @@
 const { USER_ROLES } = require("../../constants/roles");
 const { query } = require("express-validator");
 
+const { bodyFields, queryFields, pagination, MAX_PASSWORD_LENGTH } = require('../../middleware/inputValidation');
+const { USER_SORT_FIELDS } = require('../../constants/userQuery');
+const listUsersValidation = [
+  queryFields(['page', 'limit', 'search', 'department', 'role', 'isActive', 'sortBy', 'order']),
+  ...pagination(20),
+  ...[['search', 200], ['department', 150]].map(([key, max]) => query(key).optional().isString().bail().trim().isLength({ max }).withMessage(key + ' is too long')),
+  query('role').optional().isString().bail().isIn(Object.values(USER_ROLES)),
+  query('isActive').optional().custom(value => ['true', 'false', '1', '0'].includes(value)).withMessage('isActive must be true, false, 1 or 0'),
+  query('sortBy').optional().isString().bail().isIn(USER_SORT_FIELDS),
+  query('order').optional().isString().bail().toUpperCase().isIn(['ASC', 'DESC']),
+];
+
 function profileValidation(optional) {
   const field = (name) => optional ? body(name).optional() : body(name);
   return [
@@ -27,13 +39,14 @@ const assignableTechniciansValidation = [
 ];
 
 const createUserValidation = [
+  bodyFields(['firstName', 'lastName', 'email', 'phone', 'department', 'profileImageUrl', 'password', 'role']),
   ...profileValidation(false),
-  body("password").isString().bail().isLength({ min: 8 })
-    .withMessage("Password must be at least 8 characters")
+  body("password").isString().bail().isLength({ min: 8, max: MAX_PASSWORD_LENGTH })
+    .withMessage("Password must be 8 to 1024 characters").bail()
     .matches(/[A-Z]/).withMessage("Password must contain an uppercase letter")
     .matches(/[a-z]/).withMessage("Password must contain a lowercase letter")
     .matches(/[0-9]/).withMessage("Password must contain a number"),
-  body("role").isIn(Object.values(USER_ROLES)).withMessage("Invalid role"),
+  body("role").isString().bail().isIn(Object.values(USER_ROLES)).withMessage("Invalid role"),
 ];
 
 const updateUserValidation = [
@@ -58,17 +71,19 @@ const userIdValidation = [
 ];
 
 const updateUserStatusValidation = [
+  bodyFields(['isActive']),
   ...userIdValidation,
   body("isActive").custom((value) => typeof value === "boolean")
     .withMessage("isActive must be a boolean"),
 ];
 
 const updateUserRoleValidation = [
+  bodyFields(['role']),
   ...userIdValidation,
   body("role").isString().withMessage("Role is required")
     .bail().isIn(Object.values(USER_ROLES)).withMessage("Invalid role"),
 ];
 
-module.exports = { assignableTechniciansValidation, createUserValidation, updateUserValidation, userIdValidation, updateUserStatusValidation, updateUserRoleValidation };
+module.exports = { listUsersValidation, assignableTechniciansValidation, createUserValidation, updateUserValidation, userIdValidation, updateUserStatusValidation, updateUserRoleValidation };
 
 

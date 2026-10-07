@@ -1,9 +1,11 @@
 const { ticketIdValidation } = require("./ticket.validation");
 const { param, query } = require("express-validator");
 
-const uploadTicketAttachmentValidation = [...ticketIdValidation];
+const { emptyBody, queryFields } = require('../../middleware/inputValidation');
+const uploadTicketAttachmentValidation = [...ticketIdValidation, emptyBody(), queryFields([])];
 
 const uploadCommentAttachmentValidation = [
+  emptyBody(), queryFields([]),
   ...ticketIdValidation,
   param("commentId").custom((value) => {
     if (typeof value !== "string" || !/^[1-9]\d*$/.test(value) || value.length > 20) return false;

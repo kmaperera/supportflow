@@ -5,7 +5,7 @@ const ApiError = require("../../utils/ApiError");
 const { USER_ROLES } = require("../../constants/roles");
 
 const PROFILE_FIELDS = ["firstName", "lastName", "email", "phone", "department", "profileImageUrl"];
-const SORT_FIELDS = ["first_name", "last_name", "email", "role", "department", "created_at", "updated_at"];
+const { USER_SORT_FIELDS: SORT_FIELDS } = require('../../constants/userQuery');
 
 function safeUser(user) {
   return {
@@ -129,7 +129,7 @@ async function updateUser(id, userData) {
   if (!keys.length || keys.some((key) => !PROFILE_FIELDS.includes(key))) {
     throw new ApiError(400, "Only basic profile fields may be updated");
   }
-  const details = { ...userData };
+  const details = Object.fromEntries(PROFILE_FIELDS.filter(key => Object.hasOwn(userData, key)).map(key => [key, userData[key]]));
   if (details.email !== undefined) {
     details.email = details.email.trim().toLowerCase();
     const existing = await repository.findByEmail(details.email);

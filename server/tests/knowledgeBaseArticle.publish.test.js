@@ -85,14 +85,15 @@ test("registered publish/unpublish routes require ADMIN and return mapped result
   await new Promise(resolve => server.once("listening", resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   const base = `http://127.0.0.1:${server.address().port}/api/v1/knowledge-base/articles`;
-  const patch = (action, actor = 1, id = "10") => fetch(`${base}/${id}/${action}`, { method: "PATCH", headers: {
+  const patch = (action, actor = 1, id = "10", body = {}) => fetch(`${base}/${id}/${action}`, { method: "PATCH", headers: {
     "content-type": "application/json", ...(actor ? { authorization: `Bearer ${jwt.sign({ role: "ADMIN" }, process.env.JWT_ACCESS_SECRET, { subject: String(actor), expiresIn: "5m" })}` } : {}),
-  }, body: JSON.stringify({ status: "ARCHIVED", viewCount: 0, createdBy: 1, publishedAt: "spoofed" }) });
+  }, body: JSON.stringify(body) });
   for (const action of ["publish", "unpublish"]) {
     assert.equal((await patch(action, null)).status, 401);
     for (const actor of [2, 3]) assert.equal((await patch(action, actor)).status, 403);
     for (const id of ["0", "-1", "1.5", "abc", "18446744073709551616"]) assert.equal((await patch(action, 1, id)).status, 422);
   }
+  for (const action of ["publish", "unpublish"]) assert.equal((await patch(action, 1, "10", { status: "ARCHIVED", createdBy: 1 })).status, 422);
   assert.equal(query.mock.callCount(), 0);
   for (const action of ["publish", "unpublish"]) {
     assert.equal((await patch(action, 1, "99")).status, 404);
