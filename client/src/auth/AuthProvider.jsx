@@ -74,6 +74,10 @@ export function AuthProvider({ children }) {
       if (isCurrent()) establishSession(restoredUser, token)
     }).catch(error => {
       if (!isCurrent()) return
+      if (error?.response?.status === 429) {
+        setAuthError('Too many requests. Please try again later.')
+        return
+      }
       clearSession()
       if (![401, 403].includes(error?.response?.status)) {
         setAuthError('Unable to check your session. Please try signing in again.')

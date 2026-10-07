@@ -23,6 +23,19 @@ try {
   let calls=0;api.defaults.adapter=config=>{calls++;return fail(config,status)}
   await assert.rejects(api.get(url),e=>e.response.status===status);assert.equal(calls,1)
  }
+ // A direct 429 never refreshes, and a refresh 429 never clears the session.
+ let throttledCalls=0
+ api.defaults.adapter=config=>{throttledCalls++;return fail(config,429)}
+ await assert.rejects(api.get('/tickets'),e=>e.response.status===429)
+ assert.equal(throttledCalls,1);assert.equal(clears,0);assert.equal(tokens.getAccessToken(),'new')
+ refreshes=0
+ api.defaults.adapter=async config=>{
+  if(config.url==='/auth/refresh'){refreshes++;await new Promise(r=>setTimeout(r,20));return fail(config,429)}
+  return fail(config,401)
+ }
+ const throttled=await Promise.allSettled([api.get('/a'),api.get('/b')])
+ assert.ok(throttled.every(r=>r.status==='rejected'&&r.reason.response.status===429))
+ assert.equal(refreshes,1);assert.equal(clears,0);assert.equal(tokens.getAccessToken(),'new')
  tokens.setAccessToken('expired');refreshes=0
  api.defaults.adapter=async config=>{if(config.url==='/auth/refresh'){refreshes++;await new Promise(r=>setTimeout(r,20))}return fail(config,401)}
  const failed=await Promise.allSettled([api.get('/a'),api.get('/b')]);assert.ok(failed.every(r=>r.status==='rejected'));assert.equal(refreshes,1);assert.equal(clears,1);assert.equal(tokens.getAccessToken(),null);assert.equal(user,null)

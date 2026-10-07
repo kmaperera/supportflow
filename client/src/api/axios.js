@@ -45,7 +45,7 @@ api.interceptors.response.use(response => response, async error => {
       // Do not replay an old session's operation after a different login/clear.
       if (getAccessToken() !== accessToken) throw error;
     }).catch(refreshError => {
-      if (getSessionHandlers() === handlers && getAccessToken() === token) handlers.clearSession();
+      if (refreshError.response?.status !== 429 && getSessionHandlers() === handlers && getAccessToken() === token) handlers.clearSession();
       throw refreshError;
     }).finally(() => { recovery = null });
   }

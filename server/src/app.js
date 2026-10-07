@@ -1,6 +1,7 @@
 ﻿const express = require("express");
 const cors = require("cors");
 const { securityHeaders, privateApiResponse } = require("./middleware/securityHeaders");
+const { createApiRateLimiter } = require("./middleware/rateLimiter");
 const requestLogger = require("./utils/logger");
 const cookieParser = require("cookie-parser");
 const ApiError = require("./utils/ApiError");
@@ -32,6 +33,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+app.use("/api/v1", createApiRateLimiter());
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(cookieParser());
