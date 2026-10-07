@@ -1,6 +1,6 @@
 ﻿const express = require("express");
 const cors = require("cors");
-const helmet = require("helmet");
+const { securityHeaders, privateApiResponse } = require("./middleware/securityHeaders");
 const requestLogger = require("./utils/logger");
 const cookieParser = require("cookie-parser");
 const ApiError = require("./utils/ApiError");
@@ -17,7 +17,13 @@ const dashboardRoutes = require("./modules/dashboard/dashboard.routes");
 
 const app = express();
 
-app.use(helmet());
+app.use(securityHeaders());
+// Include malformed/unauthenticated responses, without disabling public health caching.
+app.use([
+  "/api/v1/auth", "/api/v1/users", "/api/v1/tickets", "/api/v1/notifications",
+  "/api/v1/sla", "/api/v1/knowledge-base", "/api/v1/dashboard",
+  "/api/v1/reports", "/api/v1/audit-logs",
+], privateApiResponse);
 app.use(
   cors({
     origin: process.env.CLIENT_URL,
