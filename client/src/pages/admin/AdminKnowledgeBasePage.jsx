@@ -70,7 +70,7 @@ function Articles({ categories }) {
     } finally { pending.current = false; if (mounted.current) setBusy(null) }
   }
   return <section aria-labelledby="kb-articles-heading" className="space-y-4">
-    <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="kb-articles-heading" className="text-xl font-semibold">KB Articles</h2><Link className={button} to="/admin/knowledge-base/articles/new">Add Article</Link></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="kb-articles-heading" className="text-lg font-semibold">KB Articles</h2><Link className={button} to="/admin/knowledge-base/articles/new">Add Article</Link></div>
     <FilterBar activeCount={[query.search, query.categoryId].filter(Boolean).length} className={kbCard}>
       <div className="grid items-end gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]">
         <div><label htmlFor="kb-search" className="text-sm font-semibold">Search articles</label><input id="kb-search" type="search" maxLength={200} className={input} placeholder="Search articles..." value={search} onChange={event => setSearch(event.target.value)} aria-describedby="kb-search-help" /></div>
@@ -125,7 +125,7 @@ function Categories({ resource }) {
     finally { pending.current = false; if (mounted.current) setBusy(null) }
   }
   return <section aria-labelledby="kb-categories-heading" className="space-y-4">
-    <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="kb-categories-heading" className="text-xl font-semibold">KB Categories</h2><button className={button} disabled={Boolean(editor) || Boolean(busy)} onClick={() => { setEditor({ category: null }); setMessage('') }}>Add KB Category</button></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="kb-categories-heading" className="text-lg font-semibold">KB Categories</h2><button className={button} disabled={Boolean(editor) || Boolean(busy)} onClick={() => { setEditor({ category: null }); setMessage('') }}>Add KB Category</button></div>
     <p className="text-sm text-slate-600 dark:text-slate-300">Inactive categories remain here for management. Their articles are hidden from employees and technicians until the category is active again.</p>
     {message && <AuthFeedback variant="success">{message}</AuthFeedback>}{error && !deactivating && <AuthFeedback>{error}</AuthFeedback>}
     {editor && <KbCategoryEditor key={editor.category?.id || 'new'} category={editor.category} onCancel={() => setEditor(null)} onSaved={() => { setMessage(editor.category ? 'KB category updated successfully.' : 'KB category created successfully.'); setEditor(null); resource.reload() }} />}

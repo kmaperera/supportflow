@@ -48,7 +48,7 @@ export default function TicketInternalNotes({ ticket, userId, disabled, draft, o
       if (active.current) setAdding(false)
     }
   }
-  return <section aria-labelledby="internal-notes-heading" className="min-w-0 rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 p-4 sm:p-6">
+  return <section aria-labelledby="internal-notes-heading" className="min-w-0 rounded-2xl border border-slate-200 dark:border-slate-700 border-l-4 border-l-teal-700 dark:border-l-teal-400 bg-slate-50 dark:bg-slate-950 p-4 sm:p-6">
     <h2 id="internal-notes-heading" className="text-lg font-semibold">Internal Notes</h2>
     <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Visible only to support staff.</p>
     {!current ? <ContentSkeleton initial={!result && attempt === 0} variant="rows">Loading internal notes...</ContentSkeleton> : current.error ? <ErrorState compact className="mt-4" title="Unable to load internal notes."><button type="button" onClick={() => setAttempt(value => value + 1)} className="cursor-pointer rounded text-teal-800 dark:text-teal-300 underline focus-visible:outline-2">Retry</button></ErrorState> : <InternalNoteList notes={current.notes} userId={userId} />}

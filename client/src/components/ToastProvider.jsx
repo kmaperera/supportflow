@@ -48,9 +48,9 @@ function ToastItem({ toast, dismiss }) {
     return () => clearTimeout(timer)
   }, [toast.id, toast.type, dismiss, hovered, focused])
   return <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} className={`pointer-events-auto flex min-w-0 items-start gap-3 rounded-xl border p-4 shadow-lg ${styles[toast.type]}`}>
-        <div role={toast.type === 'error' ? 'alert' : 'status'} aria-live={toast.type === 'error' ? 'assertive' : 'polite'} aria-atomic="true" className="min-w-0 flex-1 break-words text-sm">
+        <div role={toast.type === 'error' ? 'alert' : 'status'} aria-live={toast.type === 'error' ? 'assertive' : 'polite'} aria-atomic="true" className="min-w-0 flex-1 [overflow-wrap:anywhere] text-sm leading-6">
           <p className="font-semibold capitalize">{toast.type}</p><p className="mt-1">{toast.message}</p>
         </div>
-        <button type="button" aria-label={`Dismiss ${toast.type} notification`} onClick={() => dismiss(toast.id)} className="shrink-0 cursor-pointer rounded px-2 py-1 font-semibold hover:bg-white/60 dark:hover:bg-slate-900/60 focus-visible:outline-2 focus-visible:outline-offset-2">×</button>
+        <button type="button" aria-label={`Dismiss ${toast.type} notification`} onClick={() => dismiss(toast.id)} className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg hover:bg-white/60 dark:hover:bg-slate-900/60 focus-visible:outline-2 focus-visible:outline-offset-2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M6 18L18 6" /></svg></button>
       </div>
 }

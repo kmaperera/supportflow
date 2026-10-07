@@ -33,6 +33,24 @@ html, body { background: var(--page-bg); color: var(--page-text); }
 @layer base {
   input, select, textarea { @apply bg-white dark:bg-slate-900; }
   input::placeholder, textarea::placeholder { @apply text-slate-500 dark:text-slate-400; }
+  button, select, summary, input:is([type='radio'], [type='checkbox']), input::file-selector-button { cursor: pointer; }
+  :is(button, input, select, textarea):disabled, [aria-disabled='true'] { cursor: not-allowed; }
+  button, a[href] { -webkit-tap-highlight-color: transparent; }
+  button { font-size: .875rem; font-weight: 600; }
+  button:not(:disabled):not([aria-disabled='true']):hover { filter: brightness(.98); }
+  button:not(:disabled):not([aria-disabled='true']):active { filter: brightness(.96); }
+  :is(input, select, textarea):disabled { opacity: .6; }
+  textarea { line-height: 1.5; }
+  .layout-table thead { @apply bg-slate-50 text-slate-600 dark:bg-slate-950 dark:text-slate-300; }
+  .layout-table th { font-weight: 600; }
+  .layout-table tbody tr:hover { @apply bg-slate-50 dark:bg-slate-800/50; }
+  .layout-table :is(th, td) { overflow-wrap: anywhere; }
+  @media (prefers-reduced-motion: no-preference) {
+    button, nav a { transition: background-color 150ms, border-color 150ms, color 150ms; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after { scroll-behavior: auto; }
+  }
 }
 .dark :is(input, select, textarea)[aria-invalid="true"] {
   border-color: var(--color-red-400);
@@ -66,7 +84,7 @@ html, body { background: var(--page-bg); color: var(--page-text); }
 }
 
 @utility layout-table {
-  @apply w-full min-w-0 overflow-auto;
+  @apply relative w-full min-w-0 overflow-auto;
 }
 
 /* Workspace and auth content must wrap rather than hiding page overflow. */

@@ -76,7 +76,7 @@ export function MyTicketsList({ tickets, totalRecords }) {
   return <ul className="space-y-4">
     {tickets.map(ticket => <li key={ticket.id} className="min-w-0">
       <Link to={`/employee/tickets/${encodeURIComponent(ticket.id)}`} aria-labelledby={`ticket-number-${ticket.id} ticket-title-${ticket.id} ticket-status-${ticket.id}`} className="block rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 transition-colors hover:border-teal-700 dark:hover:border-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400 sm:p-6">
-      <span id={`ticket-number-${ticket.id}`} className="break-all text-sm font-semibold text-teal-800 dark:text-teal-300 underline underline-offset-4">{ticket.ticketNumber}</span>
+      <span id={`ticket-number-${ticket.id}`} className="break-all text-sm font-semibold text-teal-800 dark:text-teal-300">{ticket.ticketNumber}</span>
       <h2 id={`ticket-title-${ticket.id}`} className="mt-1 break-words text-lg font-semibold">{ticket.title}</h2>
       <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2 xl:grid-cols-4">
         <div><dt className="text-slate-500 dark:text-slate-400">Category</dt><dd className="mt-1 break-words">{ticket.category?.name || 'Not specified'}</dd></div>
