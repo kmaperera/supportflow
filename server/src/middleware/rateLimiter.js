@@ -32,4 +32,25 @@ function createApiRateLimiter(env = process.env) {
   });
 }
 
-module.exports = { createApiRateLimiter, rateLimitSettings };
+function loginRateLimitSettings(env = process.env) {
+  return {
+    windowMs: positiveInteger(env.LOGIN_RATE_LIMIT_WINDOW_MS, 900000, 86400000),
+    limit: positiveInteger(env.LOGIN_RATE_LIMIT_MAX, 5, 1000),
+  };
+}
+
+function createLoginRateLimiter(env = process.env) {
+  return rateLimit({
+    ...loginRateLimitSettings(env),
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    identifier: "login",
+    skipSuccessfulRequests: true,
+    handler: (req, res) => {
+      res.setHeader("Cache-Control", "private, no-store");
+      res.status(429).json({ success: false, message: "Too many login attempts. Please try again later.", errors: [] });
+    },
+  });
+}
+
+module.exports = { createApiRateLimiter, rateLimitSettings, createLoginRateLimiter, loginRateLimitSettings };

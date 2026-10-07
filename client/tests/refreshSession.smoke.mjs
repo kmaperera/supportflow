@@ -4,6 +4,9 @@ const server = await createServer({ server: { middlewareMode: true }, appType: '
 try {
   const { default: api } = await server.ssrLoadModule('/src/api/axios.js')
   const { refreshSession, login } = await server.ssrLoadModule('/src/api/authApi.js')
+  const { getLoginErrorMessage } = await server.ssrLoadModule('/src/api/authApi.js')
+  const loginMessage = 'Too many login attempts. Please try again later.'
+  assert.equal(getLoginErrorMessage({ response: { status: 429, data: { success: false, message: loginMessage, errors: [] } } }), loginMessage)
   const user = { id: 1, role: 'ADMIN', mustChangePassword: true, isActive: true }
   let calls = 0
   api.defaults.adapter = async config => {

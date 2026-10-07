@@ -1,5 +1,6 @@
 // Only known public messages are displayed; arbitrary server text is not UI.
 const publicMessages = new Set([
+  'Too many login attempts. Please try again later.',
   'Invalid email or password', 'Invalid email or password.',
   'Your account is inactive. Please contact an administrator.',
   'Account is inactive', 'Validation failed',
