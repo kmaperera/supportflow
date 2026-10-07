@@ -41,6 +41,7 @@ async function findById(notificationId, db = pool) {
 
 async function findByUserId(userId, options = {}, db = pool) {
   const { limit = 20, offset = 0 } = options;
+  require('../../utils/sqlPagination')(limit, offset);
   const unreadFilter = options.unreadOnly === true ? " AND is_read = FALSE" : "";
   const [rows] = await db.query(
     `${NOTIFICATION_SELECT} WHERE user_id = ?${unreadFilter}

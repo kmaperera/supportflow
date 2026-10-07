@@ -64,6 +64,7 @@ const ARTICLE_LIST_FROM = `FROM knowledge_base_articles AS a
   INNER JOIN users AS author ON author.id = a.created_by`;
 
 async function findAll({ limit = 20, offset = 0, ...filters } = {}, db = pool) {
+  require('../../utils/sqlPagination')(limit, offset);
   const { where, values } = listVisibility(filters);
   const [rows] = await db.query(
     `SELECT a.id, a.category_id, c.name AS category_name,

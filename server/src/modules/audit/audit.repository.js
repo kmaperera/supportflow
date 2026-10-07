@@ -14,6 +14,7 @@ function where(filters) {
   return { sql: clauses.length ? ` WHERE ${clauses.join(' AND ')}` : '', values };
 }
 async function findAll({ filters, limit, offset }, db = pool) {
+  require('../../utils/sqlPagination')(limit, offset);
   const { sql, values } = where(filters);
   const [rows] = await db.query(`SELECT CAST(a.id AS CHAR) AS id, CAST(a.actor_user_id AS CHAR) AS actor_user_id, a.action, a.entity_type, CAST(a.entity_id AS CHAR) AS entity_id,
     a.description, a.metadata, a.ip_address,
