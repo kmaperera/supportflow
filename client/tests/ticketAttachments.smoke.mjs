@@ -42,5 +42,8 @@ try {
   assert.deepEqual(await uploadTicketAttachment('42', file), attachment)
   assert.equal(await (await downloadTicketAttachment('42', attachment)).text(), 'hello')
   await assert.rejects(() => downloadTicketAttachment('42', { ...attachment, downloadPath: 'https://untrusted.test/file' }), /Invalid attachment download path/)
+  for (const downloadPath of ['javascript:alert(1)', 'data:text/html,<script>alert(1)</script>', 'vbscript:msgbox(1)', 'blob:untrusted', '//untrusted.test/file']) {
+    await assert.rejects(() => downloadTicketAttachment('42', { ...attachment, downloadPath }), /Invalid attachment download path/)
+  }
   console.log('Attachment restrictions, multipart field, list/upload/download contracts and download path validation passed.')
 } finally { await server.close() }

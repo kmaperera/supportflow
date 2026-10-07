@@ -94,9 +94,9 @@ function AttachmentRow({ attachment, ticketId }) {
       if (mode === 'open') {
         if (!preview.closed) openAttachment(blob, preview)
       } else saveAttachment(blob, attachment.originalName)
-    } catch {
+    } catch (cause) {
       preview?.close()
-      setError(mode === 'open' ? 'Unable to open attachment. Allow pop-ups or use Download.' : 'Unable to download attachment.')
+      setError(cause?.message === 'This file type is download-only' ? 'Preview is unavailable for this file type. Use Download.' : mode === 'open' ? 'Unable to open attachment. Allow pop-ups or use Download.' : 'Unable to download attachment.')
     }
     finally { pending.current = false; setDownloading(null) }
   }

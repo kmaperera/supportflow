@@ -1,7 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import App from '../src/App'
+import ConfirmDialog from '../src/components/ConfirmDialog'
+import ErrorState from '../src/components/ErrorState'
 import { AuthContext } from '../src/auth/AuthContext'
 import ThemeProvider from '../src/theme/ThemeProvider'
 import ToastProvider from '../src/components/ToastProvider'
@@ -11,7 +13,8 @@ import '../src/index.css'
 
 const route = new URLSearchParams(location.search).get('route') || '/admin'
 const role = route.startsWith('/employee') ? 'EMPLOYEE' : route.startsWith('/technician') ? 'TECHNICIAN' : 'ADMIN'
-const long = 'LongUnbrokenValue'.repeat(8)
+const xss = new URLSearchParams(location.search).has('xss')
+const long = xss ? `<script>window.__xss=1</script><img src=x onerror="window.__xss=1"><svg onload="window.__xss=1"><a href="javascript:window.__xss=1">click</a> O'Connor C++ <5 minutes A & B` : 'LongUnbrokenValue'.repeat(8)
 const date = '2026-10-01T12:00:00Z'
 const person = { id: 9, firstName: 'Malith', lastName: `Perera ${long}`, email: `${long}@example.test`, role, isActive: true, createdAt: date, department: long, mustChangePassword: route === '/change-password' }
 const category = { id: 1, name: long, isActive: true, description: 'Office equipment and connectivity', createdAt: date }
@@ -29,15 +32,16 @@ api.defaults.adapter = async config => {
     comments: [{ id: 1, commentType: 'PUBLIC', author: person, content: `Investigating the connection. ${long}`, createdAt: date }, { id: 2, commentType: 'INTERNAL', author: person, content: `Check network configuration. ${long}`, createdAt: date }],
     attachments: [{ id: 1, originalName: `${long}.pdf`, mimeType: 'application/pdf', fileSize: 12345, uploadedBy: person, createdAt: date, downloadPath: '/api/v1/tickets/1/attachments/1/download' }], history: [],
     notifications: [{ id: 1, ticketId: 1, type: 'PUBLIC_COMMENT', title: `Printer update ${long}`, message: long, isRead: false, createdAt: date }], unreadCount: 1,
-    logs: [{ id: 1, action: `TICKET_UPDATED_${long}`, createdAt: date, actor: { name: person.firstName, email: person.email, role }, entityType: 'Ticket', entityId: 1, description: long, metadata: { isDemo: true, schemaVersion: 1 } }],
+    logs: [{ id: 1, action: `TICKET_UPDATED_${long}`, createdAt: date, actor: { name: person.firstName, email: person.email, role }, entityType: 'Ticket', entityId: 1, description: long, metadata: { isDemo: true, schemaVersion: 1, ...(xss ? { value: long } : {}) } }],
     distribution: [{ status: 'OPEN', priorityId: 1, priorityName: 'HIGH', categoryName: long, count: 6 }], period: config.params?.period || 'monthly', trend: [{ date: '2026-10-01', month: '2026-10', count: 6 }],
     report: { rows: [{ ...ticket, requester: { name: person.firstName }, assignedTechnician: { name: person.firstName } }], pagination } }
   return { config, status: 200, headers: {}, data: { success: true, data, pagination } }
 }
 export function ToastControls() {
   const toast = useToast()
-  useEffect(() => { window.showPolishToast = () => toast.info(`Saved ${long}`) }, [toast])
-  return null
+  const [dialog, setDialog] = useState(false)
+  useEffect(() => { window.showPolishToast = () => toast.info(`Saved ${long}`); window.showXssDialog = () => setDialog(true) }, [toast])
+  return xss ? <><ErrorState title={long} message={long} /><ConfirmDialog open={dialog} title={long} description={long} confirmLabel="Confirm" onConfirm={() => setDialog(false)} onCancel={() => setDialog(false)} /></> : null
 }
 const auth = { user: person, isAuthenticated: route !== '/login', isInitializing: false, logoutUser: async () => {}, clearAuthError: () => {}, setAuthError: () => {} }
 createRoot(document.getElementById('root')).render(<ThemeProvider><ToastProvider><ToastControls /><AuthContext.Provider value={auth}><MemoryRouter initialEntries={[route]}><App /></MemoryRouter></AuthContext.Provider></ToastProvider></ThemeProvider>)

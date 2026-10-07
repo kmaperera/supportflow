@@ -54,3 +54,21 @@ test("missing context and unsupported types fail clearly; optional fields can be
   assert.match(result.text, /Hello there,/);
   assert.doesNotMatch(result.text, /undefined|null/);
 });
+
+test("XSS payloads remain text in every notification email template", () => {
+  const payload = `<script>alert(1)</script><img src=x onerror="alert(1)"><svg onload="alert(1)"><a href="javascript:alert(1)">click</a>`;
+  const legitimate = "O'Connor C++ <5 minutes A & B\nconst answer = 42; https://example.test";
+  for (const type of [TYPES.TICKET_CREATED, TYPES.TICKET_ASSIGNED, TYPES.TICKET_REASSIGNED,
+    TYPES.TICKET_UNASSIGNED, TYPES.STATUS_CHANGED, TYPES.PUBLIC_COMMENT, TYPES.INTERNAL_NOTE,
+    TYPES.TICKET_RESOLVED, TYPES.TICKET_REOPENED, TYPES.TICKET_CLOSED]) {
+    const result = build({ type, ticketNumber: payload, recipientName: payload,
+      ticketTitle: legitimate, statusLabel: payload, reassignmentDirection: "TO_YOU",
+      commentContext: "EMPLOYEE_REPLY" });
+    assert.ok(result.html.includes(escapeHtml(payload)));
+    // Existing email context is single-line; preserve its normalization contract.
+    assert.ok(result.html.includes(escapeHtml(legitimate.replace(/\n/g, " "))));
+    assert.doesNotMatch(result.html, /<script|<img|<svg|<a\s/i);
+    assert.ok(result.text.includes(payload));
+    assert.ok(result.text.includes(legitimate.replace(/\n/g, " ")));
+  }
+});
