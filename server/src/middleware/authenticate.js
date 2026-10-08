@@ -38,7 +38,7 @@ const authenticate = asyncHandler(async (req, res, next) => {
   }
 
   const user = await userRepository.findById(userId);
-  if (!user) {
+  if (!user || String(user.id) !== userId) {
     throw new ApiError(401, "User account no longer exists");
   }
   if (![true, 1, "1"].includes(user.is_active)) {

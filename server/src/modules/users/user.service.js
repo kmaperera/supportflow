@@ -151,7 +151,7 @@ async function updateUserStatus(id, isActive, currentAdminId) {
   if (typeof isActive !== "boolean") {
     throw new ApiError(400, "isActive must be a boolean");
   }
-  if (Number(id) === Number(currentAdminId) && isActive === false) {
+  if (String(id) === String(currentAdminId) && isActive === false) {
     throw new ApiError(400, "You cannot deactivate your own account");
   }
 
@@ -167,7 +167,7 @@ async function updateUserRole(id, role, currentAdminId) {
   if (!Object.values(USER_ROLES).includes(role)) {
     throw new ApiError(400, "Invalid role");
   }
-  if (Number(id) === Number(currentAdminId)) {
+  if (String(id) === String(currentAdminId)) {
     throw new ApiError(400, "You cannot change your own role");
   }
   if (user.role === role) return user;

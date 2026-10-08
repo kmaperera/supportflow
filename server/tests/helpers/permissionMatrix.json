@@ -1,0 +1,596 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/v1/health",
+    "access": "public",
+    "rule": "Intentionally public health endpoint"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "access": "cookie/public",
+    "rule": "Login credentials or validated refresh cookie; logout is idempotent"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/refresh",
+    "access": "cookie/public",
+    "rule": "Login credentials or validated refresh cookie; logout is idempotent"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/logout",
+    "access": "cookie/public",
+    "rule": "Login credentials or validated refresh cookie; logout is idempotent"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/logout-all",
+    "access": "cookie/public",
+    "rule": "Login credentials or validated refresh cookie; logout is idempotent"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/me",
+    "access": "authenticated",
+    "rule": "Current authenticated user only; no client-selected identity"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/auth/change-password",
+    "access": "authenticated",
+    "rule": "Current authenticated user only; no client-selected identity"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users",
+    "access": "ADMIN",
+    "rule": "Admin management; no self-deactivation or self-role change; profile fields allowlisted"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/users",
+    "access": "ADMIN",
+    "rule": "Admin management; no self-deactivation or self-role change; profile fields allowlisted"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/assignable-technicians",
+    "access": "ADMIN",
+    "rule": "Admin management; no self-deactivation or self-role change; profile fields allowlisted"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/technician-workload",
+    "access": "ADMIN",
+    "rule": "Admin management; no self-deactivation or self-role change; profile fields allowlisted"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/:id",
+    "access": "ADMIN",
+    "rule": "Admin management; no self-deactivation or self-role change; profile fields allowlisted"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/users/:id",
+    "access": "ADMIN",
+    "rule": "Admin management; no self-deactivation or self-role change; profile fields allowlisted"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/users/:id/status",
+    "access": "ADMIN",
+    "rule": "Admin management; no self-deactivation or self-role change; profile fields allowlisted"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/users/:id/role",
+    "access": "ADMIN",
+    "rule": "Admin management; no self-deactivation or self-role change; profile fields allowlisted"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tickets/admin/categories",
+    "access": "ADMIN",
+    "rule": "Admin-only category management"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tickets/admin/categories/:categoryId",
+    "access": "ADMIN",
+    "rule": "Admin-only category management"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/tickets/admin/categories",
+    "access": "ADMIN",
+    "rule": "Admin-only category management"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/tickets/admin/categories/:categoryId",
+    "access": "ADMIN",
+    "rule": "Admin-only category management"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/tickets/admin/categories/:categoryId/status",
+    "access": "ADMIN",
+    "rule": "Admin-only category management"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tickets/categories",
+    "access": "EMPLOYEE/TECHNICIAN/ADMIN",
+    "rule": "Authenticated active lookup only"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tickets/priorities",
+    "access": "EMPLOYEE/TECHNICIAN/ADMIN",
+    "rule": "Authenticated active lookup only"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/tickets/:id/attachments/:attachmentId",
+    "access": "authenticated",
+    "rule": "Parent ticket access + child belongs to ticket + internal visibility; uploads need owner/assigned Technician/Admin; deletion also uploader or Admin"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/tickets/:id/attachments",
+    "access": "authenticated",
+    "rule": "Parent ticket access + child belongs to ticket + internal visibility; uploads need owner/assigned Technician/Admin; deletion also uploader or Admin"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/tickets/:id/comments/:commentId/attachments",
+    "access": "authenticated",
+    "rule": "Parent ticket access + child belongs to ticket + internal visibility; uploads need owner/assigned Technician/Admin; deletion also uploader or Admin"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tickets/:id/attachments",
+    "access": "authenticated",
+    "rule": "Parent ticket access + child belongs to ticket + internal visibility; uploads need owner/assigned Technician/Admin; deletion also uploader or Admin"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tickets/:id/attachments/:attachmentId/download",
+    "access": "authenticated",
+    "rule": "Parent ticket access + child belongs to ticket + internal visibility; uploads need owner/assigned Technician/Admin; deletion also uploader or Admin"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tickets/my",
+    "access": "EMPLOYEE",
+    "rule": "Employee creator identity scopes list AND count"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/tickets",
+    "access": "EMPLOYEE",
+    "rule": "Creator derived from authenticated Employee"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tickets/queue",
+    "access": "TECHNICIAN/ADMIN",
+    "rule": "Technician: unassigned or own; Admin: all; filters cannot broaden scope"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tickets/assigned-to-me",
+    "access": "TECHNICIAN",
+    "rule": "Technician session identity scopes list AND count"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tickets/workflow-summary",
+    "access": "ADMIN",
+    "rule": "Admin-only; stale current-assignment token on unassign; existing lifecycle rules"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tickets/:id",
+    "access": "authenticated",
+    "rule": "Employee owner; Technician unassigned/own; Admin all; employee comments omit internal notes"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tickets/:id/comments",
+    "access": "authenticated",
+    "rule": "Employee owner; Technician unassigned/own; Admin all; employee comments omit internal notes"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/tickets/:id/comments",
+    "access": "authenticated",
+    "rule": "Employee owner, assigned Technician or Admin; public content only"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/tickets/:id/internal-notes",
+    "access": "TECHNICIAN/ADMIN",
+    "rule": "Assigned Technician or Admin; never Employee"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/tickets/:id",
+    "access": "EMPLOYEE",
+    "rule": "Employee owner only; editable fields and status allowlisted"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/tickets/:id/self-assign",
+    "access": "TECHNICIAN",
+    "rule": "Technician from session; unassigned OPEN ticket only"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/tickets/:id/assign",
+    "access": "ADMIN",
+    "rule": "Admin-only; stale current-assignment token on unassign; existing lifecycle rules"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/tickets/:id/unassign",
+    "access": "ADMIN",
+    "rule": "Admin-only; stale current-assignment token on unassign; existing lifecycle rules"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/tickets/:id/status",
+    "access": "TECHNICIAN/ADMIN",
+    "rule": "Assigned Technician or Admin; valid lifecycle separately enforced"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/tickets/:id/priority",
+    "access": "TECHNICIAN/ADMIN",
+    "rule": "Assigned Technician or Admin; valid lifecycle separately enforced"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/tickets/:id/resolve",
+    "access": "TECHNICIAN/ADMIN",
+    "rule": "Assigned Technician or Admin; valid lifecycle separately enforced"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/tickets/:id/close",
+    "access": "EMPLOYEE/ADMIN",
+    "rule": "Employee owner or Admin; valid lifecycle separately enforced"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/tickets/:id/reopen",
+    "access": "EMPLOYEE/ADMIN",
+    "rule": "Employee owner or Admin; valid lifecycle separately enforced"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tickets/:id/status-history",
+    "access": "authenticated",
+    "rule": "Employee owner; Technician unassigned/own; Admin all; employee comments omit internal notes"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tickets/:id/assignment-history",
+    "access": "authenticated",
+    "rule": "Employee owner; Technician unassigned/own; Admin all; employee comments omit internal notes"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/tickets/:ticketId/feedback",
+    "access": "EMPLOYEE",
+    "rule": "Employee owner only, CLOSED ticket"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications",
+    "access": "authenticated",
+    "rule": "Current user only for rows and counts; NO Admin bypass"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/notifications/read-all",
+    "access": "authenticated",
+    "rule": "Current user only for rows and counts; NO Admin bypass"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/notifications/:notificationId/read",
+    "access": "authenticated",
+    "rule": "Current user only for rows and counts; NO Admin bypass"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/sla/policies",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/sla/policies/:policyId",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/knowledge-base/articles/suggestions",
+    "access": "EMPLOYEE/TECHNICIAN/ADMIN",
+    "rule": "Readers: published and active-category content; Admin: management visibility; suggestions published only"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/knowledge-base/categories",
+    "access": "ADMIN",
+    "rule": "Readers: published and active-category content; Admin: management visibility; suggestions published only"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/knowledge-base/categories",
+    "access": "ADMIN",
+    "rule": "Admin-only category/article management"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/knowledge-base/categories/:categoryId",
+    "access": "ADMIN",
+    "rule": "Admin-only category/article management"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/knowledge-base/categories/:categoryId/status",
+    "access": "ADMIN",
+    "rule": "Admin-only category/article management"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/knowledge-base/articles",
+    "access": "ADMIN",
+    "rule": "Admin-only category/article management"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/knowledge-base/articles/:articleId",
+    "access": "ADMIN",
+    "rule": "Admin-only category/article management"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/knowledge-base/articles/:articleId/publish",
+    "access": "ADMIN",
+    "rule": "Admin-only category/article management"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/knowledge-base/articles/:articleId/unpublish",
+    "access": "ADMIN",
+    "rule": "Admin-only category/article management"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/knowledge-base/articles/:articleId/archive",
+    "access": "ADMIN",
+    "rule": "Admin-only category/article management"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/knowledge-base/articles",
+    "access": "authenticated",
+    "rule": "Readers: published and active-category content; Admin: management visibility; suggestions published only"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/knowledge-base/articles/:articleId",
+    "access": "authenticated",
+    "rule": "Readers: published and active-category content; Admin: management visibility; suggestions published only"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/knowledge-base/articles/:articleId/feedback",
+    "access": "authenticated",
+    "rule": "Employee/Technician own feedback on readable published article; Admin write forbidden"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/knowledge-base/articles/:articleId/feedback",
+    "access": "authenticated",
+    "rule": "Readers: published and active-category content; Admin: management visibility; suggestions published only"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dashboard/employee/summary",
+    "access": "EMPLOYEE",
+    "rule": "Employee creator scope; Technician assigned scope plus intended unassigned queue count; Admin global"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dashboard/technician/summary",
+    "access": "TECHNICIAN",
+    "rule": "Employee creator scope; Technician assigned scope plus intended unassigned queue count; Admin global"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dashboard/admin/summary",
+    "access": "ADMIN",
+    "rule": "Admin global data"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dashboard/ticket-summary",
+    "access": "authenticated",
+    "rule": "Employee creator scope; Technician assigned scope plus intended unassigned queue count; Admin global"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dashboard/status-distribution",
+    "access": "authenticated",
+    "rule": "Employee creator scope; Technician assigned scope plus intended unassigned queue count; Admin global"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dashboard/category-distribution",
+    "access": "authenticated",
+    "rule": "Employee creator scope; Technician assigned scope plus intended unassigned queue count; Admin global"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dashboard/priority-distribution",
+    "access": "authenticated",
+    "rule": "Employee creator scope; Technician assigned scope plus intended unassigned queue count; Admin global"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dashboard/technician-workload",
+    "access": "ADMIN",
+    "rule": "Admin global data"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dashboard/average-first-response-time",
+    "access": "EMPLOYEE/TECHNICIAN/ADMIN",
+    "rule": "Employee creator scope; Technician assigned scope plus intended unassigned queue count; Admin global"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dashboard/average-resolution-time",
+    "access": "EMPLOYEE/TECHNICIAN/ADMIN",
+    "rule": "Employee creator scope; Technician assigned scope plus intended unassigned queue count; Admin global"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dashboard/sla-compliance",
+    "access": "EMPLOYEE/TECHNICIAN/ADMIN",
+    "rule": "Employee creator scope; Technician assigned scope plus intended unassigned queue count; Admin global"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dashboard/ticket-trend",
+    "access": "EMPLOYEE/TECHNICIAN/ADMIN",
+    "rule": "Employee creator scope; Technician assigned scope plus intended unassigned queue count; Admin global"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dashboard/recent-tickets",
+    "access": "EMPLOYEE/TECHNICIAN/ADMIN",
+    "rule": "Employee creator scope; Technician assigned scope plus intended unassigned queue count; Admin global"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dashboard/recent-activity",
+    "access": "EMPLOYEE/TECHNICIAN/ADMIN",
+    "rule": "Employee creator scope; Technician assigned scope plus intended unassigned queue count; Admin global"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dashboard/satisfaction-summary",
+    "access": "ADMIN",
+    "rule": "Admin global data"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/tickets/export/pdf",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/tickets/export/csv",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/tickets",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/date-range",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/technician-performance",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/sla",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/categories",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/priorities",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/statuses",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/date-range/export/csv",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/technician-performance/export/csv",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/sla/export/csv",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/categories/export/csv",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/priorities/export/csv",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/statuses/export/csv",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/analytics/export/pdf",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/audit-logs",
+    "access": "ADMIN",
+    "rule": "Admin-only, including exports and aggregate counts"
+  }
+]

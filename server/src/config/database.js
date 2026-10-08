@@ -8,6 +8,10 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   waitForConnections: true,
   multipleStatements: false,
+  // Preserve distinct BIGINT identities above JavaScript's safe integer range.
+  // Safe integers retain their existing numeric representation.
+  supportBigNumbers: true,
+  bigNumberStrings: false,
   connectionLimit: 10,
   queueLimit: 0,
 });
