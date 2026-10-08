@@ -8,19 +8,19 @@ async function fetchAttachment(attachment) {
   const options = { signal: AbortSignal.timeout(30000), redirect: 'error' };
   let response;
   try {
-    if (!attachment.fileUrl) throw new Error('Missing stored URL');
-    response = await fetch(attachment.fileUrl, options);
-    if ([401, 403].includes(response.status) && attachment.publicId &&
-        ['image', 'raw', 'video'].includes(attachment.resourceType)) {
-      await response.body?.cancel();
-      // Uploads use Cloudinary's default upload delivery type. Raw IDs include extensions.
-      const format = attachment.resourceType === 'raw' ? undefined : path.extname(attachment.originalName).slice(1).toLowerCase();
-      const url = cloudinary.utils.private_download_url(attachment.publicId, format, {
-        resource_type: attachment.resourceType, type: 'upload',
-        expires_at: Math.floor(Date.now() / 1000) + 60,
-      });
-      response = await fetch(url, options);
-    }
+    const deliveryType = attachment.deliveryType ?? 'upload';
+    if (!attachment.publicId || !['image', 'raw', 'video'].includes(attachment.resourceType) ||
+        !['upload', 'private', 'authenticated'].includes(deliveryType)) throw new Error('Invalid asset metadata');
+    // Always sign server-side, including legacy public assets. Never fetch a
+    // persisted or client-supplied URL or redirect the browser to the provider.
+    const extension = path.extname(attachment.originalName || '').slice(1).toLowerCase();
+    const format = attachment.resourceType === 'raw' ? undefined : extension === 'jpeg' ? 'jpg' : extension;
+    const url = cloudinary.utils.private_download_url(attachment.publicId, format, {
+      resource_type: attachment.resourceType, type: deliveryType,
+      expires_at: Math.floor(Date.now() / 1000) + 60, attachment: true,
+    });
+    if (new URL(url).protocol !== 'https:') throw new Error('Insecure delivery URL');
+    response = await fetch(url, options);
     if (!response.ok) {
       const status = response.status;
       await response.body?.cancel();

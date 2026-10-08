@@ -4,7 +4,7 @@ const { PassThrough } = require("node:stream");
 
 // Stub the config module so tests never load credentials or contact Cloudinary.
 const configPath = require.resolve("../src/config/cloudinary");
-const cloudinary = { uploader: {} };
+const cloudinary = { uploader: {}, utils: { private_download_url: () => "https://example.com/signed" } };
 require.cache[configPath] = { id: configPath, filename: configPath, loaded: true, exports: cloudinary };
 const upload = require("../src/services/cloudinaryUpload.service");
 const tickets = require("../src/modules/tickets/ticket.repository");
@@ -55,7 +55,7 @@ test("deletion role, ownership, visibility and status matrix", async (t) => {
   t.mock.method(attachments, "findById", async () => attachment);
   const events = [];
   t.mock.method(upload, "deleteCloudinaryAsset", async value => {
-    assert.deepEqual(value, { publicId: "trusted", resourceType: "raw" });
+    assert.deepEqual(value, { publicId: "trusted", resourceType: "raw", deliveryType: "upload" });
     events.push("cloud"); return { result: "ok" };
   });
   t.mock.method(attachments, "deleteById", async id => { assert.equal(id, "10"); events.push("db"); return 1; });
@@ -150,7 +150,7 @@ test("downloads enforce ownership and internal visibility across historical stat
         } else {
           assert.deepEqual(await service.getAttachmentForDownload(5, 10, user), {
             originalName: "report.txt", mimeType: "text/plain", fileSize: 3, fileUrl: asset.secureUrl,
-            publicId: undefined, resourceType: undefined,
+            publicId: undefined, resourceType: undefined, deliveryType: "upload",
           });
         }
       }
@@ -179,7 +179,7 @@ test("downloads enforce ownership and internal visibility across historical stat
 
 test("download controller sends safe binary headers and never fetches denied requests", async (t) => {
   const controller = require("../src/modules/tickets/ticketAttachment.controller");
-  const info = { originalName: 'report"\r\nInjected: yes\\.txt', mimeType: "text/plain", fileUrl: asset.secureUrl };
+  const info = { originalName: 'report"\r\nInjected: yes\\.txt', mimeType: "text/plain", fileUrl: asset.secureUrl, publicId: "stored-id", resourceType: "raw" };
   const authorize = t.mock.method(service, "getAttachmentForDownload", async () => info);
   const remote = t.mock.method(globalThis, "fetch", async () => new Response("abc"));
   async function invoke() {
@@ -230,7 +230,7 @@ test("blocked PDF delivery uses a server-only signed download and bounds actual 
   const remote = t.mock.method(globalThis, 'fetch', async url => url === asset.secureUrl
     ? new Response('denied', { status: 401 }) : new Response('%PDF-contents'));
   assert.equal((await fetchAttachment(info)).toString(), '%PDF-contents');
-  assert.equal(remote.mock.callCount(), 2);
+  assert.equal(remote.mock.callCount(), 1);
   remote.mock.mockImplementation(async () => new Response('missing', { status: 404 }));
   await assert.rejects(fetchAttachment(info), error => error.errors[0].remoteStatus === 404);
   remote.mock.mockImplementation(async () => new Response(new Uint8Array(10 * 1024 * 1024 + 1)));
@@ -284,10 +284,10 @@ test("allowed roles/statuses persist trusted metadata and return safe fields", a
       assert.equal(saved.ticketId, "5");
       assert.equal(saved.publicId, asset.publicId);
       assert.equal(result.uploadedBy.id, user.id);
-      assert.deepEqual(Object.keys(result).sort(), ["id", "ticketId", "commentId", "originalName", "downloadPath", "resourceType", "mimeType", "fileSize", "createdAt", "uploadedBy"].sort());
+      assert.deepEqual(Object.keys(result).sort(), ["id", "ticketId", "commentId", "originalName", "downloadPath", "mimeType", "fileSize", "createdAt", "uploadedBy"].sort());
     }
   }
-  assert.equal(send.mock.calls[0].arguments[0].folder, "supportflow/tickets/TKT-000005");
+  assert.equal(send.mock.calls[0].arguments[0].folder, undefined);
   asset.bytes = undefined;
   await service.uploadTicketAttachment(5, file, { id: 9, role: "ADMIN" });
   assert.equal(saved.fileSize, file.size);
@@ -302,7 +302,7 @@ test("insert failure cleans up and preserves original failure; read failure does
   const insert = t.mock.method(attachments, "createAttachment", async () => { throw failure; });
   const cleanup = t.mock.method(upload, "deleteCloudinaryAsset", async () => { throw new Error("cleanup failed"); });
   await assert.rejects(service.uploadTicketAttachment(5, file, { id: 9, role: "ADMIN" }), err => err === failure);
-  assert.deepEqual(cleanup.mock.calls[0].arguments[0], { publicId: "asset-id", resourceType: "raw" });
+  assert.deepEqual(cleanup.mock.calls[0].arguments[0], { publicId: "asset-id", resourceType: "raw", deliveryType: "upload" });
   insert.mock.mockImplementation(async () => 10);
   t.mock.method(attachments, "findById", async () => { throw failure; });
   await assert.rejects(service.uploadTicketAttachment(5, file, { id: 9, role: "ADMIN" }), err => err === failure);
@@ -331,18 +331,20 @@ test("Cloudinary helper streams memory, maps output and sanitizes failures", asy
     stream.on("data", chunk => chunks.push(chunk));
     stream.on("end", () => {
       assert.deepEqual(Buffer.concat(chunks), file.buffer);
-      callback(null, { public_id: "asset-id", secure_url: asset.secureUrl, resource_type: "raw", bytes: 3 });
+      callback(null, { public_id: `${options.folder}/${options.public_id}`, secure_url: asset.secureUrl, resource_type: "raw", type: "authenticated", bytes: 3 });
     });
     return stream;
   };
-  assert.deepEqual(await upload.uploadAttachmentBuffer({ buffer: file.buffer, folder: "safe", originalName: "../report.txt", mimeType: file.mimetype }), asset);
-  assert.equal(options.resource_type, "auto");
-  assert.equal(options.folder, "safe");
+  const uploaded = await upload.uploadAttachmentBuffer({ buffer: file.buffer, folder: "unsafe", originalName: "../report.txt", mimeType: file.mimetype });
+  assert.equal(uploaded.deliveryType, "authenticated");
+  assert.match(uploaded.publicId, /^supportflow\/tickets\/[a-f0-9-]+\.txt$/);
+  assert.equal(options.resource_type, "raw");
+  assert.equal(options.folder, "supportflow/tickets");
   assert.equal(options.use_filename, false);
   cloudinary.uploader.destroy = async (id, value) => { assert.equal(id, "asset-id"); assert.equal(value.resource_type, "raw"); return { result: "ok" }; };
-  await upload.deleteCloudinaryAsset({ publicId: "asset-id", resourceType: "raw" });
+  await upload.deleteCloudinaryAsset({ publicId: "asset-id", resourceType: "raw", deliveryType: "upload" });
   cloudinary.uploader.upload_stream = () => { throw new Error("secret provider details"); };
-  await assert.rejects(upload.uploadAttachmentBuffer({ buffer: file.buffer }), { statusCode: 502, message: "Attachment upload failed" });
+  await assert.rejects(upload.uploadAttachmentBuffer({ buffer: file.buffer, originalName: "report.txt", mimeType: "text/plain" }), { statusCode: 502, message: "Attachment upload failed" });
 });
 
 test("route parses one file, rejects spoofed fields and normalizes Multer errors", async (t) => {
@@ -465,7 +467,7 @@ test("attachment listing reuses resource access and trusted visibility with safe
     assert.deepEqual(read.mock.calls.at(-1).arguments, ["5", { includeInternal }]);
     assert.deepEqual(result.map(value => value.id), [12, 13]);
     assert.deepEqual(result[0], { id: 12, ticketId: 5, commentId: 21, originalName: "report.txt",
-      downloadPath: "/api/v1/tickets/5/attachments/12/download", resourceType: "raw", mimeType: "text/plain", fileSize: 3, createdAt: "now",
+      downloadPath: "/api/v1/tickets/5/attachments/12/download", mimeType: "text/plain", fileSize: 3, createdAt: "now",
       uploadedBy: { id: 7, firstName: "Tech", lastName: "User", email: "tech@example.com", role: "TECHNICIAN", profileImageUrl: null } });
   }
   const before = read.mock.callCount();
@@ -539,7 +541,7 @@ test("comment attachment role/type/status matrix and trusted metadata", async (t
           assert.equal(saved.fileSize, asset.bytes);
           assert.equal("visibility" in saved, false);
           assert.equal("publicId" in result, false);
-          assert.equal(send.mock.calls.at(-1).arguments[0].folder, "supportflow/tickets/TKT-000005/comments/22");
+          assert.equal(send.mock.calls.at(-1).arguments[0].folder, undefined);
         }
       }
     }
@@ -585,5 +587,5 @@ test("comment insert failure cleans up the uploaded asset and preserves DB error
   t.mock.method(attachments, "createAttachment", async () => { throw failure; });
   const cleanup = t.mock.method(upload, "deleteCloudinaryAsset", async () => { throw new Error("cleanup failed"); });
   await assert.rejects(service.uploadCommentAttachment(5, 22, file, { id: 9, role: "ADMIN" }), err => err === failure);
-  assert.deepEqual(cleanup.mock.calls[0].arguments[0], { publicId: asset.publicId, resourceType: asset.resourceType });
+  assert.deepEqual(cleanup.mock.calls[0].arguments[0], { publicId: asset.publicId, resourceType: asset.resourceType, deliveryType: "upload" });
 });

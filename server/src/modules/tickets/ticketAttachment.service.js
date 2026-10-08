@@ -43,10 +43,9 @@ async function authorizeTicketAttachmentUpload(ticketId, currentUser) {
 }
 
 async function uploadTicketAttachment(ticketId, file, currentUser) {
-  const ticket = await authorizeTicketAttachmentUpload(ticketId, currentUser);
+  await authorizeTicketAttachmentUpload(ticketId, currentUser);
   validateAttachmentFile(file);
-  return persistAttachment(ticketId, null, file, currentUser,
-    `supportflow/tickets/${ticket.ticket_number}`);
+  return persistAttachment(ticketId, null, file, currentUser);
 }
 
 async function authorizeCommentAttachmentUpload(ticketId, commentId, currentUser) {
@@ -68,16 +67,14 @@ async function authorizeCommentAttachmentUpload(ticketId, commentId, currentUser
 }
 
 async function uploadCommentAttachment(ticketId, commentId, file, currentUser) {
-  const ticket = await authorizeCommentAttachmentUpload(ticketId, commentId, currentUser);
+  await authorizeCommentAttachmentUpload(ticketId, commentId, currentUser);
   validateAttachmentFile(file);
-  return persistAttachment(ticketId, commentId, file, currentUser,
-    `supportflow/tickets/${ticket.ticket_number}/comments/${commentId}`);
+  return persistAttachment(ticketId, commentId, file, currentUser);
 }
 
-async function persistAttachment(ticketId, commentId, file, currentUser, folder) {
+async function persistAttachment(ticketId, commentId, file, currentUser) {
   const asset = await cloudinaryUpload.uploadAttachmentBuffer({
     buffer: file.buffer,
-    folder,
     originalName: file.originalname,
     mimeType: file.mimetype,
   });
@@ -86,16 +83,18 @@ async function persistAttachment(ticketId, commentId, file, currentUser, folder)
     attachmentId = await attachmentRepository.createAttachment({
       ticketId, commentId, uploadedBy: currentUser.id,
       originalName: file.originalname, publicId: asset.publicId,
-      fileUrl: asset.secureUrl, resourceType: asset.resourceType,
+      fileUrl: asset.secureUrl, resourceType: asset.resourceType, deliveryType: asset.deliveryType,
       mimeType: file.mimetype, fileSize: asset.bytes ?? file.size,
     });
   } catch (err) {
     try {
-      await cloudinaryUpload.deleteCloudinaryAsset({
-        publicId: asset.publicId, resourceType: asset.resourceType,
+      const cleanup = await cloudinaryUpload.deleteCloudinaryAsset({
+        publicId: asset.publicId, resourceType: asset.resourceType, deliveryType: asset.deliveryType ?? "upload",
       });
+      if (!["ok", "not found"].includes(cleanup?.result)) throw new Error("Cleanup incomplete");
     } catch {
-      // Preserve the original database failure even if best-effort cleanup fails.
+      // Preserve the DB error while making compensation failure observable.
+      console.error("Cloudinary attachment rollback cleanup failed");
     }
     throw err;
   }
@@ -146,7 +145,7 @@ async function getAttachmentForDownload(ticketId, attachmentId, currentUser) {
   return {
     originalName: attachment.original_name, mimeType: attachment.mime_type,
     fileSize: attachment.file_size, fileUrl: attachment.file_url,
-    publicId: attachment.public_id, resourceType: attachment.resource_type,
+    publicId: attachment.public_id, resourceType: attachment.resource_type, deliveryType: attachment.delivery_type ?? "upload",
   };
 }
 
@@ -169,10 +168,11 @@ async function deleteTicketAttachment(ticketId, attachmentId, currentUser) {
   attachmentAccess.assertCanDeleteAttachment(ticket, attachment, currentUser);
 
   const result = await cloudinaryUpload.deleteCloudinaryAsset({
-    publicId: attachment.public_id, resourceType: attachment.resource_type,
+    publicId: attachment.public_id, resourceType: attachment.resource_type, deliveryType: attachment.delivery_type ?? "upload",
   });
   // An already-absent asset is safe to remove from MySQL, including on a retry.
   if (!["ok", "not found"].includes(result?.result)) {
+    console.error("Cloudinary attachment deletion incomplete");
     throw new ApiError(502, "Attachment asset deletion failed");
   }
   const affectedRows = await attachmentRepository.deleteById(attachmentId);
@@ -185,7 +185,7 @@ function mapAttachment(attachment) {
     id: attachment.id, ticketId: attachment.ticket_id, commentId: attachment.comment_id,
     originalName: attachment.original_name,
     downloadPath: `/api/v1/tickets/${attachment.ticket_id}/attachments/${attachment.id}/download`,
-    resourceType: attachment.resource_type, mimeType: attachment.mime_type,
+    mimeType: attachment.mime_type,
     fileSize: attachment.file_size, createdAt: attachment.created_at,
     uploadedBy: {
       id: attachment.uploader_id ?? attachment.uploaded_by, firstName: attachment.uploader_first_name,

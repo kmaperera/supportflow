@@ -41,7 +41,7 @@ test('PDF and raster signatures reject content mismatches; existing document map
 
 test('real upload routes bound multipart input before storage and preserve PDF/image workflows', async (t) => {
   const configPath = require.resolve('../src/config/cloudinary');
-  require.cache[configPath] = { id: configPath, filename: configPath, loaded: true, exports: {} };
+  require.cache[configPath] = { id: configPath, filename: configPath, loaded: true, exports: { utils: { private_download_url: () => "https://example.test/signed" } } };
   const authPath = require.resolve('../src/middleware/authenticate');
   let user = { id: 3, role: 'EMPLOYEE' };
   require.cache[authPath] = { id: authPath, filename: authPath, loaded: true, exports(req, res, next) {
@@ -122,7 +122,7 @@ test('real upload routes bound multipart input before storage and preserve PDF/i
   let received;
   const res = { set(headers) { assert.match(headers['Content-Disposition'], /^attachment;/); assert.equal(headers['X-Content-Type-Options'], 'nosniff'); return this; }, status(code) { assert.equal(code, 200); return this; }, send(data) { received = data; } };
   // Repository fixture needs the trusted remote URL for this controller path.
-  repository.findById.mock.mockImplementation(async () => ({ id: 1, ticket_id: 1, original_name: 'photo.png', mime_type: 'image/png', file_url: 'https://example.test/fixture' }));
+  repository.findById.mock.mockImplementation(async () => ({ id: 1, ticket_id: 1, original_name: 'photo.png', mime_type: 'image/png', resource_type: 'image', public_id: 'fixture', file_url: 'https://example.test/fixture' }));
   await controller.downloadTicketAttachment({ params: { id: '1', attachmentId: '1' }, user }, res, err => { throw err; });
   assert.deepEqual(received, bytes);
 });
