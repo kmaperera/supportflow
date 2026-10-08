@@ -6,6 +6,7 @@ import cookieApp from './helpers/cookieApp.js'
 const { app, user } = await cookieApp()
 const require = createRequire(import.meta.url)
 user.role = 'ADMIN'
+require('../src/modules/tickets/ticket.repository').findById = async () => ({ id: 1, status: 'OPEN' })
 require('../src/config/database').query = async () => [[]]
 require('../src/modules/tickets/ticketAttachment.service').uploadTicketAttachment = async (id, file) => {
   assert.equal(file.originalname, 'cors-fixture.txt')

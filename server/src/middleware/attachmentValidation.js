@@ -6,8 +6,7 @@ const {
   MAX_ATTACHMENT_FILENAME_LENGTH,
 } = require("../constants/attachmentTypes");
 
-// Metadata validation only; this does not inspect file signatures or contents.
-function validateAttachmentFile(file) {
+function validateAttachmentMetadata(file) {
   if (!file || typeof file !== "object" || Array.isArray(file)) {
     throw new ApiError(422, "Attachment file is required");
   }
@@ -19,6 +18,11 @@ function validateAttachmentFile(file) {
   ) {
     throw new ApiError(422, "Attachment filename is invalid");
   }
+
+  if (/[\x00-\x1f\x7f]/.test(file.originalname)) {
+    throw new ApiError(422, "Attachment filename contains control characters");
+  }
+  file.originalname = path.posix.basename(path.win32.basename(file.originalname)).trim();
 
   const extension = path.extname(file.originalname).toLowerCase();
   if (!extension || extension === ".") {
@@ -36,6 +40,11 @@ function validateAttachmentFile(file) {
   ) {
     throw new ApiError(415, "Attachment MIME type does not match the file extension");
   }
+  return extension;
+}
+
+function validateAttachmentFile(file) {
+  const extension = validateAttachmentMetadata(file);
 
   if (!Number.isSafeInteger(file.size) || file.size < 0) {
     throw new ApiError(422, "Attachment file size is invalid");
@@ -59,6 +68,19 @@ function validateAttachmentFile(file) {
   if (file.buffer.length !== file.size) {
     throw new ApiError(422, "Attachment file size does not match its buffer");
   }
+
+  // Shallow signatures only: never decode images or unpack Office archives here.
+  const startsWith = (bytes) => file.buffer.subarray(0, bytes.length).equals(Buffer.from(bytes));
+  const signatures = {
+    ".pdf": () => startsWith(Buffer.from("%PDF-")),
+    ".png": () => startsWith([137, 80, 78, 71, 13, 10, 26, 10]),
+    ".jpg": () => startsWith([255, 216, 255]),
+    ".jpeg": () => startsWith([255, 216, 255]),
+    ".webp": () => startsWith(Buffer.from("RIFF")) && file.buffer.subarray(8, 12).equals(Buffer.from("WEBP")),
+  };
+  if (signatures[extension] && !signatures[extension]()) {
+    throw new ApiError(415, "Attachment content does not match the file type");
+  }
 }
 
 function validateSingleAttachment(req, res, next) {
@@ -70,25 +92,8 @@ function validateSingleAttachment(req, res, next) {
   return next();
 }
 
-function validateMultipleAttachments(req, res, next) {
-  try {
-    if (!Array.isArray(req.files) || req.files.length === 0) {
-      throw new ApiError(422, "Attachment file is required");
-    }
-    if (req.files.length > 5) {
-      throw new ApiError(422, "Too many files uploaded");
-    }
-    for (const file of req.files) {
-      validateAttachmentFile(file);
-    }
-  } catch (err) {
-    return next(err);
-  }
-  return next();
-}
-
 module.exports = {
+  validateAttachmentMetadata,
   validateAttachmentFile,
   validateSingleAttachment,
-  validateMultipleAttachments,
 };

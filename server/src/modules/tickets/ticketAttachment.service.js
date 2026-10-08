@@ -16,7 +16,7 @@ function validId(value) {
   return /^[1-9]\d*$/.test(id) && id.length <= 20 && BigInt(id) <= 18446744073709551615n;
 }
 
-async function uploadTicketAttachment(ticketId, file, currentUser) {
+async function authorizeTicketAttachmentUpload(ticketId, currentUser) {
   if (!validId(ticketId)) throw new ApiError(422, "Ticket ID must be a positive integer");
   if (!currentUser || !validId(currentUser.id) ||
       typeof currentUser.role !== "string" || !currentUser.role) {
@@ -25,7 +25,6 @@ async function uploadTicketAttachment(ticketId, file, currentUser) {
   if (!Object.values(USER_ROLES).includes(currentUser.role)) {
     throw new ApiError(403, "You do not have permission to access this resource");
   }
-  validateAttachmentFile(file);
 
   const ticket = await ticketRepository.findById(ticketId);
   if (!ticket) throw new ApiError(404, "Ticket not found");
@@ -40,11 +39,17 @@ async function uploadTicketAttachment(ticketId, file, currentUser) {
     throw new ApiError(409, "Attachments cannot be added in the ticket's current status");
   }
 
+  return ticket;
+}
+
+async function uploadTicketAttachment(ticketId, file, currentUser) {
+  const ticket = await authorizeTicketAttachmentUpload(ticketId, currentUser);
+  validateAttachmentFile(file);
   return persistAttachment(ticketId, null, file, currentUser,
     `supportflow/tickets/${ticket.ticket_number}`);
 }
 
-async function uploadCommentAttachment(ticketId, commentId, file, currentUser) {
+async function authorizeCommentAttachmentUpload(ticketId, commentId, currentUser) {
   if (!validId(ticketId)) throw new ApiError(422, "Ticket ID must be a positive integer");
   if (!validId(commentId)) throw new ApiError(422, "Comment ID must be a positive integer");
   if (!currentUser || typeof currentUser !== "object" || Array.isArray(currentUser) ||
@@ -54,11 +59,17 @@ async function uploadCommentAttachment(ticketId, commentId, file, currentUser) {
   if (!Object.values(USER_ROLES).includes(currentUser.role)) {
     throw new ApiError(403, "You do not have permission to access this resource");
   }
-  validateAttachmentFile(file);
+
   const ticket = await ticketRepository.findById(ticketId);
   if (!ticket) throw new ApiError(404, "Ticket not found");
   const comment = await ticketCommentRepository.findById(commentId);
   attachmentAccess.assertCanUploadToCommentAttachment(ticket, comment, currentUser);
+  return ticket;
+}
+
+async function uploadCommentAttachment(ticketId, commentId, file, currentUser) {
+  const ticket = await authorizeCommentAttachmentUpload(ticketId, commentId, currentUser);
+  validateAttachmentFile(file);
   return persistAttachment(ticketId, commentId, file, currentUser,
     `supportflow/tickets/${ticket.ticket_number}/comments/${commentId}`);
 }
@@ -184,4 +195,4 @@ function mapAttachment(attachment) {
   };
 }
 
-module.exports = { uploadTicketAttachment, uploadCommentAttachment, getTicketAttachments, getAttachmentForDownload, deleteTicketAttachment };
+module.exports = { authorizeTicketAttachmentUpload, authorizeCommentAttachmentUpload, uploadTicketAttachment, uploadCommentAttachment, getTicketAttachments, getAttachmentForDownload, deleteTicketAttachment };

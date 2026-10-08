@@ -346,6 +346,8 @@ test("Cloudinary helper streams memory, maps output and sanitizes failures", asy
 });
 
 test("route parses one file, rejects spoofed fields and normalizes Multer errors", async (t) => {
+  t.mock.method(tickets, "findById", async () => ticket);
+  t.mock.method(comments, "findById", async () => ({ id: 22, ticket_id: 5, comment_type: "PUBLIC" }));
   const express = require("express");
   const authPath = require.resolve("../src/middleware/authenticate");
   require.cache[authPath] = { id: authPath, filename: authPath, loaded: true, exports(req, res, next) {
@@ -379,7 +381,7 @@ test("route parses one file, rejects spoofed fields and normalizes Multer errors
   assert.deepEqual(await success.json(), { success: true, message: "Attachment uploaded successfully", data: { attachment: { id: 10, ticketId: 5, commentId: null, uploadedBy: { id: 3 } } } });
   for (const [options, status, message] of [
     [{ field: "wrong" }, 422, "Unexpected file field"],
-    [{ count: 2 }, 422, "Unexpected file field"],
+    [{ count: 2 }, 422, "Too many files uploaded"],
     [{ size: 10 * 1024 * 1024 + 1 }, 413, "File size exceeds the 10 MB limit"],
     [{ count: 0 }, 422, "Attachment file is required"],
     [{ id: "0" }, 422, "Validation failed"],

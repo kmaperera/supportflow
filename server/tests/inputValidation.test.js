@@ -147,7 +147,9 @@ test('mounted API rejects malformed input before controllers and preserves front
     assert.equal((await request('POST', '/tickets', {}, 'ADMIN')).status, 403);
     assert.equal((await request('POST', '/tickets', {}, null)).status, 401);
   });
-  await t.test('multipart text metadata is rejected while the existing attachment field works', async () => {
+  await t.test('multipart text metadata is rejected while the existing attachment field works', async t => {
+    t.mock.method(require('../src/modules/tickets/ticket.repository'), 'findById', async () => ({ id: 1, created_by: 7, status: 'OPEN' }));
+    t.mock.method(require('../src/modules/tickets/ticketComment.repository'), 'findById', async () => ({ id: 1, ticket_id: 1, comment_type: 'PUBLIC' }));
     for (const url of ['/tickets/1/attachments', '/tickets/1/comments/1/attachments']) {
       for (const extra of [false, true]) {
         const form = new FormData(); form.append('attachment', new Blob(['file'], { type: 'text/plain' }), 'notes.txt');

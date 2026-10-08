@@ -34,9 +34,20 @@ const { validateSingleAttachment } = require("../../middleware/attachmentValidat
 const { uploadTicketAttachmentValidation, uploadCommentAttachmentValidation, getTicketAttachmentsValidation, downloadTicketAttachmentValidation } = require("./ticketAttachment.validation");
 const { uploadTicketAttachment, uploadCommentAttachment, getTicketAttachments, downloadTicketAttachment } = require("./ticketAttachment.controller");
 
-router.post("/:id/attachments", authenticate, uploadSingleAttachment, handleMulterError,
+const attachmentService = require("./ticketAttachment.service");
+const authorizeUpload = async (req, res, next) => {
+  try {
+    if (req.params.commentId !== undefined) {
+      await attachmentService.authorizeCommentAttachmentUpload(req.params.id, req.params.commentId, req.user);
+    } else {
+      await attachmentService.authorizeTicketAttachmentUpload(req.params.id, req.user);
+    }
+    next();
+  } catch (err) { next(err); }
+};
+router.post("/:id/attachments", authenticate, uploadTicketAttachmentValidation, validate, authorizeUpload, uploadSingleAttachment, handleMulterError,
   validateSingleAttachment, uploadTicketAttachmentValidation, validate, uploadTicketAttachment);
-router.post("/:id/comments/:commentId/attachments", authenticate, uploadSingleAttachment, handleMulterError,
+router.post("/:id/comments/:commentId/attachments", authenticate, uploadCommentAttachmentValidation, validate, authorizeUpload, uploadSingleAttachment, handleMulterError,
   validateSingleAttachment, uploadCommentAttachmentValidation, validate, uploadCommentAttachment);
 router.get("/:id/attachments", authenticate, getTicketAttachmentsValidation, validate, getTicketAttachments);
 router.get("/:id/attachments/:attachmentId/download", authenticate, downloadTicketAttachmentValidation, validate, downloadTicketAttachment);
