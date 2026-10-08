@@ -104,8 +104,8 @@ async function updateLastLogin(id) {
   return result.affectedRows;
 }
 
-async function updatePassword(id, passwordHash) {
-  const [result] = await pool.execute(
+async function updatePassword(id, passwordHash, db = pool) {
+  const [result] = await db.execute(
     "UPDATE users SET password_hash = ?, must_change_password = FALSE WHERE id = ?",
     [passwordHash, id]
   );

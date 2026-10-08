@@ -9,6 +9,12 @@ const PORT = process.env.PORT || 5000;
 
 async function startServer() {
   try {
+    require("./utils/jwt").validateJwtConfiguration();
+  } catch (error) {
+    console.error(`SupportFlow JWT configuration error: ${error.message}`);
+    process.exit(1);
+  }
+  try {
     await testDatabaseConnection();
 
     const server = http.createServer(app);

@@ -1,4 +1,5 @@
-﻿const { revokeAllUserRefreshTokens } = require("./refreshToken.service");
+const tokenRepository = require("./refreshToken.repository");
+const pool = require("../../config/database");
 const { comparePassword, hashPassword } = require("../../utils/password");
 const userRepository = require("../users/user.repository");
 const ApiError = require("../../utils/ApiError");
@@ -18,16 +19,17 @@ async function login(email, password) {
     throw new ApiError(401, "Invalid email or password");
   }
 
-  if (!user.is_active) {
+  const passwordMatches = await comparePassword(password, user.password_hash);
+  if (!passwordMatches) {
+    throw new ApiError(401, "Invalid email or password");
+  }
+
+  // Only disclose inactive status after the caller proves the password.
+  if (![true, 1, "1"].includes(user.is_active)) {
     throw new ApiError(
       403,
       "Your account is inactive. Please contact an administrator."
     );
-  }
-
-  const passwordMatches = await comparePassword(password, user.password_hash);
-  if (!passwordMatches) {
-    throw new ApiError(401, "Invalid email or password");
   }
 
   await userRepository.updateLastLogin(user.id);
@@ -42,7 +44,7 @@ async function login(email, password) {
     department: user.department,
     profileImageUrl: user.profile_image_url,
     isActive: Boolean(user.is_active),
-    mustChangePassword: Boolean(user.must_change_password),
+    mustChangePassword: [true, 1, "1"].includes(user.must_change_password),
     lastLoginAt: user.last_login_at,
     createdAt: user.created_at,
     updatedAt: user.updated_at,
@@ -69,8 +71,18 @@ async function changePassword(userId, currentPassword, newPassword, confirmPassw
   }
 
   const passwordHash = await hashPassword(newPassword);
-  await userRepository.updatePassword(userId, passwordHash);
-  await revokeAllUserRefreshTokens(userId);
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    await userRepository.updatePassword(userId, passwordHash, connection);
+    await tokenRepository.revokeAllForUser(userId, connection);
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
   return { success: true };
 }
 

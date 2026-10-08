@@ -61,7 +61,7 @@ test("actual login validates and counts wrong, unknown, inactive and malformed a
   assert.match(success.headers.get("ratelimit"), /"api"/);
   assert.match(success.headers.get("ratelimit"), /"login"/);
   for (const [email, status] of [["known@example.com", 401], ["nobody-supportflow@example.com", 401], ["inactive@example.com", 403], ["bad-email", 422], ["known@example.com", 401]]) {
-    const response = await post(email);
+    const response = await post(email, email === "inactive@example.com" ? "CorrectFixturePassword123!" : "DefinitelyWrongPassword123!");
     assert.equal(response.status, status);
     if (status === 401) assert.equal((await response.json()).message, "Invalid email or password");
   }

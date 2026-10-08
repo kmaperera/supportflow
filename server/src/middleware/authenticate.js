@@ -41,7 +41,7 @@ const authenticate = asyncHandler(async (req, res, next) => {
   if (!user) {
     throw new ApiError(401, "User account no longer exists");
   }
-  if (!user.is_active) {
+  if (![true, 1, "1"].includes(user.is_active)) {
     throw new ApiError(403, "Your account is inactive. Please contact an administrator.");
   }
 
@@ -55,8 +55,13 @@ const authenticate = asyncHandler(async (req, res, next) => {
     department: user.department,
     profileImageUrl: user.profile_image_url,
     isActive: Boolean(user.is_active),
-    mustChangePassword: Boolean(user.must_change_password),
+    mustChangePassword: [true, 1, "1"].includes(user.must_change_password),
   };
+  const path = `${req.baseUrl}${req.path}`.replace(/\/$/, "");
+  if (req.user.mustChangePassword && !(
+    (req.method === "GET" && path === "/api/v1/auth/me") ||
+    (req.method === "PATCH" && path === "/api/v1/auth/change-password")
+  )) throw new ApiError(403, "Password change required before accessing this resource");
   next();
 });
 

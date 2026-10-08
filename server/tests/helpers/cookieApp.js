@@ -30,6 +30,13 @@ async function cookieApp() {
     for (const row of records) if (String(row.user_id) === String(id) && !row.revoked_at) { row.revoked_at = new Date(); count++; }
     return count;
   };
+  repository.rotate = async (id, replacement) => {
+    const row = records.find(row => row.id === id && !row.revoked_at && row.expires_at > new Date());
+    if (!row) return false;
+    row.revoked_at = new Date();
+    await repository.create(replacement);
+    return true;
+  };
   return { app: require("../../src/app"), records, user };
 }
 module.exports = cookieApp;

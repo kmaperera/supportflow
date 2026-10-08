@@ -64,18 +64,20 @@ async function rotateRefreshToken(rawToken) {
   const { tokenRecord, decoded } = await validateStoredRefreshToken(rawToken);
   const user = await userRepository.findById(decoded.sub);
   if (!user) throw new ApiError(401, "Invalid refresh token");
-  if (!user.is_active) {
+  if (![true, 1, "1"].includes(user.is_active)) {
     throw new ApiError(403, "Your account is inactive. Please contact an administrator.");
   }
 
-  // Only the request that revokes the active record may issue a replacement.
-  if ((await tokenRepository.revokeById(tokenRecord.id)) !== 1) {
-    throw new ApiError(401, "Invalid refresh token");
-  }
-
-  const refreshToken = await createRefreshToken(user.id);
+  // Prepare credentials before touching storage, then atomically consume/replace.
+  const refreshToken = generateRefreshToken(user.id);
   const accessToken = generateAccessToken(user);
   const replacement = verifyRefreshToken(refreshToken);
+  if (!(await tokenRepository.rotate(tokenRecord.id, {
+    userId: user.id, tokenHash: hashRefreshToken(refreshToken),
+    expiresAt: new Date(replacement.exp * 1000),
+  }))) {
+    throw new ApiError(401, "Invalid refresh token");
+  }
 
   return {
     accessToken,
@@ -91,7 +93,7 @@ async function rotateRefreshToken(rawToken) {
       department: user.department,
       profileImageUrl: user.profile_image_url,
       isActive: Boolean(user.is_active),
-      mustChangePassword: Boolean(user.must_change_password),
+      mustChangePassword: [true, 1, "1"].includes(user.must_change_password),
       lastLoginAt: user.last_login_at,
       createdAt: user.created_at,
       updatedAt: user.updated_at,

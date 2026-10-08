@@ -65,7 +65,7 @@ test('unassign HTTP contract requires expectedAssignmentId and retains ADMIN aut
   const server = require('../src/app').listen(0, '127.0.0.1');
   await new Promise(resolve => server.once('listening', resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
-  const request = (body, actor = '1') => fetch(`http://127.0.0.1:${server.address().port}/api/v1/tickets/5/unassign`, { method: 'PATCH', headers: { 'content-type': 'application/json', ...(actor ? { authorization: `Bearer ${jwt.sign({}, process.env.JWT_ACCESS_SECRET, { subject: actor })}` } : {}) }, body: JSON.stringify(body) });
+  const request = (body, actor = '1') => fetch(`http://127.0.0.1:${server.address().port}/api/v1/tickets/5/unassign`, { method: 'PATCH', headers: { 'content-type': 'application/json', ...(actor ? { authorization: `Bearer ${jwt.sign({}, process.env.JWT_ACCESS_SECRET, { subject: actor, expiresIn: '5m' })}` } : {}) }, body: JSON.stringify(body) });
   for (const expected of [undefined, null, 0, -1, true, 'abc', 1.5]) assert.equal((await request({ expectedAssignmentId: expected })).status, 422);
   assert.equal((await request({ expectedAssignmentId: 11 }, '2')).status, 403);
   assert.equal((await request({ expectedAssignmentId: 11 }, null)).status, 401);

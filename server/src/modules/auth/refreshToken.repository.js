@@ -28,8 +28,8 @@ async function revokeById(id) {
   return result.affectedRows;
 }
 
-async function revokeAllForUser(userId) {
-  const [result] = await pool.execute(
+async function revokeAllForUser(userId, db = pool) {
+  const [result] = await db.execute(
     `UPDATE refresh_tokens SET revoked_at = CURRENT_TIMESTAMP
      WHERE user_id = ? AND revoked_at IS NULL
        AND expires_at > CURRENT_TIMESTAMP`,
@@ -45,4 +45,30 @@ async function deleteExpired() {
   return result.affectedRows;
 }
 
-module.exports = { create, findActiveByHash, revokeById, revokeAllForUser, deleteExpired };
+async function rotate(id, { userId, tokenHash, expiresAt }) {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [result] = await connection.execute(
+      "UPDATE refresh_tokens SET revoked_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ? AND revoked_at IS NULL AND expires_at > CURRENT_TIMESTAMP",
+      [id, userId]
+    );
+    if (result.affectedRows !== 1) {
+      await connection.rollback();
+      return false;
+    }
+    await connection.execute(
+      "INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)",
+      [userId, tokenHash, expiresAt]
+    );
+    await connection.commit();
+    return true;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+module.exports = { create, findActiveByHash, revokeById, revokeAllForUser, deleteExpired, rotate };
