@@ -30,7 +30,7 @@ async function cookieApp() {
     for (const row of records) if (String(row.user_id) === String(id) && !row.revoked_at) { row.revoked_at = new Date(); count++; }
     return count;
   };
-  return { app: require("../../src/app"), records };
+  return { app: require("../../src/app"), records, user };
 }
 module.exports = cookieApp;
 

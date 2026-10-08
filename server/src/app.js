@@ -1,5 +1,6 @@
 ﻿const express = require("express");
 const cors = require("cors");
+const { corsPolicy } = require("./config/cors");
 const { securityHeaders, privateApiResponse } = require("./middleware/securityHeaders");
 const { createApiRateLimiter } = require("./middleware/rateLimiter");
 const requestLogger = require("./utils/logger");
@@ -25,14 +26,7 @@ app.use([
   "/api/v1/sla", "/api/v1/knowledge-base", "/api/v1/dashboard",
   "/api/v1/reports", "/api/v1/audit-logs",
 ], privateApiResponse);
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+app.use(cors(corsPolicy().rest));
 app.use("/api/v1", createApiRateLimiter());
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));

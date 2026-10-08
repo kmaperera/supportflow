@@ -1,8 +1,17 @@
 // Uses an isolated Edge/Chromium instance on port 9223; no real user/database data.
 import assert from 'node:assert/strict'
 import http from 'node:http'
+import { createRequire } from 'node:module'
 import cookieApp from './helpers/cookieApp.js'
-const { app } = await cookieApp()
+const { app, user } = await cookieApp()
+const require = createRequire(import.meta.url)
+user.role = 'ADMIN'
+require('../src/config/database').query = async () => [[]]
+require('../src/modules/tickets/ticketAttachment.service').uploadTicketAttachment = async (id, file) => {
+  assert.equal(file.originalname, 'cors-fixture.txt')
+  assert.equal(file.buffer.toString(), 'multipart fixture')
+  return { id: 1, originalName: file.originalname }
+}
 const api = app.listen(5097)
 const frontend = http.createServer((req, res) => {
   res.setHeader('Content-Type', 'text/html')
@@ -49,6 +58,19 @@ try {
   // not merely that the frontend page was outside the cookie Path.
   const outside = (await send('Network.getCookies', { urls: ['http://localhost:5097/api/v1/tickets/my'] })).cookies
   assert.equal(outside.some(c => c.name === 'refreshToken'), false)
+  for (const format of ['csv', 'pdf']) {
+    const result = await evaluate(`(async()=>{
+      const r=await fetch('http://localhost:5097/api/v1/reports/tickets/export/${format}',{credentials:'include',headers:{Authorization:'Bearer '+window.accessToken}});
+      return {status:r.status,disposition:r.headers.get('content-disposition'),size:(await r.blob()).size};
+    })()`)
+    assert.equal(result.status, 200)
+    assert.match(result.disposition, new RegExp('attachment; filename=".*\\.'+format+'"'))
+    assert.ok(result.size > 0)
+  }
+  assert.equal(await evaluate(`(async()=>{
+    const body=new FormData();body.append('attachment',new Blob(['multipart fixture'],{type:'text/plain'}),'cors-fixture.txt');
+    return (await fetch('http://localhost:5097/api/v1/tickets/1/attachments',{method:'POST',credentials:'include',headers:{Authorization:'Bearer '+window.accessToken},body})).status;
+  })()`), 201)
   await send('Page.reload')
   for(let i=0;i<100;i++) {
     if(await evaluate(`document.readyState==='complete' && typeof window.request==='undefined'`))break
@@ -67,6 +89,14 @@ try {
   assert.equal((await cookies()).length, 0)
   assert.equal((await evaluate(`window.request('refresh')`)).status, 401)
   console.log('PASS: browser HttpOnly, same-site cross-port credentials, scope, reload/refresh rotation, authenticated request, logout and logout-all deletion.')
+  for(let i=0;i<6;i++) assert.equal((await evaluate(`window.request('login',{email:'nobody@example.com',password:'wrong'})`)).status, i<5?401:429)
+  await send('Page.navigate',{url:'http://127.0.0.1:5197/'})
+  for(let i=0;i<100;i++) {
+    if(await evaluate(`location.hostname==='127.0.0.1' && document.readyState==='complete'`))break
+    await new Promise(resolve=>setTimeout(resolve,50))
+  }
+  assert.equal(await evaluate(`fetch('http://localhost:5097/api/v1/health',{credentials:'include'}).then(()=>false,()=>true)`),true)
+  console.log('PASS: browser-readable CSV/PDF filenames, multipart upload, readable login 429 and disallowed-origin response blocking.')
 } finally {
   ws?.close()
   if(target) await fetch(`http://localhost:${port}/json/close/${target.id}`)

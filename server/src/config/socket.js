@@ -2,6 +2,7 @@ const { Server } = require("socket.io");
 const { verifyAccessToken } = require("../utils/jwt");
 const userRepository = require("../modules/users/user.repository");
 const { USER_ROLES } = require("../constants/roles");
+const { corsPolicy } = require("./cors");
 
 let io;
 let httpServer;
@@ -11,9 +12,7 @@ function initializeSocket(server) {
     if (server !== httpServer) throw new Error("Socket.IO is already initialized on another server");
     return io;
   }
-  const origin = process.env.CLIENT_URL?.trim();
-  if (!origin || origin === "*") throw new Error("CLIENT_URL must specify the client origin for Socket.IO");
-  io = new Server(server, { cors: { origin, credentials: true } });
+  io = new Server(server, corsPolicy().socket);
   httpServer = server;
 
   io.use(async (socket, next) => {

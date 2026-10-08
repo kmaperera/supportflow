@@ -12,6 +12,7 @@ test("socket initialization, authentication and private rooms use trusted identi
   const env = { CLIENT_URL: "http://localhost:5173", NODE_ENV: "test" };
   const context = { module: { exports: {} }, process: { env }, console,
     require(name) {
+      if (name === "./cors") return { corsPolicy: () => require("../src/config/cors").corsPolicy(env) };
       if (name.includes("constants/roles")) return require("../src/constants/roles");
       if (name === "socket.io") return { Server: class {
         constructor(server, config) { options = config; count++; }
@@ -41,7 +42,7 @@ test("socket initialization, authentication and private rooms use trusted identi
   assert.equal(initializeSocket(server), getIO());
   assert.equal(count, 1);
   assert.throws(() => initializeSocket({}), /another server/);
-  assert.equal(options.cors.origin, env.CLIENT_URL);
+  options.cors.origin(env.CLIENT_URL, (error, origin) => { assert.equal(error, null); assert.equal(origin, env.CLIENT_URL); });
   assert.equal(options.cors.credentials, true);
   async function authenticate(token = "test-token") {
     const socket = { handshake: { auth: { token, userId: 999, role: "ADMIN" } } };
