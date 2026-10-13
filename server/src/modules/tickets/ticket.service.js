@@ -1,3 +1,5 @@
+const adminAudit = require('../audit/audit.admin');
+const { AUDIT_ACTIONS: A, AUDIT_ENTITY_TYPES: E } = require('../../constants/audit');
 const ticketStatusHistoryRepository = require("./ticketStatusHistory.repository");
 const { TICKET_SORT_FIELDS, TICKET_SORT_DIRECTIONS, DEFAULT_PAGE, DEFAULT_LIMIT, MAX_LIMIT } = require("../../constants/ticketQuery");
 const { TICKET_STATUSES } = require("../../constants/ticketStatuses");
@@ -430,7 +432,7 @@ async function selfAssignTicket(ticketId, currentUser) {
   }
 }
 
-async function unassignTicketByAdmin(ticketId, expectedAssignmentId, currentAdmin) {
+async function unassignTicketByAdmin(ticketId, expectedAssignmentId, currentAdmin, auditContext) {
   if (!isValidTicketUserId(ticketId)) throw new ApiError(400, "Ticket ID must be a positive integer");
   if (!currentAdmin || !isValidTicketUserId(currentAdmin.id) ||
       typeof currentAdmin.role !== "string" || !currentAdmin.role) {
@@ -478,6 +480,8 @@ async function unassignTicketByAdmin(ticketId, expectedAssignmentId, currentAdmi
       type: NOTIFICATION_TYPES.TICKET_UNASSIGNED, title: "Ticket unassigned",
       message: `${ticket.ticket_number} has been unassigned from you.`,
     }, connection));
+    await adminAudit.record(auditContext && { ...auditContext, actorUserId: currentAdmin.id }, A.TICKET_UNASSIGNED, E.TICKET, ticketId,
+      { previousTechnicianId: String(activeAssignment.technician_id), previousAssignmentId: String(activeAssignment.id) }, connection);
     await connection.commit();
     notificationRealtime.emitNotifications(createdNotifications);
     return result;
@@ -493,7 +497,7 @@ async function unassignTicketByAdmin(ticketId, expectedAssignmentId, currentAdmi
   }
 }
 
-async function assignTicketByAdmin(ticketId, technicianId, currentAdmin) {
+async function assignTicketByAdmin(ticketId, technicianId, currentAdmin, auditContext) {
   if (!isValidTicketUserId(ticketId) || !isValidTicketUserId(technicianId)) {
     throw new ApiError(400, "Ticket ID and technician ID must be positive integers");
   }
@@ -537,7 +541,7 @@ async function assignTicketByAdmin(ticketId, technicianId, currentAdmin) {
     const nextStatus = ticket.status === TICKET_STATUSES.OPEN ? TICKET_STATUSES.ASSIGNED : ticket.status;
     const affectedRows = await ticketRepository.updateAssignment(ticketId, technicianId, nextStatus, connection);
     if (affectedRows !== 1) throw new Error("Unexpected assignment update count");
-    await ticketAssignmentRepository.createAssignment({
+    const assignmentId = await ticketAssignmentRepository.createAssignment({
       ticketId, technicianId, assignedBy: currentAdmin.id, assignmentType: "ADMIN",
     }, connection);
     if (ticket.status !== nextStatus) {
@@ -564,6 +568,10 @@ async function assignTicketByAdmin(ticketId, technicianId, currentAdmin) {
         message: `${ticket.ticket_number} has been reassigned to another technician.`,
       }, connection));
     }
+    const metadata = { newTechnicianId: String(technicianId), newAssignmentId: String(assignmentId) };
+    if (active) { metadata.previousTechnicianId = String(active.technician_id); metadata.previousAssignmentId = String(active.id); }
+    await adminAudit.record(auditContext && { ...auditContext, actorUserId: currentAdmin.id },
+      active ? A.TICKET_REASSIGNED : A.TICKET_ASSIGNED, E.TICKET, ticketId, metadata, connection);
     await connection.commit();
     notificationRealtime.emitNotifications(createdNotifications);
     return result;
@@ -640,7 +648,7 @@ async function updateTicketStatus(ticketId, newStatus, currentUser) {
   }
 }
 
-async function updateTicketPriority(ticketId, priorityId, currentUser) {
+async function updateTicketPriority(ticketId, priorityId, currentUser, auditContext) {
   if (!isValidTicketUserId(ticketId) || !isValidTicketUserId(priorityId)) {
     throw new ApiError(400, "Ticket ID and priority ID must be positive integers");
   }
@@ -684,6 +692,8 @@ async function updateTicketPriority(ticketId, priorityId, currentUser) {
     const updated = await ticketRepository.findById(ticketId, connection);
     if (!updated) throw new Error("Updated ticket could not be retrieved");
     const result = mapTicket(updated);
+    if (currentUser.role === USER_ROLES.ADMIN) await adminAudit.record(auditContext && { ...auditContext, actorUserId: currentUser.id },
+      A.TICKET_PRIORITY_CHANGED, E.TICKET, ticketId, { previousPriorityId: String(ticket.priority_id), newPriorityId: String(priorityId) }, connection);
     await connection.commit();
     return result;
   } catch (error) {

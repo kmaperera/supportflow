@@ -1,4 +1,5 @@
-﻿const service = require("./ticket.service");
+const adminAudit = require('../audit/audit.admin');
+const service = require("./ticket.service");
 const asyncHandler = require("../../utils/asyncHandler");
 
 const createTicket = asyncHandler(async (req, res) => {
@@ -60,14 +61,14 @@ const selfAssignTicket = asyncHandler(async (req, res) => {
 });
 
 const unassignTicketByAdmin = asyncHandler(async (req, res) => {
-  const ticket = await service.unassignTicketByAdmin(req.params.id, req.body.expectedAssignmentId, req.user);
+  const ticket = await service.unassignTicketByAdmin(req.params.id, req.body.expectedAssignmentId, req.user, adminAudit.contextFromRequest(req));
   res.status(200).json({
     success: true, message: "Ticket unassigned successfully", data: { ticket },
   });
 });
 
 const assignTicketByAdmin = asyncHandler(async (req, res) => {
-  const ticket = await service.assignTicketByAdmin(req.params.id, req.body.technicianId, req.user);
+  const ticket = await service.assignTicketByAdmin(req.params.id, req.body.technicianId, req.user, adminAudit.contextFromRequest(req));
   res.status(200).json({
     success: true, message: "Ticket assigned successfully", data: { ticket },
   });
@@ -81,7 +82,7 @@ const updateTicketStatus = asyncHandler(async (req, res) => {
 });
 
 const updateTicketPriority = asyncHandler(async (req, res) => {
-  const ticket = await service.updateTicketPriority(req.params.id, req.body.priorityId, req.user);
+  const ticket = await service.updateTicketPriority(req.params.id, req.body.priorityId, req.user, adminAudit.contextFromRequest(req));
   res.status(200).json({
     success: true, message: "Ticket priority updated successfully", data: { ticket },
   });

@@ -1,4 +1,6 @@
-﻿const { revokeAllUserRefreshTokens } = require("../auth/refreshToken.service");
+const adminAudit = require('../audit/audit.admin');
+const { AUDIT_ACTIONS: A, AUDIT_ENTITY_TYPES: E } = require('../../constants/audit');
+const { revokeAllUserRefreshTokens } = require("../auth/refreshToken.service");
 const repository = require("./user.repository");
 const { hashPassword } = require("../../utils/password");
 const ApiError = require("../../utils/ApiError");
@@ -24,7 +26,7 @@ function validateId(id) {
   }
 }
 
-async function createUser(userData) {
+async function createUser(userData, auditContext) {
   const email = userData.email.trim().toLowerCase();
   if (await repository.findByEmail(email)) {
     throw new ApiError(409, "A user with this email already exists");
@@ -41,7 +43,9 @@ async function createUser(userData) {
     if (error.code === "ER_DUP_ENTRY") throw new ApiError(409, "A user with this email already exists");
     throw error;
   }
-  return getUserById(id);
+  const user = await getUserById(id);
+  await adminAudit.record(auditContext, A.USER_CREATED, E.USER, id, { role: user.role, isActive: user.isActive });
+  return user;
 }
 
 function positiveInteger(value, fallback) {
@@ -146,8 +150,8 @@ async function updateUser(id, userData) {
   return getUserById(id);
 }
 
-async function updateUserStatus(id, isActive, currentAdminId) {
-  await getUserById(id);
+async function updateUserStatus(id, isActive, currentAdminId, auditContext) {
+  const previous = await getUserById(id);
   if (typeof isActive !== "boolean") {
     throw new ApiError(400, "isActive must be a boolean");
   }
@@ -159,10 +163,13 @@ async function updateUserStatus(id, isActive, currentAdminId) {
   if (isActive === false) {
     await revokeAllUserRefreshTokens(id);
   }
-  return getUserById(id);
+  const user = await getUserById(id);
+  if (previous.isActive !== isActive) await adminAudit.record(auditContext && { ...auditContext, actorUserId: currentAdminId },
+    isActive ? A.USER_ACTIVATED : A.USER_DEACTIVATED, E.USER, id, { previousActive: previous.isActive, newActive: isActive });
+  return user;
 }
 
-async function updateUserRole(id, role, currentAdminId) {
+async function updateUserRole(id, role, currentAdminId, auditContext) {
   const user = await getUserById(id);
   if (!Object.values(USER_ROLES).includes(role)) {
     throw new ApiError(400, "Invalid role");
@@ -174,7 +181,10 @@ async function updateUserRole(id, role, currentAdminId) {
 
   await repository.updateRole(id, role);
   await revokeAllUserRefreshTokens(id);
-  return getUserById(id);
+  const updated = await getUserById(id);
+  await adminAudit.record(auditContext && { ...auditContext, actorUserId: currentAdminId }, A.USER_ROLE_CHANGED, E.USER, id,
+    { previousRole: user.role, newRole: role });
+  return updated;
 }
 
 module.exports = { getTechnicianWorkload, getAssignableTechnicians, createUser, getUsers, getUserById, updateUser, updateUserStatus, updateUserRole };

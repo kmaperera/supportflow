@@ -1,3 +1,4 @@
+const adminAudit = require('../audit/audit.admin');
 const slaPolicyService = require("./slaPolicy.service");
 const asyncHandler = require("../../utils/asyncHandler");
 
@@ -15,7 +16,7 @@ const updateSlaPolicy = asyncHandler(async (req, res) => {
   const policy = await slaPolicyService.updatePolicy(req.params.policyId, {
     responseTimeMinutes,
     resolutionTimeMinutes,
-  });
+  }, undefined, adminAudit.contextFromRequest(req));
   res.status(200).json({
     success: true,
     message: "SLA policy updated successfully",

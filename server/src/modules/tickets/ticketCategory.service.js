@@ -1,3 +1,5 @@
+const adminAudit = require('../audit/audit.admin');
+const { AUDIT_ACTIONS: A, AUDIT_ENTITY_TYPES: E } = require('../../constants/audit');
 const repository = require("./ticketCategory.repository");
 const ApiError = require("../../utils/ApiError");
 
@@ -24,7 +26,7 @@ function normalizeCategory(values) {
   return { name, description };
 }
 
-async function createCategory(values, createdBy, db) {
+async function createCategory(values, createdBy, db, auditContext) {
   const { name, description } = normalizeCategory(values);
   // The equality lookup uses the same database collation as the unique name index.
   if (await repository.findByName(name, db)) {
@@ -42,7 +44,9 @@ async function createCategory(values, createdBy, db) {
   }
   const row = await repository.findById(id, db);
   if (!row) throw new ApiError(500, "Created Ticket category could not be retrieved");
-  return mapCategory(row);
+  const result = mapCategory(row);
+  await adminAudit.record(auditContext, A.CATEGORY_CREATED, E.CATEGORY, id, { name: result.name, isActive: result.isActive }, db);
+  return result;
 }
 
 function mapCategory(row) {
@@ -68,7 +72,7 @@ async function requireCategory(categoryId, db) {
   return row;
 }
 
-async function updateCategory(categoryId, values, db) {
+async function updateCategory(categoryId, values, db, auditContext) {
   validateCategoryId(categoryId);
   const existing = await requireCategory(categoryId, db);
   if (!values || typeof values !== "object" || Array.isArray(values) ||
@@ -93,16 +97,22 @@ async function updateCategory(categoryId, values, db) {
     if (error.code === "ER_DUP_ENTRY") throw new ApiError(409, "Ticket category already exists");
     throw error;
   }
-  return mapCategory(await requireCategory(categoryId, db));
+  const result = mapCategory(await requireCategory(categoryId, db));
+  const changedFields = ['name', 'description'].filter(field => result[field] !== existing[field]);
+  if (changedFields.length) await adminAudit.record(auditContext, A.CATEGORY_UPDATED, E.CATEGORY, categoryId, { changedFields }, db);
+  return result;
 }
 
-async function setCategoryActiveStatus(categoryId, isActive, db) {
+async function setCategoryActiveStatus(categoryId, isActive, db, auditContext) {
   validateCategoryId(categoryId);
   if (typeof isActive !== "boolean") throw new ApiError(422, "isActive must be a boolean");
   const existing = await requireCategory(categoryId, db);
   if (mapCategory(existing).isActive === isActive) return mapCategory(existing);
   await repository.setActiveStatus(categoryId, isActive, db);
-  return mapCategory(await requireCategory(categoryId, db));
+  const result = mapCategory(await requireCategory(categoryId, db));
+  await adminAudit.record(auditContext, isActive ? A.CATEGORY_ACTIVATED : A.CATEGORY_DEACTIVATED, E.CATEGORY, categoryId,
+    { previousActive: mapCategory(existing).isActive, newActive: isActive }, db);
+  return result;
 }
 
 async function getCategoryById(id, db) { validateCategoryId(id); return mapCategory(await requireCategory(id, db)); }

@@ -65,6 +65,24 @@ function safeMetadata(value) {
   const safe = {};
   if (typeof value.isDemo === 'boolean') safe.isDemo = value.isDemo;
   if (Number.isSafeInteger(value.schemaVersion) && value.schemaVersion > 0) safe.schemaVersion = value.schemaVersion;
+  for (const key of ['role', 'previousRole', 'newRole']) {
+    if (['ADMIN', 'EMPLOYEE', 'TECHNICIAN'].includes(value[key])) safe[key] = value[key];
+  }
+  for (const key of ['status', 'previousStatus', 'newStatus']) {
+    if (['DRAFT', 'PUBLISHED', 'ARCHIVED'].includes(value[key])) safe[key] = value[key];
+  }
+  for (const key of ['isActive', 'previousActive', 'newActive']) {
+    if (typeof value[key] === 'boolean') safe[key] = value[key];
+  }
+  if (typeof value.name === 'string' && Array.from(value.name).length <= 100) safe.name = value.name;
+  for (const key of ['categoryId', 'newTechnicianId', 'previousTechnicianId', 'newAssignmentId', 'previousAssignmentId', 'previousPriorityId', 'newPriorityId']) {
+    if (typeof value[key] === 'string' && /^[1-9]\d{0,19}$/.test(value[key]) && BigInt(value[key]) <= 18446744073709551615n) safe[key] = value[key];
+  }
+  for (const key of ['previousResponseMinutes', 'newResponseMinutes', 'previousResolutionMinutes', 'newResolutionMinutes']) {
+    if (Number.isInteger(value[key]) && value[key] > 0 && value[key] <= 4294967295) safe[key] = value[key];
+  }
+  const fields = new Set(['name', 'description', 'title', 'content', 'categoryId', 'responseTimeMinutes', 'resolutionTimeMinutes']);
+  if (Array.isArray(value.changedFields) && value.changedFields.length <= fields.size && value.changedFields.every(field => fields.has(field))) safe.changedFields = [...new Set(value.changedFields)];
   return Object.keys(safe).length ? safe : null;
 }
 async function getLogs(params, db) {

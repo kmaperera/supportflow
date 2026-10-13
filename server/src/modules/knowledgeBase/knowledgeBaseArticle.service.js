@@ -1,3 +1,5 @@
+const adminAudit = require('../audit/audit.admin');
+const { AUDIT_ACTIONS: A, AUDIT_ENTITY_TYPES: E } = require('../../constants/audit');
 const repository = require("./knowledgeBaseArticle.repository");
 const categories = require("./knowledgeBaseCategory.repository");
 const ApiError = require("../../utils/ApiError");
@@ -5,7 +7,7 @@ const slugify = require("../../utils/slugify");
 const { USER_ROLES } = require("../../constants/roles");
 const { READER_FILTERS, isReader, canReadArticle } = require("./knowledgeBaseAccess");
 
-async function createArticle(values, db) {
+async function createArticle(values, db, auditContext) {
   if (!values || typeof values !== "object" || Array.isArray(values) ||
       Object.keys(values).some(key => !["categoryId", "title", "content", "createdBy"].includes(key))) {
     throw new ApiError(422, "Only categoryId, title, content and authenticated createdBy may be provided");
@@ -44,7 +46,10 @@ async function createArticle(values, db) {
   }
   const row = await repository.findById(id, db);
   if (!row) throw new ApiError(500, "Created Knowledge Base article could not be retrieved");
-  return mapArticle(row);
+  const result = mapArticle(row);
+  await adminAudit.record(auditContext, A.KB_ARTICLE_CREATED, E.KNOWLEDGE_BASE_ARTICLE, id,
+    { categoryId: String(result.categoryId), status: result.status }, db);
+  return result;
 }
 
 function mapArticle(row) {
@@ -63,7 +68,7 @@ function validateArticleId(articleId) {
       BigInt(articleId) > 18446744073709551615n) throw new ApiError(422, "Article ID must be a positive integer");
 }
 
-async function updateArticle(articleId, values, db) {
+async function updateArticle(articleId, values, db, auditContext) {
   validateArticleId(articleId);
   const existing = await repository.findById(articleId, db);
   if (!existing) throw new ApiError(404, "Knowledge Base article not found");
@@ -116,7 +121,13 @@ async function updateArticle(articleId, values, db) {
   }
   const row = await repository.findById(articleId, db);
   if (!row) throw new ApiError(404, "Knowledge Base article not found");
-  return mapArticle(row);
+  const result = mapArticle(row);
+  const changedFields = [];
+  if (title !== existing.title) changedFields.push('title');
+  if (content !== existing.content) changedFields.push('content');
+  if (String(categoryId) !== String(existing.category_id)) changedFields.push('categoryId');
+  await adminAudit.record(auditContext, A.KB_ARTICLE_UPDATED, E.KNOWLEDGE_BASE_ARTICLE, articleId, { changedFields }, db);
+  return result;
 }
 
 async function requireArticle(articleId, db) {
@@ -125,7 +136,7 @@ async function requireArticle(articleId, db) {
   return row;
 }
 
-async function publishArticle(articleId, db) {
+async function publishArticle(articleId, db, auditContext) {
   validateArticleId(articleId);
   const existing = await requireArticle(articleId, db);
   if (existing.status === "PUBLISHED") return mapArticle(existing);
@@ -135,20 +146,26 @@ async function publishArticle(articleId, db) {
   if (!category) throw new ApiError(409, "Knowledge Base article category is missing");
   if (![true, 1, "1"].includes(category.is_active)) throw new ApiError(409, "Knowledge Base category is inactive");
   await repository.updateStatus(articleId, "PUBLISHED", new Date(), db);
-  return mapArticle(await requireArticle(articleId, db));
+  const result = mapArticle(await requireArticle(articleId, db));
+  if (existing.status !== result.status) await adminAudit.record(auditContext, A.KB_ARTICLE_PUBLISHED, E.KNOWLEDGE_BASE_ARTICLE, articleId,
+    { previousStatus: existing.status, newStatus: result.status }, db);
+  return result;
 }
 
-async function unpublishArticle(articleId, db) {
+async function unpublishArticle(articleId, db, auditContext) {
   validateArticleId(articleId);
   const existing = await requireArticle(articleId, db);
   if (existing.status === "DRAFT") return mapArticle(existing);
   if (existing.status === "ARCHIVED") throw new ApiError(409, "Archived Knowledge Base article cannot be unpublished");
   if (existing.status !== "PUBLISHED") throw new ApiError(409, "Knowledge Base article cannot be unpublished from its current status");
   await repository.updateStatus(articleId, "DRAFT", null, db);
-  return mapArticle(await requireArticle(articleId, db));
+  const result = mapArticle(await requireArticle(articleId, db));
+  if (existing.status !== result.status) await adminAudit.record(auditContext, A.KB_ARTICLE_UNPUBLISHED, E.KNOWLEDGE_BASE_ARTICLE, articleId,
+    { previousStatus: existing.status, newStatus: result.status }, db);
+  return result;
 }
 
-async function archiveArticle(articleId, db) {
+async function archiveArticle(articleId, db, auditContext) {
   validateArticleId(articleId);
   const existing = await requireArticle(articleId, db);
   if (existing.status === "ARCHIVED" && existing.published_at === null) return mapArticle(existing);
@@ -157,7 +174,10 @@ async function archiveArticle(articleId, db) {
   }
   // Also repair an archived row with an inconsistent publication timestamp.
   await repository.updateStatus(articleId, "ARCHIVED", null, db);
-  return mapArticle(await requireArticle(articleId, db));
+  const result = mapArticle(await requireArticle(articleId, db));
+  if (existing.status !== result.status) await adminAudit.record(auditContext, A.KB_ARTICLE_ARCHIVED, E.KNOWLEDGE_BASE_ARTICLE, articleId,
+    { previousStatus: existing.status, newStatus: result.status }, db);
+  return result;
 }
 
 async function getArticleById(articleId, user, db) {

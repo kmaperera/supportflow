@@ -1,8 +1,9 @@
-﻿const service = require("./user.service");
+const adminAudit = require('../audit/audit.admin');
+const service = require("./user.service");
 const asyncHandler = require("../../utils/asyncHandler");
 
 const createUser = asyncHandler(async (req, res) => {
-  const user = await service.createUser(req.body);
+  const user = await service.createUser(req.body, adminAudit.contextFromRequest(req));
   res.status(201).json({ success: true, message: "User created successfully", data: { user } });
 });
 const getUsers = asyncHandler(async (req, res) => {
@@ -31,7 +32,7 @@ const updateUser = asyncHandler(async (req, res) => {
 });
 
 const updateUserStatus = asyncHandler(async (req, res) => {
-  const user = await service.updateUserStatus(req.params.id, req.body.isActive, req.user.id);
+  const user = await service.updateUserStatus(req.params.id, req.body.isActive, req.user.id, adminAudit.contextFromRequest(req));
   res.status(200).json({
     success: true,
     message: "User status updated successfully",
@@ -40,7 +41,7 @@ const updateUserStatus = asyncHandler(async (req, res) => {
 });
 
 const updateUserRole = asyncHandler(async (req, res) => {
-  const user = await service.updateUserRole(req.params.id, req.body.role, req.user.id);
+  const user = await service.updateUserRole(req.params.id, req.body.role, req.user.id, adminAudit.contextFromRequest(req));
   res.status(200).json({
     success: true,
     message: "User role updated successfully",

@@ -1,8 +1,9 @@
+const adminAudit = require('../audit/audit.admin');
 const service = require("./knowledgeBaseCategory.service");
 const asyncHandler = require("../../utils/asyncHandler");
 
 const createCategory = asyncHandler(async (req, res) => {
-  const category = await service.createCategory(req.body);
+  const category = await service.createCategory(req.body, undefined, adminAudit.contextFromRequest(req));
   res.status(201).json({
     success: true,
     message: "Knowledge Base category created successfully",
@@ -11,12 +12,12 @@ const createCategory = asyncHandler(async (req, res) => {
 });
 
 const updateCategory = asyncHandler(async (req, res) => {
-  const category = await service.updateCategory(req.params.categoryId, req.body);
+  const category = await service.updateCategory(req.params.categoryId, req.body, undefined, adminAudit.contextFromRequest(req));
   res.status(200).json({ success: true, message: "Knowledge Base category updated successfully", data: { category } });
 });
 
 const setCategoryActiveStatus = asyncHandler(async (req, res) => {
-  const category = await service.setCategoryActiveStatus(req.params.categoryId, req.body.isActive);
+  const category = await service.setCategoryActiveStatus(req.params.categoryId, req.body.isActive, undefined, adminAudit.contextFromRequest(req));
   res.status(200).json({ success: true, message: "Knowledge Base category status updated successfully", data: { category } });
 });
 

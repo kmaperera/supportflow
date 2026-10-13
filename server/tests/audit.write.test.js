@@ -112,7 +112,7 @@ test('default and strict failures log only safe categories and never leak DB err
   assert.deepEqual(messages, ['Audit log write failed: database operation', 'Audit log write failed: database operation', 'Audit log write failed: invalid entry']);
 });
 
-test('legacy read metadata remains null-safe and preserves the current demo-only API contract', () => {
+test('legacy read metadata remains null-safe and preserves the current allowlisted API contract', () => {
   for (const value of ['', '{broken', null, 'null', '[]', { value: Infinity }]) assert.equal(service.safeMetadata(value), null);
-  assert.deepEqual(service.safeMetadata('{"isDemo":true,"schemaVersion":1,"password":"test-only-secret","previousRole":"EMPLOYEE"}'), { isDemo: true, schemaVersion: 1 });
+  assert.deepEqual(service.safeMetadata('{"isDemo":true,"schemaVersion":1,"password":"test-only-secret","previousRole":"EMPLOYEE"}'), { isDemo: true, schemaVersion: 1, previousRole: 'EMPLOYEE' });
 });

@@ -6,6 +6,8 @@ try {
   const { getAuditLogs, auditParams, safeAuditMetadata } = await server.ssrLoadModule('/src/api/auditApi.js')
   assert.deepEqual(auditParams({ search: ' demo ', action: '', role: 'ADMIN', sortBy: 'secret' }, 2), { page: 2, limit: 25, search: 'demo' })
   assert.deepEqual(safeAuditMetadata({ isDemo: true, schemaVersion: 1, password: 'secret', nested: { token: 'secret' } }), { isDemo: true, schemaVersion: 1 })
+  assert.deepEqual(safeAuditMetadata({ previousRole: 'EMPLOYEE', newRole: 'TECHNICIAN', password: 'test-only-secret', unknown: 'test-only-secret' }), { previousRole: 'EMPLOYEE', newRole: 'TECHNICIAN' })
+  assert.deepEqual(safeAuditMetadata({ newTechnicianId: '9007199254740993', changedFields: ['content'], content: 'test-only private article body', newResponseMinutes: 15 }), { newTechnicianId: '9007199254740993', newResponseMinutes: 15, changedFields: ['content'] })
   const pagination = { page: 2, limit: 25, total: 26, totalPages: 2, hasNextPage: false, hasPreviousPage: true }
   api.defaults.adapter = async config => {
     assert.equal(config.method, 'get')

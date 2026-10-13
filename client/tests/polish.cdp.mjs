@@ -35,7 +35,10 @@ try {
     }
     await wait(250)
     if (route === '/admin/reports') { await evaluate('document.querySelector("button[type=submit]").click()'); await wait(120) }
-    if (route === '/admin/audit-logs') await evaluate('document.querySelectorAll("details").forEach(d=>d.open=true)')
+    if (route === '/admin/audit-logs') {
+      await evaluate('document.querySelectorAll("details").forEach(d=>d.open=true)')
+      assert.equal(await evaluate('Boolean(document.querySelector("pre")?.textContent.includes("previousRole") && document.querySelector("pre")?.textContent.includes("TECHNICIAN"))'), true, 'admin before/after metadata remains visible')
+    }
     const alerts = await evaluate('[...document.querySelectorAll("[role=alert]")].map(e=>e.textContent)')
     if (alerts.length) failures.push({ route, alerts })
     for (const width of [320, 375, 430, 768, 1024, 1440]) for (const dark of [false, true]) {

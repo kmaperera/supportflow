@@ -1,3 +1,5 @@
+const adminAudit = require('../audit/audit.admin');
+const { AUDIT_ACTIONS: A, AUDIT_ENTITY_TYPES: E } = require('../../constants/audit');
 const repository = require("./slaPolicy.repository");
 const ticketRepository = require("../tickets/ticket.repository");
 const ApiError = require("../../utils/ApiError");
@@ -69,7 +71,7 @@ async function resolvePolicyForPriority(priorityId, db) {
   return policy;
 }
 
-async function updatePolicy(id, values, db) {
+async function updatePolicy(id, values, db, auditContext) {
   validateId(id);
   if (!values || typeof values !== "object" || Array.isArray(values) ||
       Object.keys(values).some(key => !["responseTimeMinutes", "resolutionTimeMinutes"].includes(key))) {
@@ -84,9 +86,18 @@ async function updatePolicy(id, values, db) {
   if (resolutionTimeMinutes < responseTimeMinutes) {
     throw new ApiError(422, "Resolution time must be greater than or equal to response time");
   }
-  await getPolicyById(id, db);
+  const previous = await getPolicyById(id, db);
+  if (previous.responseTimeMinutes === responseTimeMinutes && previous.resolutionTimeMinutes === resolutionTimeMinutes) return previous;
   await repository.updateById(id, { responseTimeMinutes, resolutionTimeMinutes }, db);
-  return getPolicyById(id, db);
+  const updated = await getPolicyById(id, db);
+  const metadata = { changedFields: [] };
+  for (const [field, label] of [['responseTimeMinutes', 'ResponseMinutes'], ['resolutionTimeMinutes', 'ResolutionMinutes']]) {
+    if (previous[field] !== updated[field]) {
+      metadata.changedFields.push(field); metadata['previous' + label] = previous[field]; metadata['new' + label] = updated[field];
+    }
+  }
+  if (metadata.changedFields.length) await adminAudit.record(auditContext, A.SLA_POLICY_UPDATED, E.SLA_POLICY, id, metadata, db);
+  return updated;
 }
 
 async function setPolicyActiveStatus(id, isActive, db) {
