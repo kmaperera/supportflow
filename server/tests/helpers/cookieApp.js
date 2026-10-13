@@ -20,6 +20,7 @@ async function cookieApp() {
     return records.length;
   };
   repository.findActiveByHash = async hash => records.find(row => row.token_hash === hash && !row.revoked_at && row.expires_at > new Date()) || null;
+  repository.findRejectedByHash = async hash => records.find(row => row.token_hash === hash && row.revoked_at && row.expires_at > new Date()) || null;
   repository.revokeById = async id => {
     const row = records.find(row => row.id === id && !row.revoked_at);
     if (!row) return 0;
@@ -37,7 +38,9 @@ async function cookieApp() {
     await repository.create(replacement);
     return true;
   };
-  return { app: require("../../src/app"), records, user };
+  const auditEvents = [];
+  require('../../src/modules/audit/audit.repository').create = async entry => { auditEvents.push(entry); return auditEvents.length; };
+  return { app: require("../../src/app"), records, user, auditEvents };
 }
 module.exports = cookieApp;
 

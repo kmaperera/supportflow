@@ -83,6 +83,11 @@ function safeMetadata(value) {
   }
   const fields = new Set(['name', 'description', 'title', 'content', 'categoryId', 'responseTimeMinutes', 'resolutionTimeMinutes']);
   if (Array.isArray(value.changedFields) && value.changedFields.length <= fields.size && value.changedFields.every(field => fields.has(field))) safe.changedFields = [...new Set(value.changedFields)];
+  if (['INVALID_CREDENTIALS', 'ACCOUNT_INACTIVE', 'SESSION_NOT_ACTIVE'].includes(value.reasonCode)) safe.reasonCode = value.reasonCode;
+  for (const key of ['sessionsRevoked', 'forcedChange']) {
+    if (typeof value[key] === 'boolean') safe[key] = value[key];
+  }
+  if (Number.isSafeInteger(value.revokedSessionCount) && value.revokedSessionCount >= 0) safe.revokedSessionCount = value.revokedSessionCount;
   return Object.keys(safe).length ? safe : null;
 }
 async function getLogs(params, db) {

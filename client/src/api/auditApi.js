@@ -32,6 +32,11 @@ export function safeAuditMetadata(metadata) {
   }
   const fields = new Set(['name', 'description', 'title', 'content', 'categoryId', 'responseTimeMinutes', 'resolutionTimeMinutes']);
   if (Array.isArray(metadata.changedFields) && metadata.changedFields.length <= fields.size && metadata.changedFields.every(field => fields.has(field))) safe.changedFields = [...new Set(metadata.changedFields)];
+  if (['INVALID_CREDENTIALS', 'ACCOUNT_INACTIVE', 'SESSION_NOT_ACTIVE'].includes(metadata.reasonCode)) safe.reasonCode = metadata.reasonCode;
+  for (const key of ['sessionsRevoked', 'forcedChange']) {
+    if (typeof metadata[key] === 'boolean') safe[key] = metadata[key];
+  }
+  if (Number.isSafeInteger(metadata.revokedSessionCount) && metadata.revokedSessionCount >= 0) safe.revokedSessionCount = metadata.revokedSessionCount;
   return Object.keys(safe).length ? safe : null
 }
 export async function getAuditLogs(filters, { page = 1, signal } = {}) {

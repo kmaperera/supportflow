@@ -28,7 +28,7 @@ test("password update and refresh revocation commit together or roll back", asyn
     });
     const changed = service.changePassword(1, "CurrentFixture123!", "NewFixture123!", "NewFixture123!");
     if (fail) await assert.rejects(changed, /fixture revocation failure/);
-    else assert.deepEqual(await changed, { success: true });
+    else assert.deepEqual(await changed, { success: true, sessionsRevoked: true, forcedChange: false });
     assert.deepEqual(calls, ["begin", "password", "revoke", fail ? "rollback" : "commit", "release"]);
   }
 });

@@ -61,7 +61,7 @@ test("actual cookie issuance, rotation, failure, revocation and deletion in deve
     for (const value of sessions) assert.equal((await post("/refresh", undefined, value)).status, 401);
     assert.ok(records.every(row => row.revoked_at));
   }
-  for (const [email, status] of [["cookie@example.com", 401], ["nobody@example.com", 401], ["inactive@example.com", 403], ["bad", 422], ["nobody@example.com", 401], ["cookie@example.com", 429]]) {
+  for (const [email, status] of [["cookie@example.com", 401], ["nobody@example.com", 401], ["inactive@example.com", 401], ["bad", 422], ["nobody@example.com", 401], ["cookie@example.com", 429]]) {
     const response = await post("/login", { email, password: email === "inactive@example.com" ? "CookieFixture123!" : "WrongFixture123!" });
     assert.equal(response.status, status);
     assert.equal(response.headers.get("set-cookie"), null);

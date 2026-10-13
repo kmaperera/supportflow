@@ -38,6 +38,7 @@ try {
     if (route === '/admin/audit-logs') {
       await evaluate('document.querySelectorAll("details").forEach(d=>d.open=true)')
       assert.equal(await evaluate('Boolean(document.querySelector("pre")?.textContent.includes("previousRole") && document.querySelector("pre")?.textContent.includes("TECHNICIAN"))'), true, 'admin before/after metadata remains visible')
+      assert.equal(await evaluate('Boolean(document.querySelector("pre")?.textContent.includes("sessionsRevoked") && document.querySelector("pre")?.textContent.includes("forcedChange"))'), true, 'security-event metadata remains visible')
     }
     const alerts = await evaluate('[...document.querySelectorAll("[role=alert]")].map(e=>e.textContent)')
     if (alerts.length) failures.push({ route, alerts })

@@ -3,8 +3,16 @@ const pool = require("../../config/database");
 const { comparePassword, hashPassword } = require("../../utils/password");
 const userRepository = require("../users/user.repository");
 const ApiError = require("../../utils/ApiError");
+const audit = require('../audit/audit.service');
+const { AUDIT_ACTIONS, AUDIT_ENTITY_TYPES } = require('../../constants/audit');
 
-async function login(email, password) {
+async function rejectLogin(reasonCode, context) {
+  if (context) await audit.log({ actorUserId: null, action: AUDIT_ACTIONS.LOGIN_FAILED,
+    entityType: AUDIT_ENTITY_TYPES.AUTH, entityId: null, ipAddress: context.ipAddress, metadata: { reasonCode } });
+  throw new ApiError(401, 'Invalid email or password');
+}
+
+async function login(email, password, auditContext) {
   if (
     typeof email !== "string" || !email.trim() ||
     typeof password !== "string" || !password
@@ -16,20 +24,17 @@ async function login(email, password) {
   const user = await userRepository.findByEmail(normalizedEmail);
 
   if (!user) {
-    throw new ApiError(401, "Invalid email or password");
+    return rejectLogin('INVALID_CREDENTIALS', auditContext);
   }
 
   const passwordMatches = await comparePassword(password, user.password_hash);
   if (!passwordMatches) {
-    throw new ApiError(401, "Invalid email or password");
+    return rejectLogin('INVALID_CREDENTIALS', auditContext);
   }
 
-  // Only disclose inactive status after the caller proves the password.
+  // Keep all credential/account rejections indistinguishable to the caller.
   if (![true, 1, "1"].includes(user.is_active)) {
-    throw new ApiError(
-      403,
-      "Your account is inactive. Please contact an administrator."
-    );
+    return rejectLogin('ACCOUNT_INACTIVE', auditContext);
   }
 
   await userRepository.updateLastLogin(user.id);
@@ -63,6 +68,7 @@ async function changePassword(userId, currentPassword, newPassword, confirmPassw
 
   const user = await userRepository.findById(userId);
   if (!user) throw new ApiError(401, "User account no longer exists");
+  const forcedChange = [true, 1, '1'].includes(user.must_change_password);
   if (!(await comparePassword(currentPassword, user.password_hash))) {
     throw new ApiError(400, "Current password is incorrect");
   }
@@ -83,7 +89,7 @@ async function changePassword(userId, currentPassword, newPassword, confirmPassw
   } finally {
     connection.release();
   }
-  return { success: true };
+  return { success: true, sessionsRevoked: true, forcedChange };
 }
 
 module.exports = { login, changePassword };

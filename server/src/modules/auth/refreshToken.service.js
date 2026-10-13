@@ -4,6 +4,13 @@ const crypto = require("node:crypto");
 const { generateRefreshToken, verifyRefreshToken, generateAccessToken } = require("../../utils/jwt");
 const tokenRepository = require("./refreshToken.repository");
 const ApiError = require("../../utils/ApiError");
+const audit = require('../audit/audit.service');
+const { AUDIT_ACTIONS, AUDIT_ENTITY_TYPES } = require('../../constants/audit');
+
+async function rejectedSession(userId, reasonCode, context) {
+  if (context) await audit.log({ actorUserId: null, action: AUDIT_ACTIONS.REFRESH_TOKEN_REJECTED,
+    entityType: AUDIT_ENTITY_TYPES.AUTH, entityId: userId, ipAddress: context.ipAddress, metadata: { reasonCode } });
+}
 
 function hashRefreshToken(token) {
   if (typeof token !== "string" || !token) {
@@ -48,24 +55,45 @@ async function validateStoredRefreshToken(rawToken) {
   return { tokenRecord, decoded };
 }
 
-async function revokeRefreshToken(rawToken) {
+async function revokeRefreshSession(rawToken) {
   const record = await tokenRepository.findActiveByHash(hashRefreshToken(rawToken));
-  if (!record) return false;
-  return (await tokenRepository.revokeById(record.id)) > 0;
+  if (!record || (await tokenRepository.revokeById(record.id)) < 1) return null;
+  return { userId: record.user_id };
+}
+
+async function revokeRefreshToken(rawToken) {
+  return Boolean(await revokeRefreshSession(rawToken));
 }
 
 async function revokeAllUserRefreshTokens(userId) {
   return tokenRepository.revokeAllForUser(userId);
 }
 
-async function rotateRefreshToken(rawToken) {
+async function rotateRefreshToken(rawToken, auditContext) {
   if (!rawToken) throw new ApiError(401, "Refresh token is required");
 
-  const { tokenRecord, decoded } = await validateStoredRefreshToken(rawToken);
+  let tokenRecord, decoded;
+  try {
+    ({ tokenRecord, decoded } = await validateStoredRefreshToken(rawToken));
+  } catch (error) {
+    if (auditContext && error.statusCode === 401) {
+      // Ordinary expiry, malformed/type-invalid and unknown cookies are noise.
+      // Audit only a verified, unexpired credential matching a revoked DB row.
+      try {
+        const claims = verifyRefreshToken(rawToken);
+        const rejected = await tokenRepository.findRejectedByHash(hashRefreshToken(rawToken));
+        if (rejected && String(rejected.user_id) === claims.sub) await rejectedSession(claims.sub, 'SESSION_NOT_ACTIVE', auditContext);
+      } catch {
+        // Diagnostics must never replace the existing authentication rejection.
+      }
+    }
+    throw error;
+  }
   const user = await userRepository.findById(decoded.sub);
   if (!user) throw new ApiError(401, "Invalid refresh token");
   if (![true, 1, "1"].includes(user.is_active)) {
-    throw new ApiError(403, "Your account is inactive. Please contact an administrator.");
+    await rejectedSession(decoded.sub, 'ACCOUNT_INACTIVE', auditContext);
+    throw new ApiError(401, "Invalid refresh token");
   }
 
   // Prepare credentials before touching storage, then atomically consume/replace.
@@ -76,6 +104,7 @@ async function rotateRefreshToken(rawToken) {
     userId: user.id, tokenHash: hashRefreshToken(refreshToken),
     expiresAt: new Date(replacement.exp * 1000),
   }))) {
+    if (decoded.exp > Math.floor(Date.now() / 1000)) await rejectedSession(decoded.sub, 'SESSION_NOT_ACTIVE', auditContext);
     throw new ApiError(401, "Invalid refresh token");
   }
 
@@ -103,6 +132,6 @@ async function rotateRefreshToken(rawToken) {
 
 module.exports = {
   hashRefreshToken, createRefreshToken, validateStoredRefreshToken,
-  revokeRefreshToken, revokeAllUserRefreshTokens, rotateRefreshToken,
+  revokeRefreshToken, revokeRefreshSession, revokeAllUserRefreshTokens, rotateRefreshToken,
 };
 

@@ -28,6 +28,14 @@ async function revokeById(id) {
   return result.affectedRows;
 }
 
+// Only used after verification of an unexpired signed refresh credential.
+// Fetch no stored hash/credential for rejection auditing.
+async function findRejectedByHash(tokenHash) {
+  const [rows] = await pool.execute(`SELECT user_id FROM refresh_tokens
+    WHERE token_hash = ? AND revoked_at IS NOT NULL AND expires_at > CURRENT_TIMESTAMP LIMIT 1`, [tokenHash]);
+  return rows[0] || null;
+}
+
 async function revokeAllForUser(userId, db = pool) {
   const [result] = await db.execute(
     `UPDATE refresh_tokens SET revoked_at = CURRENT_TIMESTAMP
@@ -71,4 +79,4 @@ async function rotate(id, { userId, tokenHash, expiresAt }) {
   }
 }
 
-module.exports = { create, findActiveByHash, revokeById, revokeAllForUser, deleteExpired, rotate };
+module.exports = { create, findActiveByHash, findRejectedByHash, revokeById, revokeAllForUser, deleteExpired, rotate };

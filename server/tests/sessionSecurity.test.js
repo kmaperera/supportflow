@@ -52,8 +52,8 @@ test("token verification and session lifecycle fail closed", async t => {
   assert.equal(tokens.verifyAccessToken(rotated.accessToken).role, "TECHNICIAN");
   user.is_active = "0";
   assert.equal((await get(access)).status, 403);
-  assert.equal((await post("/auth/refresh", rotated.refreshToken)).status, 403);
-  await assert.rejects(require("../src/modules/auth/auth.service").login(user.email, "CookieFixture123!"), { statusCode: 403 });
+  assert.equal((await post("/auth/refresh", rotated.refreshToken)).status, 401);
+  await assert.rejects(require("../src/modules/auth/auth.service").login(user.email, "CookieFixture123!"), { statusCode: 401, message: "Invalid email or password" });
   await assert.rejects(require("../src/modules/auth/auth.service").login(user.email, "WrongFixture123!"), { statusCode: 401, message: "Invalid email or password" });
   user.is_active = 1;
   user.must_change_password = 1;
