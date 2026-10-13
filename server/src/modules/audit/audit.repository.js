@@ -1,4 +1,13 @@
 const pool = require('../../config/database');
+
+// Append-only. A caller-owned connection can include this insert in its transaction.
+async function create(entry, db = pool) {
+  const [result] = await db.execute(`INSERT INTO audit_logs
+    (actor_user_id, action, entity_type, entity_id, description, metadata, ip_address)
+    VALUES (?, ?, ?, ?, ?, ?, ?)`, [entry.actorUserId, entry.action, entry.entityType,
+    entry.entityId, entry.description, entry.metadata == null ? null : JSON.stringify(entry.metadata), entry.ipAddress]);
+  return result.insertId;
+}
 function where(filters) {
   const clauses = [], values = [];
   for (const [key, column] of [['action', 'action'], ['actorUserId', 'actor_user_id'], ['entityType', 'entity_type'], ['entityId', 'entity_id']]) {
@@ -29,4 +38,4 @@ async function countAll(filters, db = pool) {
   const [rows] = await db.query(`SELECT COUNT(*) AS total FROM audit_logs a${sql}`, values);
   return Number(rows[0].total);
 }
-module.exports = { findAll, countAll };
+module.exports = { create, findAll, countAll };
