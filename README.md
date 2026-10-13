@@ -11,3 +11,5 @@ Supply database credentials and Cloudinary configuration. Supply distinct JWT si
 Only `VITE_API_BASE_URL` belongs in the client env. Every `VITE_*` value is public browser configuration. Store production secrets in the hosting provider environment or secret manager, never source control. If a credential is committed, rotate it at its provider; deleting it from a file does not remove Git history. JWT key rotation invalidates issued tokens. Deployment implementation remains in Phase 20.
 
 See [Phase 18.13 environment-secret review](server/ENV_SECRET_REVIEW.md) for classifications, findings and verification.
+
+See [Security architecture and final Phase 18 review](docs/SECURITY.md) for the final checklist, audit events, verification, known limitations and production requirements.
