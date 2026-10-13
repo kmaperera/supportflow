@@ -14,7 +14,8 @@ try {
       const eligible = assignedTo === 7 && ['IN_PROGRESS', 'WAITING_FOR_USER'].includes(status)
       assert.equal(canResolveTicket(ticket, '7'), eligible)
       const html = renderToString(React.createElement(Control, { ticket, userId: '7', summary: '', pending: true }))
-      assert.equal(html.includes('Resolution note *'), eligible)
+      assert.equal(html.includes('for="resolution-summary"'), eligible)
+      if (eligible) assert.match(html, /Resolution note/)
       if (eligible) assert.match(html, /type="submit" disabled=""/)
     }
   }

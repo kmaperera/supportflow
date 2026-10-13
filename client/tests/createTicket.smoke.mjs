@@ -33,14 +33,16 @@ try {
   assert.match(getCreateTicketErrors({ isAxiosError: true }).message, /connect/)
   const html = renderToString(React.createElement(MemoryRouter, null, React.createElement(CreateTicketPage)))
   assert.match(html, /<form/)
-  assert.match(html, /Category options unavailable/)
+  // SSR does not run the option-fetching effects: submission stays blocked
+  // until real category/priority choices have loaded.
+  assert.match(html, /Loading ticket options/)
   assert.match(html, /<button type="submit"/)
-  assert.doesNotMatch(html, /<button type="submit"[^>]* disabled=""/)
+  assert.match(html, /<button type="submit"[^>]* disabled=""/)
   assert.ok(!html.includes('type="file"'))
   const success = renderToString(React.createElement(MemoryRouter, { initialEntries: [{ pathname: '/employee/tickets', state: { createdTicketNumber: ticket.ticketNumber } }] }, React.createElement(Placeholder, { title: 'My Tickets', phase: '14.6' })))
   assert.match(success, /SUP-2026-000099/)
   assert.match(success, /created successfully/)
-  console.log('Create-ticket payload, validation boundaries, safe errors, unavailable options and success feedback passed.')
+  console.log('Create-ticket payload, validation boundaries, safe errors, initial loading/submission guard and success feedback passed.')
 } finally {
   await server.close()
 }

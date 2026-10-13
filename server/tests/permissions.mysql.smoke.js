@@ -8,10 +8,22 @@ const {hashPassword}=require('../src/utils/password');
 const run=randomUUID().replaceAll('-','');
 const created={users:[],tickets:[],article:null,category:null};
 let server;
+let fixtureConnection;
+const originalPool={query:pool.query,execute:pool.execute,getConnection:pool.getConnection};
 async function insert(sql,values){const[result]=await pool.query(sql,values);return result.insertId;}
 async function main(){
  if(process.env.NODE_ENV==='production'||!['localhost','127.0.0.1','::1'].includes(process.env.DB_HOST||'localhost'))throw new Error('Requires a local non-production database');
  process.env.NODE_ENV='test';
+ fixtureConnection=await pool.getConnection();
+ await fixtureConnection.beginTransaction();
+ let sequence=0;const savepoints=[];
+ const db={query:(...args)=>fixtureConnection.query(...args),execute:(...args)=>fixtureConnection.execute(...args),
+  async beginTransaction(){const name=`idor_fixture_${++sequence}`;await fixtureConnection.query(`SAVEPOINT ${name}`);savepoints.push(name);},
+  async commit(){await fixtureConnection.query(`RELEASE SAVEPOINT ${savepoints.pop()}`);},
+  async rollback(){if(savepoints.length){const name=savepoints.pop();await fixtureConnection.query(`ROLLBACK TO SAVEPOINT ${name}`);await fixtureConnection.query(`RELEASE SAVEPOINT ${name}`);}},
+  release(){},destroy(){throw new Error('Fixture connection must remain open');}};
+ // Include newly instrumented LOGIN_SUCCESS rows in the same rollback scope.
+ pool.query=db.query;pool.execute=db.execute;pool.getConnection=async()=>db;
  const password=`Fixture-${randomUUID()}!`;
  const hash=await hashPassword(password);
  for(const role of ['EMPLOYEE','EMPLOYEE','TECHNICIAN','TECHNICIAN','ADMIN']){
@@ -67,13 +79,8 @@ async function main(){
 }
 async function cleanup(){
  if(server){server.closeAllConnections();await new Promise(r=>server.close(r));}
- if(created.article)await pool.query('DELETE FROM knowledge_base_articles WHERE id = ? AND slug = ?',[created.article,`idor-${run}`]);
- if(created.category)await pool.query('DELETE FROM knowledge_base_categories WHERE id = ? AND name = ?',[created.category,`IDOR ${run}`]);
- for(const id of created.tickets)await pool.query('DELETE FROM tickets WHERE id = ? AND title = ?',[id,`Fixture ${run}`]);
- for(const user of created.users){
-  await pool.query('DELETE FROM refresh_tokens WHERE user_id = ?',[user.id]);
-  await pool.query('DELETE FROM users WHERE id = ? AND email = ?',[user.id,user.email]);
- }
- console.log('Disposable fixture records cleaned up.');
+ pool.query=originalPool.query;pool.execute=originalPool.execute;pool.getConnection=originalPool.getConnection;
+ if(fixtureConnection){try{await fixtureConnection.rollback();}finally{fixtureConnection.release();}}
+ console.log('Disposable fixtures, sessions and audit events rolled back; existing history preserved.');
 }
 main().catch(error=>{console.error(`Permission smoke failed: ${error.code||error.name}`);process.exitCode=1;}).finally(async()=>{try{await cleanup();}catch{console.error('Fixture cleanup failed; inspect only this run\'s allocated IDs.');process.exitCode=1;}await pool.end();});
