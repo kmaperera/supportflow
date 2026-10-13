@@ -2,7 +2,7 @@ const repository = require('./audit.repository');
 const pool = require('../../config/database');
 const { normalizeQuery } = require('./audit.validation');
 const { AUDIT_ACTIONS, AUDIT_ENTITY_TYPES } = require('../../constants/audit');
-const { sanitizeMetadata, isPlainObject } = require('./audit.metadata');
+const { sanitizeMetadata, isPlainObject, MAX_METADATA_BYTES } = require('./audit.metadata');
 const { isIP } = require('node:net');
 const actions = new Set(Object.values(AUDIT_ACTIONS));
 const entities = new Set(Object.values(AUDIT_ENTITY_TYPES));
@@ -59,7 +59,10 @@ async function log(entry, { connection, strict = false } = {}) {
 
 // Explicit allowlist: arbitrary future metadata must never be echoed to clients.
 function safeMetadata(value) {
-  if (typeof value === 'string') { try { value = JSON.parse(value); } catch { return null; } }
+  if (typeof value === 'string') {
+    if (Buffer.byteLength(value, 'utf8') > MAX_METADATA_BYTES) return null;
+    try { value = JSON.parse(value); } catch { return null; }
+  }
   try { value = sanitizeMetadata(value); } catch { return null; }
   if (!value) return null;
   const safe = {};

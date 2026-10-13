@@ -56,7 +56,7 @@ async function main() {
     }
     assert.ok((await service.getLogs(filters)).pagination.total > 0);
   }
-  for (const filters of [{ actorUserId: '18446744073709551615' }, { entityType: 'PHASE_18_14_NONEXISTENT' },
+  for (const filters of [{ actorUserId: '18446744073709551615' }, { entityType: 'AUTH' },
     { entityId: '18446744073709551615' }, { startDate: '2000-01-01', endDate: '2099-12-31' }, { search: 'DEMO' }]) {
     const filtered = await service.getLogs(filters);
     assert.ok(Number.isSafeInteger(filtered.pagination.total));

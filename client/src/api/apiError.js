@@ -4,6 +4,7 @@ const publicMessages = new Set([
   'Invalid email or password', 'Invalid email or password.',
   'Your account is inactive. Please contact an administrator.',
   'Account is inactive', 'Validation failed',
+  'Invalid audit-log query',
   'Current password is incorrect', 'New password must be different from current password',
   'New password and confirmation do not match',
   'Ticket assignment has changed. Refresh and try again.',

@@ -1,4 +1,5 @@
 const pool = require('../../config/database');
+const { MAX_METADATA_BYTES } = require('./audit.metadata');
 
 // Append-only. A caller-owned connection can include this insert in its transaction.
 async function create(entry, db = pool) {
@@ -26,11 +27,13 @@ async function findAll({ filters, limit, offset }, db = pool) {
   require('../../utils/sqlPagination')(limit, offset);
   const { sql, values } = where(filters);
   const [rows] = await db.query(`SELECT CAST(a.id AS CHAR) AS id, CAST(a.actor_user_id AS CHAR) AS actor_user_id, a.action, a.entity_type, CAST(a.entity_id AS CHAR) AS entity_id,
-    a.description, a.metadata, a.ip_address,
+    a.description,
+    CASE WHEN OCTET_LENGTH(CAST(a.metadata AS CHAR CHARACTER SET utf8mb4)) <= ? THEN a.metadata ELSE NULL END AS metadata,
+    a.ip_address,
     DATE_FORMAT(a.created_at, '%Y-%m-%dT%H:%i:%s.000Z') AS created_at,
     u.first_name, u.last_name, u.email, u.role
     FROM audit_logs a LEFT JOIN users u ON u.id = a.actor_user_id${sql}
-    ORDER BY a.created_at DESC, a.id DESC LIMIT ? OFFSET ?`, [...values, limit, offset]);
+    ORDER BY a.created_at DESC, a.id DESC LIMIT ? OFFSET ?`, [MAX_METADATA_BYTES, ...values, limit, offset]);
   return rows;
 }
 async function countAll(filters, db = pool) {
