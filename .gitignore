@@ -40,3 +40,16 @@ Desktop.ini
 *.tmp
 *.temp
 .cache/
+
+# Local private keys, credential stores, backups and diagnostic dumps
+*.key
+*.pem
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+.npmrc
+*.dump
+*.bak
+backups/
+debug-dumps/
