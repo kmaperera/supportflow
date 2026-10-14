@@ -21,8 +21,8 @@ test("date-range uses one bounded creation aggregate and zero-fills UTC dates wi
   let calls = 0;
   const result = await service.getDateRangeReport({ startDate: "2026-09-01", endDate: "2026-09-03" }, { async query(sql, values) {
     calls++;
-    assert.match(sql, /DATE_FORMAT\(t.created_at, '%Y-%m-%d'\) AS report_date, COUNT\(\*\) AS ticket_count/);
-    assert.match(sql, /WHERE t.created_at >= \? AND t.created_at < \?/);
+    assert.match(sql, /DATE_FORMAT\(TIMESTAMPADD\(SECOND, UNIX_TIMESTAMP\(t.created_at\), '1970-01-01 00:00:00'\), '%Y-%m-%d'\) AS report_date, COUNT\(\*\) AS ticket_count/);
+    assert.match(sql, /WHERE t.created_at >= \(SELECT COALESCE\([^\n]+? AND t.created_at < \(SELECT COALESCE\([^\n]+?/);
     assert.match(sql, /GROUP BY report_date ORDER BY report_date ASC/);
     assert.doesNotMatch(sql, /JOIN|status|updated_at|resolved_at|first_response_at|LIMIT|OFFSET/);
     assert.deepEqual(values, ["2026-09-01 00:00:00", "2026-09-04 00:00:00"]);

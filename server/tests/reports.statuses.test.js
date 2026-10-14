@@ -14,7 +14,7 @@ test('status report binds shared filters, normalizes counts and zero-fills lifec
   const { report } = await service.getStatusReport({startDate:'2026-09-01',endDate:'2026-09-09',categoryId:'3',priorityId:'2',technicianId:'4'}, {async query(sql,params) {
     calls++;
     assert.deepEqual(params,['2026-09-01 00:00:00','2026-09-10 00:00:00',2,3,4]);
-    assert.match(sql,/SELECT t.status, COUNT\(\*\) AS total_tickets FROM tickets t WHERE t.created_at >= \? AND t.created_at < \? AND t.priority_id = \? AND t.category_id = \? AND t.assigned_to = \? GROUP BY t.status/);
+    assert.match(sql,/SELECT t.status, COUNT\(\*\) AS total_tickets FROM tickets t WHERE t.created_at >= \(SELECT COALESCE\([^\n]+? AND t.created_at < \(SELECT COALESCE\([^\n]+? AND t.priority_id = \? AND t.category_id = \? AND t.assigned_to = \? GROUP BY t.status/);
     assert.doesNotMatch(sql,/JOIN|ticket_status_history|ticket_assignments|sla_policies|DATE\(/);
     return [[{status:'CLOSED',total_tickets:'2'},{status:'OPEN',total_tickets:'1'}]];
   }});

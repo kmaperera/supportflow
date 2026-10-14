@@ -34,7 +34,8 @@ test("report rows/count share bound predicates and return lightweight numeric me
     return sql.includes("COUNT(*)") ? [[{ total: "26" }]] : [[row]];
   } };
   const result = await service.getTicketReportQuery({ startDate: "2026-09-01", endDate: "2026-09-09", status: "CLOSED", priorityId: "2", categoryId: "3", technicianId: "4", page: "2" }, db);
-  const where = " WHERE t.created_at >= ? AND t.created_at < ? AND t.status = ? AND t.priority_id = ? AND t.category_id = ? AND t.assigned_to = ?";
+  const { utcBoundary } = require('../src/utils/utcTimestampSql');
+  const where = ` WHERE t.created_at >= ${utcBoundary('2026-09-01 00:00:00')} AND t.created_at < ${utcBoundary('2026-09-10 00:00:00')} AND t.status = ? AND t.priority_id = ? AND t.category_id = ? AND t.assigned_to = ?`;
   assert.ok(calls.every(call => call.sql.includes(where)));
   assert.deepEqual(calls[1].values, ["2026-09-01 00:00:00", "2026-09-10 00:00:00", "CLOSED", 2, 3, 4]);
   assert.deepEqual(calls[0].values, [...calls[1].values, 25, 25]);

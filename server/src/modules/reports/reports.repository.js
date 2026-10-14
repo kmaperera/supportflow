@@ -1,12 +1,13 @@
 const pool = require("../../config/database");
+const { utcBoundary, utcTimestamp } = require('../../utils/utcTimestampSql');
 
 // Only these server-owned fragments may become SQL identifiers. Values always bind.
 const FILTER_COLUMNS = Object.freeze({ status: "t.status", priorityId: "t.priority_id", categoryId: "t.category_id", technicianId: "t.assigned_to" });
 function buildTicketReportWhere(filters = {}) {
   const conditions = [];
   const params = [];
-  if (filters.startAt !== undefined) { conditions.push("t.created_at >= ?"); params.push(filters.startAt); }
-  if (filters.endExclusive !== undefined) { conditions.push("t.created_at < ?"); params.push(filters.endExclusive); }
+  if (filters.startAt !== undefined) { conditions.push(`t.created_at >= ${utcBoundary(filters.startAt)}`); params.push(filters.startAt); }
+  if (filters.endExclusive !== undefined) { conditions.push(`t.created_at < ${utcBoundary(filters.endExclusive)}`); params.push(filters.endExclusive); }
   for (const [key, column] of Object.entries(FILTER_COLUMNS)) {
     if (filters[key] !== undefined) { conditions.push(`${column} = ?`); params.push(filters[key]); }
   }
@@ -62,7 +63,7 @@ async function getDailyTicketCountsInDateRange({ startDateTime, endExclusiveDate
   const { whereSql, params } = buildTicketReportWhere({ startAt: startDateTime, endExclusive: endExclusiveDateTime });
   // String date keys avoid mysql2 converting DATE values through the server-local timezone.
   const [rows] = await db.query(
-    `SELECT DATE_FORMAT(t.created_at, '%Y-%m-%d') AS report_date, COUNT(*) AS ticket_count
+    `SELECT DATE_FORMAT(${utcTimestamp('t.created_at')}, '%Y-%m-%d') AS report_date, COUNT(*) AS ticket_count
      FROM tickets AS t${whereSql}
      GROUP BY report_date ORDER BY report_date ASC`, params
   );

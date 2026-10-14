@@ -13,8 +13,8 @@ test("trend queries creation buckets with half-open UTC ranges and authenticated
       const daily = period === "daily";
       const result = await service.getTicketTrend({ id: "7", role }, period, { async query(sql, values) {
         assert.match(sql, /COUNT\(\*\) AS ticket_count/);
-        assert.ok(sql.includes(`DATE_FORMAT(created_at, '${daily ? "%Y-%m-%d" : "%Y-%m"}') AS period_key`));
-        assert.match(sql, /WHERE created_at >= \? AND created_at < \?/);
+        assert.ok(sql.includes(`DATE_FORMAT(TIMESTAMPADD(SECOND, UNIX_TIMESTAMP(created_at), '1970-01-01 00:00:00'), '${daily ? "%Y-%m-%d" : "%Y-%m"}') AS period_key`));
+        assert.match(sql, /WHERE created_at >= \(SELECT COALESCE\([^\n]+? AND created_at < \(SELECT COALESCE\([^\n]+?/);
         assert.match(sql, /GROUP BY period_key ORDER BY period_key ASC/);
         assert.doesNotMatch(sql, /updated_at|resolved_at|first_response_at|ticket_status_history|ticket_assignments|JOIN|UPDATE|INSERT|DELETE/);
         assert.ok(sql.includes(role === "EMPLOYEE" ? "AND created_by = ?" : role === "TECHNICIAN" ? "AND assigned_to = ?" : "FROM tickets"));

@@ -1,4 +1,5 @@
 const pool = require("../../config/database");
+const { utcBoundary, utcTimestamp } = require('../../utils/utcTimestampSql');
 
 async function getEmployeeSummary(userId, db = pool) {
   const [rows] = await db.query(
@@ -171,14 +172,14 @@ async function getSlaComplianceMetrics({ createdBy, assignedTo } = {}, db = pool
 
 async function getTicketTrend({ period, startDate, endDate, createdBy, assignedTo }, db = pool) {
   if (!["daily", "monthly"].includes(period)) throw new TypeError("Unsupported ticket trend period");
-  const conditions = ["created_at >= ?", "created_at < ?"];
+  const conditions = [`created_at >= ${utcBoundary(startDate)}`, `created_at < ${utcBoundary(endDate)}`];
   const values = [startDate, endDate];
   if (createdBy !== undefined) { conditions.push("created_by = ?"); values.push(createdBy); }
   if (assignedTo !== undefined) { conditions.push("assigned_to = ?"); values.push(assignedTo); }
   // Return string keys so mysql2 cannot deserialize DATE values in the host timezone.
   const format = period === "daily" ? "%Y-%m-%d" : "%Y-%m";
   const [rows] = await db.query(
-    `SELECT DATE_FORMAT(created_at, '${format}') AS period_key, COUNT(*) AS ticket_count
+    `SELECT DATE_FORMAT(${utcTimestamp('created_at')}, '${format}') AS period_key, COUNT(*) AS ticket_count
      FROM tickets WHERE ${conditions.join(" AND ")}
      GROUP BY period_key ORDER BY period_key ASC`, values
   );

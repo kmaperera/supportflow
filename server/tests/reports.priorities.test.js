@@ -12,7 +12,7 @@ test('priority report preserves zero/inactive priorities and binds creation/curr
     calls++;
     assert.deepEqual(params, ['2026-09-01 00:00:00', '2026-09-10 00:00:00', 2, 4]);
     assert.match(sql, /FROM ticket_priorities p LEFT JOIN \(/);
-    assert.match(sql, /FROM tickets t WHERE t.created_at >= \? AND t.created_at < \? AND t.category_id = \? AND t.assigned_to = \?\s*\) t ON t.priority_id = p.id/);
+    assert.match(sql, /FROM tickets t WHERE t.created_at >= \(SELECT COALESCE\([^\n]+? AND t.created_at < \(SELECT COALESCE\([^\n]+? AND t.category_id = \? AND t.assigned_to = \?\s*\) t ON t.priority_id = p.id/);
     assert.match(sql, /COUNT\(t.id\)/);
     assert.match(sql, /'OPEN', 'ASSIGNED', 'IN_PROGRESS', 'WAITING_FOR_USER', 'REOPENED'/);
     assert.match(sql, /ORDER BY priority_name ASC, priority_id ASC/);

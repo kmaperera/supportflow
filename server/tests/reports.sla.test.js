@@ -12,7 +12,7 @@ const zero = { trackedTickets: 0, metTickets: 0, missedTickets: 0, pendingTicket
 test("SLA report binds supported filters and normalizes independent outcome aggregates", async () => {
   const { report } = await service.getSlaReport({ startDate: "2026-09-01", endDate: "2026-09-09", priorityId: "2", categoryId: "3", technicianId: "4" }, { async query(sql, values) {
     assert.deepEqual(values, ["2026-09-01 00:00:00", "2026-09-10 00:00:00", 2, 3, 4]);
-    assert.match(sql, /FROM tickets AS t WHERE t.created_at >= \? AND t.created_at < \? AND t.priority_id = \? AND t.category_id = \? AND t.assigned_to = \?/);
+    assert.match(sql, /FROM tickets AS t WHERE t.created_at >= \(SELECT COALESCE\([^\n]+? AND t.created_at < \(SELECT COALESCE\([^\n]+? AND t.priority_id = \? AND t.category_id = \? AND t.assigned_to = \?/);
     assert.doesNotMatch(sql, /JOIN|sla_policies|notifications|NOW|CURRENT_TIMESTAMP|GROUP BY|status/);
     for (const [dimension, due, completion] of [["response", "response_due_at", "first_response_at"], ["resolution", "resolution_due_at", "resolved_at"]]) {
       assert.ok(sql.includes(`COALESCE(SUM(t.${due} IS NOT NULL), 0) AS ${dimension}_tracked`));
