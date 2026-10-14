@@ -123,14 +123,14 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
     if (pending.current || !confirm || !chosen || !canConfirmAssignment(ticket, selected)) return
     pending.current = true; setBusy(true); setNotice(null)
     try {
-      await assignTicket(ticket.id, chosen.id)
+      await assignTicket(ticket.id, chosen.id, confirm.expectedAssignmentId)
       if (!mounted.current) return
       setOpen(false); setConfirm(false); setSelected('')
       setNotice({ success: true, text: assigned ? 'Ticket reassigned successfully.' : 'Ticket assigned successfully.' })
       await refresh()
     } catch (error) {
       if (!mounted.current) return
-      const safeMessages = ['Selected technician is inactive', 'Selected user is not a technician', 'Technician not found', 'Ticket not found', 'Ticket cannot be assigned in its current status']
+      const safeMessages = ['Ticket assignment has changed. Refresh and try again.', 'Selected technician is inactive', 'Selected user is not a technician', 'Technician not found', 'Ticket not found', 'Ticket cannot be assigned in its current status']
       const message = error?.response?.data?.message
       setNotice({ success: false, text: safeMessages.includes(message) ? message : getApiErrorMessage(error, 'Unable to assign ticket. Please try again.') })
       setConfirm(false); setAttempt(value => value + 1)
@@ -155,7 +155,7 @@ export default function AdminTicketAssignment({ ticket, refresh }) {
         </>}
       </>}
       <div className="layout-actions">
-      {current?.data?.length > 0 && <button className={button} disabled={busy || !chosen || !canConfirmAssignment(ticket, selected)} onClick={() => { setNotice(null); setConfirm(true) }}>{busy ? assigned ? 'Reassigning...' : 'Assigning...' : confirm ? 'Confirm' : 'Continue'}</button>}
+      {current?.data?.length > 0 && <button className={button} disabled={busy || !chosen || !canConfirmAssignment(ticket, selected)} onClick={() => { setNotice(null); setConfirm({ expectedAssignmentId: ticket.assignment?.id ?? null }) }}>{busy ? assigned ? 'Reassigning...' : 'Assigning...' : confirm ? 'Confirm' : 'Continue'}</button>}
       <button className={button} disabled={busy} onClick={() => { setOpen(false); setConfirm(false) }}>Cancel</button>
       </div>
     </div>}

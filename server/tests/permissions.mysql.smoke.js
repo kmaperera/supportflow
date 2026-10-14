@@ -165,8 +165,10 @@ async function main(){
  await check(0,'PATCH',`/tickets/${own}`,200,{priorityId:priorities[0].id});
  const [otherAssignment]=await pool.execute('SELECT id FROM ticket_assignments WHERE ticket_id=? AND unassigned_at IS NULL',[assignedOther]);
  await check(4,'PATCH',`/tickets/${created.tickets[2]}/unassign`,409,{expectedAssignmentId:otherAssignment[0].id});
- await check(4,'PATCH',`/tickets/${own}/assign`,200,{technicianId:created.users[2].id});
- await check(4,'PATCH',`/tickets/${own}/assign`,200,{technicianId:created.users[3].id});
+ const [beforeAssign]=await pool.execute('SELECT id FROM ticket_assignments WHERE ticket_id=? AND unassigned_at IS NULL',[own]);
+ await check(4,'PATCH',`/tickets/${own}/assign`,200,{technicianId:created.users[2].id,expectedAssignmentId:beforeAssign[0]?.id ?? null});
+ const [beforeReassign]=await pool.execute('SELECT id FROM ticket_assignments WHERE ticket_id=? AND unassigned_at IS NULL',[own]);
+ await check(4,'PATCH',`/tickets/${own}/assign`,200,{technicianId:created.users[3].id,expectedAssignmentId:beforeReassign[0].id});
  const [currentAssignment]=await pool.execute('SELECT id FROM ticket_assignments WHERE ticket_id=? AND unassigned_at IS NULL',[own]);
  await check(4,'PATCH',`/tickets/${own}/unassign`,200,{expectedAssignmentId:currentAssignment[0].id});
  await check(4,'PATCH',`/users/${created.users[4].id}/role`,400,{role:'EMPLOYEE'});

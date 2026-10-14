@@ -497,7 +497,7 @@ async function unassignTicketByAdmin(ticketId, expectedAssignmentId, currentAdmi
   }
 }
 
-async function assignTicketByAdmin(ticketId, technicianId, currentAdmin, auditContext) {
+async function assignTicketByAdmin(ticketId, technicianId, currentAdmin, auditContext, expectedAssignmentId) {
   if (!isValidTicketUserId(ticketId) || !isValidTicketUserId(technicianId)) {
     throw new ApiError(400, "Ticket ID and technician ID must be positive integers");
   }
@@ -521,6 +521,14 @@ async function assignTicketByAdmin(ticketId, technicianId, currentAdmin, auditCo
     const active = await ticketAssignmentService.assertCanChangeAssignment(ticket, connection);
     if (["RESOLVED", "CLOSED"].includes(ticket.status)) {
       throw new ApiError(409, "Ticket cannot be assigned in its current status");
+    }
+    // Missing/null means the caller observed an unassigned ticket. Compare under
+    // the row lock, including same-technician requests and assignment ABA changes.
+    if (expectedAssignmentId != null && !isValidTicketUserId(expectedAssignmentId)) {
+      throw new ApiError(422, "Expected assignment ID must be a positive integer");
+    }
+    if (String(active?.id ?? "") !== String(expectedAssignmentId ?? "")) {
+      throw new ApiError(409, "Ticket assignment has changed. Refresh and try again.");
     }
     const technician = await userRepository.findById(technicianId, connection);
     if (!technician) throw new ApiError(404, "Technician not found");

@@ -7,8 +7,8 @@ export async function unassignTicket(ticketId, expectedAssignmentId) {
   return data.data.ticket
 }
 
-export async function assignTicket(ticketId, technicianId) {
-  const { data } = await api.patch(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/assign`, { technicianId })
+export async function assignTicket(ticketId, technicianId, expectedAssignmentId = null) {
+  const { data } = await api.patch(`${API_ENDPOINTS.TICKETS}/${encodeURIComponent(ticketId)}/assign`, { technicianId, expectedAssignmentId })
   if (data?.success !== true || !data.data?.ticket?.id) throw new Error('Invalid assignment response')
   return data.data.ticket
 }

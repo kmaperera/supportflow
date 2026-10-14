@@ -68,7 +68,7 @@ const unassignTicketByAdmin = asyncHandler(async (req, res) => {
 });
 
 const assignTicketByAdmin = asyncHandler(async (req, res) => {
-  const ticket = await service.assignTicketByAdmin(req.params.id, req.body.technicianId, req.user, adminAudit.contextFromRequest(req));
+  const ticket = await service.assignTicketByAdmin(req.params.id, req.body.technicianId, req.user, adminAudit.contextFromRequest(req), req.body.expectedAssignmentId);
   res.status(200).json({
     success: true, message: "Ticket assigned successfully", data: { ticket },
   });

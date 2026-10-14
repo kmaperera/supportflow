@@ -74,9 +74,10 @@ async function main() {
   const ticketId = String(ticketResult.insertId);
   await request('PATCH', `/tickets/${ticketId}/assign`, { technicianId: targetId });
   const assignedCount = await eventCount();
-  await request('PATCH', `/tickets/${ticketId}/assign`, { technicianId: targetId });
+  const [beforeReassign] = await connection.execute('SELECT id FROM ticket_assignments WHERE ticket_id=? AND unassigned_at IS NULL', [ticketId]);
+  await request('PATCH', `/tickets/${ticketId}/assign`, { technicianId: targetId, expectedAssignmentId: beforeReassign[0].id });
   assert.equal(await eventCount(), assignedCount);
-  await request('PATCH', `/tickets/${ticketId}/assign`, { technicianId: techId });
+  await request('PATCH', `/tickets/${ticketId}/assign`, { technicianId: techId, expectedAssignmentId: beforeReassign[0].id });
   const [active] = await connection.execute('SELECT id FROM ticket_assignments WHERE ticket_id=? AND unassigned_at IS NULL', [ticketId]);
   const beforeStale = await eventCount();
   await request('PATCH', `/tickets/${ticketId}/unassign`, { expectedAssignmentId: '18446744073709551615' }, 409);

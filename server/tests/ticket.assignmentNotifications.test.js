@@ -53,7 +53,7 @@ for (const operation of ["self", "assign", "reassign", "noop", "unassign"]) {
       const admin = { id: 1, role: "ADMIN" };
       const promise = operation === "self" ? service.selfAssignTicket(5, { id: 8, role: "TECHNICIAN" })
         : operation === "unassign" ? service.unassignTicketByAdmin(5, 10, admin)
-          : service.assignTicketByAdmin(5, 8, admin);
+          : service.assignTicketByAdmin(5, 8, admin, undefined, previous === null ? null : 10);
       if (failAt) {
         await assert.rejects(promise, err => err === failure);
         assert.equal(events.includes("commit"), false);

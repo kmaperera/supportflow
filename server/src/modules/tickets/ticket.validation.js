@@ -112,7 +112,8 @@ const ticketQueueValidation = [
 ];
 
 const adminAssignTicketValidation = [
-  bodyFields(['technicianId']),
+  bodyFields(['technicianId', 'expectedAssignmentId']),
+  body("expectedAssignmentId").optional({ values: 'null' }).custom(positiveId).withMessage("Expected assignment ID must be a positive integer"),
   ...ticketIdValidation,
   body("technicianId").custom(positiveId).withMessage("Technician ID must be a positive integer"),
 ];

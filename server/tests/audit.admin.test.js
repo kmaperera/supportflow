@@ -86,12 +86,12 @@ test('assignment events are transactional, no-op/stale/rollback do not commit su
   t.mock.method(require('../src/modules/notifications/notification.service'), 'createNotification', async () => ({ id: 1 }));
   t.mock.method(require('../src/modules/notifications/notificationRealtime.service'), 'emitNotifications', () => {});
   const admin = { id: 1, role: 'ADMIN' };
-  await service.assignTicketByAdmin(5, 7, admin, context);
+  await service.assignTicketByAdmin(5, 7, admin, context, active?.id);
   assert.equal(committed[0][1], 'TICKET_ASSIGNED');
   assert.deepEqual(order, ['audit', 'commit']);
-  await service.assignTicketByAdmin(5, 7, admin, context);
+  await service.assignTicketByAdmin(5, 7, admin, context, active?.id);
   assert.equal(committed.length, 1);
-  await service.assignTicketByAdmin(5, 9, admin, context);
+  await service.assignTicketByAdmin(5, 9, admin, context, active?.id);
   assert.equal(committed[1][1], 'TICKET_REASSIGNED');
   assert.deepEqual(JSON.parse(committed[1][5]), { previousTechnicianId: '7', newTechnicianId: '9', previousAssignmentId: '11', newAssignmentId: '12' });
   await assert.rejects(service.unassignTicketByAdmin(5, 11, admin, context), { statusCode: 409 });

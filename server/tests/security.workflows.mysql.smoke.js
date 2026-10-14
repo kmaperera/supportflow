@@ -106,8 +106,10 @@ async function main() {
   await request(otherEmployee, 'GET', `/tickets/${id}/attachments/${attachment.id}/download`, undefined, 404);
   await request(admin, 'GET', '/users'); await request(admin, 'GET', '/users/assignable-technicians');
   await request(admin, 'GET', '/users/technician-workload'); await request(admin, 'GET', '/tickets/queue');
-  await request(admin, 'PATCH', `/tickets/${id}/assign`, { technicianId: otherTechnician.id });
-  await request(admin, 'PATCH', `/tickets/${id}/assign`, { technicianId: technician.id });
+  const [beforeReassign] = await connection.execute('SELECT id FROM ticket_assignments WHERE ticket_id=? AND unassigned_at IS NULL', [id]);
+  await request(admin, 'PATCH', `/tickets/${id}/assign`, { technicianId: otherTechnician.id, expectedAssignmentId: beforeReassign[0].id });
+  const [afterReassign] = await connection.execute('SELECT id FROM ticket_assignments WHERE ticket_id=? AND unassigned_at IS NULL', [id]);
+  await request(admin, 'PATCH', `/tickets/${id}/assign`, { technicianId: technician.id, expectedAssignmentId: afterReassign[0].id });
   const [assignment] = await connection.execute('SELECT id FROM ticket_assignments WHERE ticket_id=? AND unassigned_at IS NULL', [id]);
   await request(admin, 'PATCH', `/tickets/${id}/unassign`, { expectedAssignmentId: '18446744073709551615' }, 409);
   await request(admin, 'PATCH', `/tickets/${id}/unassign`, { expectedAssignmentId: String(assignment[0].id) });

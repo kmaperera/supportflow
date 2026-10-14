@@ -22,10 +22,15 @@ try {
   const { assignTicket, unassignTicket } = await server.ssrLoadModule('/src/api/ticketApi.js')
   api.defaults.adapter = async config => {
     assert.equal(config.url, '/tickets/1/assign'); assert.equal(config.method, 'patch')
-    assert.deepEqual(JSON.parse(config.data), { technicianId: 4 })
+    assert.deepEqual(JSON.parse(config.data), { technicianId: 4, expectedAssignmentId: null })
     return { config, status: 200, headers: {}, data: { success: true, data: { ticket: { id: 1, assignedTo: 4 } } } }
   }
   assert.equal((await assignTicket(1, 4)).assignedTo, 4)
+  api.defaults.adapter = async config => {
+    assert.deepEqual(JSON.parse(config.data), { technicianId: 5, expectedAssignmentId: '9007199254740993' })
+    return { config, status: 200, headers: {}, data: { success: true, data: { ticket: { id: 1, assignedTo: 5 } } } }
+  }
+  assert.equal((await assignTicket(1, 5, '9007199254740993')).assignedTo, 5)
   api.defaults.adapter = async config => {
     assert.equal(config.url, '/tickets/1/unassign'); assert.equal(config.method, 'patch')
     assert.deepEqual(JSON.parse(config.data), { expectedAssignmentId: '9007199254740993' })
@@ -35,6 +40,7 @@ try {
   const conflict = Object.assign(new Error('Conflict'), { response: { status: 409 } })
   api.defaults.adapter = async () => { throw conflict }
   await assert.rejects(unassignTicket(1, 10), error => error === conflict)
+  await assert.rejects(assignTicket(1, 5, 10), error => error === conflict)
   console.log('Unassign eligibility, exact assignment-token payload and conflict propagation passed.')
   console.log('Assignment visibility for unassigned/assigned/closed tickets and mutation contract passed.')
 } finally { await server.close() }

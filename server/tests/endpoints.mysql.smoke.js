@@ -142,7 +142,8 @@ async function main() {
   await request(employee, 'GET', `/tickets/${id}/comments`);
   await request(technician, 'GET', '/tickets/queue'); await request(technician, 'POST', `/tickets/${id}/self-assign`, {});
   await request(technician, 'GET', '/tickets/assigned-to-me'); await request(admin, 'GET', '/tickets/workflow-summary');
-  await request(admin, 'PATCH', `/tickets/${id}/assign`, { technicianId: technician.id });
+  const [beforeNoop] = await connection.execute('SELECT id FROM ticket_assignments WHERE ticket_id=? AND unassigned_at IS NULL', [id]);
+  await request(admin, 'PATCH', `/tickets/${id}/assign`, { technicianId: technician.id, expectedAssignmentId: beforeNoop[0].id });
   const [assignments] = await connection.execute('SELECT id FROM ticket_assignments WHERE ticket_id=? AND unassigned_at IS NULL', [id]);
   await request(admin, 'PATCH', `/tickets/${id}/unassign`, { expectedAssignmentId: '18446744073709551614' }, 409);
   await request(admin, 'PATCH', `/tickets/${id}/unassign`, { expectedAssignmentId: String(assignments[0].id) });
