@@ -1,6 +1,6 @@
 // Disposable local Employee journey backend. Actual HTTP/MySQL and Socket.IO;
 // only external byte storage/email are stubs, scoped to this test process.
-module.exports = async function employeeWorkflowFixture() {
+module.exports = async function employeeWorkflowFixture({ includeTechnicianB = false } = {}) {
   require('dotenv').config({ path: require('node:path').resolve(__dirname, '../../.env'), quiet: true });
   const assert = require('node:assert/strict');
   const { randomUUID } = require('node:crypto');
@@ -38,14 +38,14 @@ module.exports = async function employeeWorkflowFixture() {
   try {
     const run = randomUUID().replaceAll('-', ''), password = `Employee-${randomUUID()}!`;
     const hash = await require('../../src/utils/password').hashPassword(password);
-    for (const role of ['EMPLOYEE','EMPLOYEE','TECHNICIAN','ADMIN']) {
+    for (const role of ['EMPLOYEE','EMPLOYEE','TECHNICIAN','ADMIN', ...(includeTechnicianB ? ['TECHNICIAN'] : [])]) {
       const email = `employee-${run}-${users.length}@example.test`;
       const [row] = await connection.execute("INSERT INTO users (first_name,last_name,email,password_hash,role,is_active,must_change_password) VALUES ('Employee','Fixture',?,?,?,TRUE,FALSE)", [email,hash,role]);
       users.push({ id: String(row.insertId), email, role });
     }
     const [category] = await connection.execute('INSERT INTO ticket_categories (name,is_active) VALUES (?,TRUE)', ['Employee fixture ' + run]);
     const [inactive] = await connection.execute('INSERT INTO ticket_categories (name,is_active) VALUES (?,FALSE)', ['Hidden employee fixture ' + run]);
-    const [priorities] = await connection.query('SELECT p.id,p.name FROM ticket_priorities p JOIN sla_policies s ON s.priority_id=p.id WHERE p.is_active=TRUE AND s.is_active=TRUE ORDER BY p.id LIMIT 1');
+    const [priorities] = await connection.query('SELECT p.id,p.name FROM ticket_priorities p JOIN sla_policies s ON s.priority_id=p.id WHERE p.is_active=TRUE AND s.is_active=TRUE ORDER BY p.id LIMIT 2');
     assert.ok(priorities.length, 'Active seeded priority/SLA required');
     const [kbCategory] = await connection.execute('INSERT INTO knowledge_base_categories (name,is_active) VALUES (?,TRUE)', ['Employee knowledge ' + run]);
     const articles = [];
@@ -69,6 +69,6 @@ module.exports = async function employeeWorkflowFixture() {
       assert.equal(response.status, expected); return response.json();
     };
     for (const user of users.slice(1)) user.token = (await request(null, 'POST', '/auth/login', { email: user.email, password })).data.accessToken;
-    return { users, password, run, categoryId: String(category.insertId), inactiveCategoryId: String(inactive.insertId), priority: priorities[0], articles, connection, io, request, cleanup };
+    return { users, password, run, categoryId: String(category.insertId), inactiveCategoryId: String(inactive.insertId), priority: priorities[0], priorities, articles, connection, io, request, cleanup };
   } catch (error) { await cleanup(); throw error; }
 };
