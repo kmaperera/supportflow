@@ -3,6 +3,17 @@ const { utcBoundary, utcTimestamp } = require('../../utils/utcTimestampSql');
 
 // Only these server-owned fragments may become SQL identifiers. Values always bind.
 const FILTER_COLUMNS = Object.freeze({ status: "t.status", priorityId: "t.priority_id", categoryId: "t.category_id", technicianId: "t.assigned_to" });
+const REPORT_TIMESTAMPS = ['created_at', 'first_response_at', 'resolved_at', 'response_due_at', 'resolution_due_at'];
+function decodeReportTimestamps(row) {
+  const result = { ...row };
+  for (const column of REPORT_TIMESTAMPS) {
+    const epochColumn = `${column}_epoch`;
+    if (!Object.hasOwn(row, epochColumn)) continue;
+    result[column] = row[epochColumn] == null ? null : new Date(Number(row[epochColumn]) * 1000);
+    delete result[epochColumn];
+  }
+  return result;
+}
 function buildTicketReportWhere(filters = {}) {
   const conditions = [];
   const params = [];
@@ -31,7 +42,8 @@ function buildTicketReportRowQuery({ filters, pagination, sorting = { sortBy: "c
        t.priority_id, p.name AS priority_name, t.created_by, requester.first_name AS requester_first_name,
        requester.last_name AS requester_last_name, requester.email AS requester_email, t.assigned_to,
        technician.first_name AS technician_first_name, technician.last_name AS technician_last_name, technician.email AS technician_email,
-       t.created_at, t.first_response_at, t.resolved_at, t.response_due_at, t.resolution_due_at
+       t.created_at, t.first_response_at, t.resolved_at, t.response_due_at, t.resolution_due_at,
+       ${REPORT_TIMESTAMPS.map(column => `UNIX_TIMESTAMP(t.${column}) AS ${column}_epoch`).join(', ')}
      FROM tickets AS t
      INNER JOIN ticket_categories AS c ON c.id = t.category_id
      INNER JOIN ticket_priorities AS p ON p.id = t.priority_id
@@ -44,13 +56,13 @@ async function getTicketReportRows(options, db = pool) {
   if (!options.pagination) throw new TypeError("Invalid report pagination");
   const { sql, params } = buildTicketReportRowQuery(options);
   const [rows] = await db.query(sql, params);
-  return rows;
+  return rows.map(decodeReportTimestamps);
 }
 async function getTicketReportExportRows({ filters, sorting }, db = pool) {
   const { sql, params } = buildTicketReportRowQuery({ filters, sorting });
-  // Ticket timestamps follow UTC; decode them as UTC for ISO CSV output only.
+  // Decode the stored instants explicitly; host/session timezone rules may differ.
   const [rows] = await db.query({ sql, timezone: "Z" }, params);
-  return rows;
+  return rows.map(decodeReportTimestamps);
 }
 async function countTicketReportRows({ filters }, db = pool) {
   const { whereSql, params } = buildTicketReportWhere(filters);
