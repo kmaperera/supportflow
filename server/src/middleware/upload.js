@@ -5,6 +5,8 @@ const { validateAttachmentMetadata } = require("./attachmentValidation");
 
 const upload = multer({
   storage: multer.memoryStorage(),
+  // Browser FormData sends UTF-8 filenames; preserve their display names.
+  defParamCharset: "utf8",
   limits: {
     fileSize: MAX_ATTACHMENT_SIZE,
     files: 1,

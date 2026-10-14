@@ -370,10 +370,10 @@ test("route parses one file, rejects spoofed fields and normalizes Multer errors
   await new Promise(resolve => server.once("listening", resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   const url = `http://127.0.0.1:${server.address().port}/api/v1/tickets`;
-  async function request({ id = "5", field = "attachment", size = 3, count = 1, auth = true, spoof = false } = {}) {
+  async function request({ id = "5", field = "attachment", size = 3, count = 1, auth = true, spoof = false, filename = "report.txt" } = {}) {
     const form = new FormData();
     if (spoof) for (const key of ["uploadedBy", "ticketId", "commentId", "publicId", "fileUrl", "mimeType", "fileSize", "resourceType"]) form.append(key, "spoofed");
-    for (let i = 0; i < count; i++) form.append(field, new Blob([Buffer.alloc(size)], { type: "text/plain" }), "report.txt");
+    for (let i = 0; i < count; i++) form.append(field, new Blob([Buffer.alloc(size)], { type: "text/plain" }), filename);
     return fetch(`${url}/${id}/attachments`, { method: "POST", headers: auth ? { authorization: "test" } : {}, body: form });
   }
   assert.equal((await request({ spoof: true })).status, 422);
@@ -394,6 +394,11 @@ test("route parses one file, rejects spoofed fields and normalizes Multer errors
   }
   assert.equal((await request({ auth: false })).status, 401);
   assert.equal(calls.mock.callCount(), 1);
+  // Browser FormData encodes non-ASCII filenames as UTF-8. Preserve the
+  // display name through the actual multipart parser instead of mojibake.
+  const unicodeFilename = "r\u00e9sum\u00e9 (O'Connor) \u6587\u4ef6 \u{1F642}.txt";
+  assert.equal((await request({ filename: unicodeFilename })).status, 201);
+  assert.equal(calls.mock.calls.at(-1).arguments[1].originalname, unicodeFilename);
   const commentCalls = t.mock.method(service, "uploadCommentAttachment", async (id, commentId, received, user) => {
     assert.equal(id, "5");
     assert.equal(commentId, "22");
