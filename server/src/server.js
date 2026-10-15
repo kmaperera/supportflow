@@ -20,7 +20,7 @@ async function startServer() {
 
     const server = http.createServer(app);
     initializeSocket(server);
-    server.listen(PORT, () => {
+    server.listen(PORT, "0.0.0.0", () => {
       console.log(`SupportFlow server running on port ${PORT}`);
     });
   } catch (error) {
