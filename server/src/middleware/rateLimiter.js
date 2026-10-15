@@ -19,7 +19,7 @@ function createApiRateLimiter(env = process.env) {
     standardHeaders: "draft-8",
     legacyHeaders: false,
     identifier: "api",
-    // Use the library's IP key and IPv6 subnet handling; trust proxy stays false.
+    // Use the library's IP key and IPv6 handling with the app's scoped proxy policy.
     skip: req => req.method === "OPTIONS",
     handler: (req, res) => {
       res.setHeader("Cache-Control", "private, no-store");

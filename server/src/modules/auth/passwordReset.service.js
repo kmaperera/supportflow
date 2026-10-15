@@ -12,7 +12,6 @@ const audit = require('../audit/audit.service');
 const { AUDIT_ACTIONS: A, AUDIT_ENTITY_TYPES: E } = require('../../constants/audit');
 const active = user => user && [true, 1, '1'].includes(user.is_active);
 const hashToken = token => createHash('sha256').update(token).digest('hex');
-const pending = new Set();
 const { resetLifetime } = require('../../config/passwordReset');
 const GENERIC_MESSAGE = 'If an account exists for that email, password reset instructions have been sent.';
 
@@ -46,17 +45,17 @@ async function sendInstructions(userId, context, adminRequest = false) {
     entityType: E.USER, entityId: user.id, ipAddress: context.ipAddress });
 }
 
-// Public response never waits for lookup or SMTP. This small in-process task is
-// best-effort delivery, not a durable mail queue; users can request another link.
-function requestPasswordReset(emailAddress, context = {}) {
-  const task = new Promise(resolve => setImmediate(resolve)).then(async () => {
+// Complete all work before responding, including delivery-failure invalidation.
+// HTTP status/body remain generic for missing, inactive and delivery failures.
+async function requestPasswordReset(emailAddress, context = {}) {
+  try {
     await audit.log({ actorUserId: null, action: A.PASSWORD_RESET_REQUESTED, entityType: E.AUTH, entityId: null, ipAddress: context.ipAddress });
     const user = await users.findByEmail(emailAddress.trim().toLowerCase());
     if (active(user)) await sendInstructions(user.id, context);
-  }).catch(() => { console.error('Password reset request delivery failed'); }).finally(() => pending.delete(task));
-  pending.add(task);
+  } catch { console.error('Password reset request delivery failed'); }
 }
-async function drainPendingRequests() { await Promise.all([...pending]); }
+// Compatibility with existing test cleanup; no detached requests remain.
+async function drainPendingRequests() {}
 
 async function resetPassword(token, newPassword, context = {}) {
   const invalid = () => new ApiError(400, 'Password reset link is invalid or expired. Request a new link.');

@@ -3,7 +3,10 @@ import { io } from 'socket.io-client'
 // Shared by all role inboxes. The server joins the JWT owner's user room;
 // the client never supplies a recipient ID or requests a room itself.
 export function subscribeToNotifications({ token, onRefresh, onNotification, origin }, connect = io) {
-  const socket = connect(origin, { auth: { token }, withCredentials: true })
+  const socket = connect(origin, {
+    auth: { token }, withCredentials: true, reconnection: true,
+    ...(import.meta.env?.PROD ? { transports: ['websocket'] } : {}),
+  })
   const seen = new Set()
   let timer
   function scheduleRefresh() {
@@ -22,10 +25,14 @@ export function subscribeToNotifications({ token, onRefresh, onNotification, ori
   socket.on('notification:new', receive)
   // Reconcile missed events after reconnecting; REST remains authoritative.
   socket.on('connect', scheduleRefresh)
+  // Cross-instance emissions can be missed even while connected.
+  const refocus = () => scheduleRefresh()
+  globalThis.window?.addEventListener('focus', refocus)
   return () => {
     clearTimeout(timer)
     socket.off('notification:new', receive)
     socket.off('connect', scheduleRefresh)
+    globalThis.window?.removeEventListener('focus', refocus)
     socket.disconnect()
   }
 }

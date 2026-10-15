@@ -25,6 +25,7 @@ function validateEnvironment() {
   validatePort("PORT", 5000);
   validatePort("DB_PORT", 3306);
   require('./databaseSsl').databaseSsl();
+  require('./databasePool').poolLimit();
   require("../utils/jwt").validateJwtConfiguration();
   require("./cors").clientOrigin();
   require('./passwordReset').resetLifetime();

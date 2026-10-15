@@ -13,7 +13,7 @@ const pool = mysql.createPool({
   // Safe integers retain their existing numeric representation.
   supportBigNumbers: true,
   bigNumberStrings: false,
-  connectionLimit: 10,
+  connectionLimit: require('./databasePool').poolLimit(),
   queueLimit: 0,
 });
 

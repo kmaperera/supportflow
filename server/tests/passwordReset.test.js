@@ -11,7 +11,7 @@ test('password recovery HTTP contracts, opaque tokens, rollback and privacy', as
   const passwords = require('../src/utils/password');
   const users = [1,2,3,4].map((id,i)=>({ id, email: `recovery-${id}@example.test`, first_name: '<script>Fixture</script>', role: ['EMPLOYEE','TECHNICIAN','ADMIN','EMPLOYEE'][i], is_active: id!==4, must_change_password: 1 }));
   const initialHash = await passwords.hashPassword(password); users.forEach(u=>{u.password_hash=initialHash});users[2].must_change_password=0;
-  const records=[], mails=[], events=[];let failMail=false,failRevoke=false,revoked=0,sequence=0,saved;
+  const records=[], mails=[], events=[];let failMail=false,failRevoke=false,revoked=0,sequence=0,saved,deliveryGate;
   const connection={async beginTransaction(){saved={users:structuredClone(users),records:structuredClone(records),revoked,events:structuredClone(events)}},async commit(){},async rollback(){users.splice(0,users.length,...saved.users);records.splice(0,records.length,...saved.records);revoked=saved.revoked;events.splice(0,events.length,...saved.events)},release(){}};
   t.mock.method(require('../src/config/database'),'getConnection',async()=>connection);
   const userRepo=require('../src/modules/users/user.repository');
@@ -27,7 +27,7 @@ test('password recovery HTTP contracts, opaque tokens, rollback and privacy', as
   t.mock.method(repo,'invalidateById',async id=>{records.find(r=>r.id===id).used=true});
   t.mock.method(require('../src/modules/auth/refreshToken.repository'),'revokeAllForUser',async()=>{if(failRevoke)throw Error('Private database fault');revoked++;return 2});
   t.mock.method(require('../src/modules/audit/audit.repository'),'create',async entry=>{events.push(entry);return events.length});
-  t.mock.method(require('../src/services/email.service'),'sendEmail',async data=>{if(failMail)throw Error('Private SMTP credentials');mails.push(data)});
+  t.mock.method(require('../src/services/email.service'),'sendEmail',async data=>{if(deliveryGate)await deliveryGate;if(failMail)throw Error('Private SMTP credentials');mails.push(data)});
   const service=require('../src/modules/auth/passwordReset.service');
   const server=require('../src/app').listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
   t.after(async()=>{await service.drainPendingRequests();server.closeAllConnections();await new Promise(r=>server.close(r))});
@@ -35,6 +35,18 @@ test('password recovery HTTP contracts, opaque tokens, rollback and privacy', as
   const access=require('../src/utils/jwt').generateAccessToken(users[2]);
   const request=async(path,body,status=200,token)=>{const r=await fetch(origin+path,{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify(body)});assert.equal(r.status,status);const d=await r.json();assert.equal(d.success,status<400);if(status>=400)assert.ok(Array.isArray(d.errors));return d};
   const raw=()=>new URL(mails.at(-1).text.match(/http[^\s]+/)[0]).searchParams.get('token');
+  await t.test('public response waits for email completion within the request',async()=>{
+    let release;deliveryGate=new Promise(resolve=>{release=resolve});
+    let responded=false;
+    const response=require('../src/modules/auth/passwordReset.controller').forgotPassword({body:{email:users[1].email},ip:'127.0.0.1'}, {status(){return this},json(){responded=true}}, error=>{throw error});
+    try {
+      await new Promise(resolve=>setTimeout(resolve,100));
+      assert.equal(responded,false);
+    } finally {release();}
+    await response;deliveryGate=undefined;
+    assert.ok(mails.length>0);
+    records.length=0;mails.length=0;events.length=0;
+  });
   await t.test('existing, missing and inactive public requests are indistinguishable',async()=>{
     const responses=[];for(const email of [users[0].email,'missing@example.test',users[3].email]){responses.push(await request('/auth/forgot-password',{email}));await service.drainPendingRequests()}
     assert.deepEqual(responses[0],responses[1]);assert.deepEqual(responses[1],responses[2]);assert.equal(mails.length,1);assert.equal(records.length,1);assert.equal(revoked,0);
@@ -61,7 +73,7 @@ test('password recovery HTTP contracts, opaque tokens, rollback and privacy', as
   });
   await t.test('public SMTP failure stays generic, invalidates delivery token and logs no credentials',async()=>{
     const messages=[];const diagnostic=t.mock.method(console,'error',(...args)=>messages.push(args.join(' ')));
-    failMail=true;let status,body;require('../src/modules/auth/passwordReset.controller').forgotPassword({body:{email:users[0].email},ip:'127.0.0.1'}, {status(value){status=value;return this},json(value){body=value}});
+    failMail=true;let status,body;await require('../src/modules/auth/passwordReset.controller').forgotPassword({body:{email:users[0].email},ip:'127.0.0.1'}, {status(value){status=value;return this},json(value){body=value}});
     assert.equal(status,200);assert.deepEqual(body,{success:true,message:service.GENERIC_MESSAGE});await service.drainPendingRequests();assert.ok(records.filter(r=>r.user_id===1).every(r=>r.used));assert.deepEqual(messages,['Password reset request delivery failed']);failMail=false;diagnostic.mock.restore();
   });
   await t.test('revocation failure rolls back password/token/audit; successful reset is single-use',async()=>{

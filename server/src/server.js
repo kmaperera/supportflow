@@ -7,9 +7,7 @@ try {
   process.exit(1);
 }
 
-const app = require("./app");
-const http = require("http");
-const { initializeSocket } = require("./config/socket");
+const server = require("./httpServer");
 const { testDatabaseConnection } = require("./config/database");
 
 const PORT = process.env.PORT || 5000;
@@ -18,8 +16,6 @@ async function startServer() {
   try {
     await testDatabaseConnection();
 
-    const server = http.createServer(app);
-    initializeSocket(server);
     server.listen(PORT, "0.0.0.0", () => {
       console.log(`SupportFlow server running on port ${PORT}`);
     });

@@ -6,6 +6,28 @@ const { NOTIFICATION_TYPES } = require("../src/constants/notificationTypes");
 
 const data = { userId: "5", type: "TICKET_CREATED", title: " Title ", message: " Message " };
 
+test('persisted notifications remain REST-readable when realtime is unavailable', async t => {
+  const rows = [];
+  const db = { async query(sql) {
+    if (sql.includes('INSERT')) {
+      rows.push({ id: 91, user_id: '5', ticket_id: null, comment_id: null,
+        type: data.type, title: 'Title', message: 'Message', is_read: 0, read_at: null, created_at: new Date() });
+      return [{ insertId: 91 }];
+    }
+    return [rows];
+  } };
+  const notification = await service.createNotification(data, db);
+  t.mock.method(require('../src/config/socket'), 'getIO', () => { throw new Error('Disconnected'); });
+  t.mock.method(console, 'warn', () => {});
+  assert.equal(require('../src/modules/notifications/notificationRealtime.service').emitNotification(notification), false);
+  t.mock.method(repository, 'findByUserId', async () => rows);
+  t.mock.method(repository, 'countByUserId', async () => rows.length);
+  t.mock.method(repository, 'countUnreadByUserId', async () => rows.length);
+  const feed = await service.getUserNotifications('5');
+  assert.equal(feed.notifications[0].id, notification.id);
+  assert.equal(feed.unreadCount, 1);
+});
+
 test("feed normalizes pagination and keeps unread total independent", async (t) => {
   const find = t.mock.method(repository, "findByUserId", async () => []);
   const count = t.mock.method(repository, "countByUserId", async () => 45);

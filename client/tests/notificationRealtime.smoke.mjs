@@ -2,12 +2,17 @@ import assert from 'node:assert/strict'
 import { subscribeToNotifications } from '../src/api/notificationRealtime.js'
 
 const handlers = new Map()
+const focusHandlers = new Map()
+globalThis.window = {
+  addEventListener: (name, callback) => focusHandlers.set(name, callback),
+  removeEventListener: (name, callback) => { assert.equal(focusHandlers.get(name), callback); focusHandlers.delete(name) },
+}
 let disconnected = false
 let refreshed = 0
 const received = []
 const cleanup = subscribeToNotifications({ token: 'test-token', origin: 'http://localhost:5000', onNotification: item => received.push(item.id), onRefresh: () => { refreshed++ } }, (origin, options) => {
   assert.equal(origin, 'http://localhost:5000')
-  assert.deepEqual(options, { auth: { token: 'test-token' }, withCredentials: true })
+  assert.deepEqual(options, { auth: { token: 'test-token' }, withCredentials: true, reconnection: true })
   return {
     on: (name, handler) => handlers.set(name, handler),
     off: (name, handler) => { assert.equal(handlers.get(name), handler); handlers.delete(name) },
@@ -31,10 +36,15 @@ assert.deepEqual(received, [51, 52], 'toast callbacks receive only new valid not
 handlers.get('connect')()
 await settle()
 assert.equal(refreshed, 3, 'reconnection reconciles missed events')
+focusHandlers.get('focus')()
+await settle()
+assert.equal(refreshed, 4, 'refocus reconciles missed cross-instance events')
 handlers.get('notification:new')({ id: 53 })
 cleanup()
 await settle()
-assert.equal(refreshed, 3, 'pending callbacks are cancelled on cleanup')
+assert.equal(refreshed, 4, 'pending callbacks are cancelled on cleanup')
+assert.equal(focusHandlers.size, 0)
+delete globalThis.window
 assert.equal(handlers.size, 0)
 assert.equal(disconnected, true)
 console.log('Notification socket authentication, coalescing, dedupe, reconnect and cleanup passed.')

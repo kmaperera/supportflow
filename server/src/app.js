@@ -19,6 +19,12 @@ const dashboardRoutes = require("./modules/dashboard/dashboard.routes");
 
 const app = express();
 
+// Vercel overwrites X-Forwarded-For with the connecting client's IP.
+// Trust only the immediate platform hop; local/traditional servers stay closed.
+if (process.env.VERCEL === '1' && process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 app.use(securityHeaders());
 // Include malformed/unauthenticated responses, without disabling public health caching.
 app.use([
