@@ -1,5 +1,7 @@
 # Production environment preparation — Phase 20.2
 
+Phase 20.3 follow-up: see [production MySQL setup and verification](MYSQL_PRODUCTION.md). Provisioning and live production tests remain pending provider account access; no migrations or seeds have been run.
+
 Phase 20.2 prepares configuration only. No hosting, production database, migration, seed, credentials, DNS, or external deployment has been created. Phase 20.3 has not begun. See [the Phase 20.1 architecture plan](DEPLOYMENT_PLAN.md) for deployment order and rollback; its findings describe the pre-20.2 snapshot. The MySQL TLS gap and missing Node engines identified there are addressed below.
 
 ## Environment inventory
