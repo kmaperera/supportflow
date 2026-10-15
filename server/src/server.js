@@ -23,8 +23,9 @@ async function startServer() {
     server.listen(PORT, () => {
       console.log(`SupportFlow server running on port ${PORT}`);
     });
-  } catch {
+  } catch (error) {
     console.error("SupportFlow startup failed: check database and server configuration.");
+    require('./utils/startupError').logDevelopmentStartupError(error);
     process.exit(1);
   }
 }
