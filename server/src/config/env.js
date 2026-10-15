@@ -24,6 +24,7 @@ function validateEnvironment() {
   requireVariables(["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET", "JWT_ACCESS_EXPIRES_IN", "JWT_REFRESH_EXPIRES_IN", "CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"]);
   validatePort("PORT", 5000);
   validatePort("DB_PORT", 3306);
+  require('./databaseSsl').databaseSsl();
   require("../utils/jwt").validateJwtConfiguration();
   require("./cors").clientOrigin();
   require('./passwordReset').resetLifetime();

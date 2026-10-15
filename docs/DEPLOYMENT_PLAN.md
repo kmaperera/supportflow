@@ -1,5 +1,7 @@
 # SUPPORTFLOW PHASE 20.1 DEPLOYMENT PLAN
 
+Historical Phase 20.1 inspection snapshot. See [Phase 20.2 environment preparation](DEPLOYMENT.md) for implemented verified MySQL TLS options and Node engine declarations; later deployment gates remain applicable.
+
 Status: architecture review and planning only. No deployment, production migration, account creation, DNS change, secret upload, or Phase 20.2 implementation was performed. Application behavior is unchanged.
 
 ## Architecture and decisions
