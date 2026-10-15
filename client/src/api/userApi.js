@@ -1,6 +1,11 @@
 import api from './axios'
 import { API_ENDPOINTS } from './endpoints'
 
+export async function requestUserPasswordReset(userId) {
+  const { data } = await api.post(`${API_ENDPOINTS.USERS}/${encodeURIComponent(userId)}/reset-password`)
+  if (data?.success !== true) throw new Error('Invalid password reset request response')
+}
+
 export async function getAssignableTechnicians({ signal } = {}) {
   const { data } = await api.get(`${API_ENDPOINTS.USERS}/assignable-technicians`, { signal })
   if (data?.success !== true || !Array.isArray(data.data?.technicians)) throw new Error('Invalid technician response')

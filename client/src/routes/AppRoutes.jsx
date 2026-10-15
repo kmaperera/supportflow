@@ -13,6 +13,7 @@ import CategoryFormPage from '../pages/admin/CategoryFormPage'
 import TechnicianManagementPage from '../pages/admin/TechnicianManagementPage'
 import { Route, Routes } from 'react-router-dom'
 import LoginPage from '../pages/auth/LoginPage'
+import PasswordRecoveryPage from '../pages/auth/PasswordRecoveryPage'
 import CreateTicketPage from '../pages/employee/CreateTicketPage'
 import MyTicketsPage from '../pages/employee/MyTicketsPage'
 import NotificationsPage from '../pages/employee/NotificationsPage'
@@ -54,6 +55,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<RoleHomeRedirect />} />
+      <Route path="/forgot-password" element={<PasswordRecoveryPage />} />
+      <Route path="/reset-password" element={<PasswordRecoveryPage reset />} />
       <Route element={<LoginRoute />}>
         <Route path="/login" element={<LoginPage />} />
       </Route>

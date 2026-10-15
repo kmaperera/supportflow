@@ -17,6 +17,14 @@ export async function login({ email, password }) {
 }
 
 let refreshRequest = null
+export async function forgotPassword(email) {
+  const { data } = await api.post(AUTH_ENDPOINTS.FORGOT_PASSWORD, { email: email.trim() })
+  if (data?.success !== true) throw new Error('Invalid password recovery response')
+}
+export async function resetPassword({ token, newPassword, confirmPassword }) {
+  const { data } = await api.post(AUTH_ENDPOINTS.RESET_PASSWORD, { token, newPassword, confirmPassword })
+  if (data?.success !== true) throw new Error('Invalid password reset response')
+}
 export async function logout() {
   // Let an existing rotation settle before revoking its resulting cookie.
   if (refreshRequest) await refreshRequest.catch(() => {})

@@ -13,3 +13,5 @@ Only `VITE_API_BASE_URL` belongs in the client env. Every `VITE_*` value is publ
 See [Phase 18.13 environment-secret review](server/ENV_SECRET_REVIEW.md) for classifications, findings and verification.
 
 See [Security architecture and final Phase 18 review](docs/SECURITY.md) for the final checklist, audit events, verification, known limitations and production requirements.
+
+Password recovery and Admin reset require migration `022_create_password_reset_tokens_table.sql`, a trusted `CLIENT_URL`, and working SMTP configuration. Reset links expire after 15 minutes by default (`PASSWORD_RESET_TTL_MINUTES`, 5–30). See the [password recovery implementation and verification](server/PASSWORD_RECOVERY_REVIEW.md) for account/session policy, delivery behavior and regression commands.

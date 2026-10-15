@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import AuthFeedback from '../../auth/AuthFeedback'
-import { changeUserRole, getUsers, updateUserStatus } from '../../api/userApi'
+import { changeUserRole, getUsers, updateUserStatus, requestUserPasswordReset } from '../../api/userApi'
 import { getApiErrorMessage } from '../../api/apiError'
 import { formatTicketDate } from '../employee/ticketFormatting'
 
@@ -27,6 +27,7 @@ export default function UserManagementPage() {
 }
 
 function UserList({ currentAdminId }) {
+  const [resetTarget, setResetTarget] = useState(null)
   const [confirming, setConfirming] = useState(null)
   const [roleEditor, setRoleEditor] = useState(null)
   const [pending, setPending] = useState({})
@@ -43,6 +44,21 @@ function UserList({ currentAdminId }) {
   const [search, setSearch] = useState('')
   const [query, setQuery] = useState(defaults)
   const [result, setResult] = useState(null)
+  async function sendReset() {
+    if (!resetTarget) return
+    const id = String(resetTarget.id)
+    if (inFlight.current.has(id)) return
+    inFlight.current.add(id); setPending(previous => ({ ...previous, [id]: 'reset' })); setFeedback(null)
+    try {
+      await requestUserPasswordReset(id)
+      if (mounted.current) { setResetTarget(null); setFeedback({ success: true, message: 'Password reset instructions sent.' }) }
+    } catch (error) {
+      if (mounted.current) setFeedback({ success: false, message: getApiErrorMessage(error, 'Unable to send password reset instructions. Please try again.') })
+    } finally {
+      inFlight.current.delete(id)
+      if (mounted.current) setPending(previous => ({ ...previous, [id]: false }))
+    }
+  }
   async function saveRole(user) {
     const id = String(user.id)
     const role = roleEditor?.role
@@ -112,7 +128,10 @@ function UserList({ currentAdminId }) {
   return <div className="layout-page">
     <PageHeader title="User Management" description="View user accounts, roles, and account status." actions={<><Link to="/admin/users/new" className={`${button} inline-flex items-center`}>Create User</Link></>} />
     {created && <AuthFeedback variant="success">User created successfully.</AuthFeedback>}
-    {feedback && !confirming && !roleEditor?.confirm && <AuthFeedback variant={feedback.success ? 'success' : 'error'}>{feedback.message}</AuthFeedback>}
+    {feedback && !confirming && !resetTarget && !roleEditor?.confirm && <AuthFeedback variant={feedback.success ? 'success' : 'error'}>{feedback.message}</AuthFeedback>}
+    <ConfirmDialog open={Boolean(resetTarget)} title="Send password reset instructions?" description={`Send password reset instructions to ${resetTarget?.email || 'this user'}? Existing sessions remain active until the password is changed.`} confirmLabel="Send Reset Instructions" pending={Boolean(resetTarget && pending[resetTarget.id])} pendingLabel="Sending..." onConfirm={sendReset} onCancel={() => setResetTarget(null)}>
+      {feedback && !feedback.success && <AuthFeedback>{feedback.message}</AuthFeedback>}
+    </ConfirmDialog>
     <FilterBar activeCount={[query.search, query.role, query.isActive, query.sort !== 'newest'].filter(Boolean).length} className="grid gap-4 layout-panel sm:grid-cols-2 xl:grid-cols-4">
       <label className="min-w-0 text-sm font-medium">Search<input type="search" className={input} placeholder="Search users..." value={search} onChange={event => setSearch(event.target.value)} aria-describedby="user-search-help" /><span id="user-search-help" className="mt-1 block text-xs text-slate-500 dark:text-slate-400">Search first name, last name, or email.</span></label>
       <label className="text-sm font-medium">Role<select className={input} value={query.role} onChange={event => change({ role: event.target.value })}><option value="">All roles</option>{Object.entries(roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
@@ -128,6 +147,7 @@ function UserList({ currentAdminId }) {
         <dl className="mt-3 grid min-w-0 gap-4 text-sm sm:grid-cols-2">{[['Email', user.email], ['Role', roles[user.role] || 'Unknown role'], ['Status', <ActiveBadge key="status" value={user.isActive} />], ['Created', formatTicketDate(user.createdAt)]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-slate-500 dark:text-slate-400">{label}</dt><dd className="mt-1 break-words">{value}</dd></div>)}</dl>
         {user.mustChangePassword === true && <p className="mt-4 text-sm font-medium">Password change required</p>}
         <div className="mt-4 space-y-3">
+          {user.isActive && <button type="button" className={button} disabled={Boolean(pending[user.id])} onClick={() => { setFeedback(null); setResetTarget(user) }}>Reset Password<span className="sr-only"> {user.email}</span></button>}
           {String(user.id) === String(currentAdminId) ? <p className="text-sm text-slate-600 dark:text-slate-300">You cannot change your own role.</p> : roleEditor?.id === String(user.id) ? <div className="space-y-3 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
             <label className="block text-sm font-medium">New role<select className={input} value={roleEditor.role} disabled={Boolean(pending[user.id]) || roleEditor.confirm} onChange={event => setRoleEditor(previous => ({ ...previous, role: event.target.value, confirm: false }))}>{Object.entries(roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             <ConfirmDialog open={roleEditor.confirm} title="Change user role?" description={`User: ${user.email}. Current role: ${user.role}. New role: ${roleEditor.role}. This changes their application permissions.`} variant="warning" confirmLabel="Change Role" pending={Boolean(pending[user.id])} pendingLabel="Updating role..." onConfirm={() => saveRole(user)} onCancel={() => setRoleEditor(previous => ({ ...previous, confirm: false }))}>{feedback && !feedback.success && <AuthFeedback>{feedback.message}</AuthFeedback>}</ConfirmDialog>

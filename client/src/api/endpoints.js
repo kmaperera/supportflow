@@ -14,6 +14,8 @@
 
 // Relative to VITE_API_BASE_URL, which already includes /api/v1.
 export const AUTH_ENDPOINTS = {
+  FORGOT_PASSWORD: `${API_ENDPOINTS.AUTH}/forgot-password`,
+  RESET_PASSWORD: `${API_ENDPOINTS.AUTH}/reset-password`,
   LOGIN: `${API_ENDPOINTS.AUTH}/login`,
   REFRESH: `${API_ENDPOINTS.AUTH}/refresh`,
   CHANGE_PASSWORD: `${API_ENDPOINTS.AUTH}/change-password`,

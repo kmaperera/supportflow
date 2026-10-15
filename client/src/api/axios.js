@@ -21,7 +21,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-const excludedPaths = new Set([AUTH_ENDPOINTS.LOGIN, AUTH_ENDPOINTS.REFRESH, AUTH_ENDPOINTS.LOGOUT, AUTH_ENDPOINTS.LOGOUT_ALL]);
+const excludedPaths = new Set([AUTH_ENDPOINTS.LOGIN, AUTH_ENDPOINTS.REFRESH, AUTH_ENDPOINTS.LOGOUT, AUTH_ENDPOINTS.LOGOUT_ALL, AUTH_ENDPOINTS.FORGOT_PASSWORD, AUTH_ENDPOINTS.RESET_PASSWORD]);
 function isExcluded(config) {
   const base = new URL(config.baseURL || '/', 'http://supportflow.local');
   const url = new URL(config.url, `${base.href.replace(/\/$/, '')}/`);

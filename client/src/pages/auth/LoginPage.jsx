@@ -2,7 +2,7 @@ import FieldError from '../../components/FieldError'
 import AuthFeedback from '../../auth/AuthFeedback'
 import { getAuthFieldErrors } from '../../api/apiError'
 import { useEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { login, getLoginErrorMessage } from '../../api/authApi'
 import { useAuth } from '../../auth/useAuth'
 
@@ -115,6 +115,7 @@ function LoginPage() {
             {loginSucceeded && <AuthFeedback toast={false} variant="success">You are signed in.</AuthFeedback>}
             <button type="submit" disabled={isSubmitting || isInitializing || isLoggingOut} className="mt-2 w-full rounded-lg bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700 dark:focus-visible:outline-teal-400 disabled:cursor-not-allowed disabled:opacity-60">{isLoggingOut ? 'Logging out...' : isSubmitting ? 'Signing in...' : 'Sign in'}</button>
           </form>
+          <Link to="/forgot-password" className="mt-5 inline-block rounded text-sm font-medium text-teal-800 dark:text-teal-300 underline focus-visible:outline-2 focus-visible:outline-offset-4">Forgot Password?</Link>
           <p className="mt-7 border-t border-slate-100 dark:border-slate-800 pt-6 text-center text-xs leading-5 text-slate-500 dark:text-slate-400">Accounts are managed by your SupportFlow administrator.</p>
         </div>
         <p className="mt-7 text-xs text-slate-500 dark:text-slate-400">Need access? Contact your IT team.</p>

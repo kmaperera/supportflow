@@ -1,5 +1,8 @@
 // Only known public messages are displayed; arbitrary server text is not UI.
 const publicMessages = new Set([
+  'Too many password recovery attempts. Please try again later.',
+  'Password reset link is invalid or expired. Request a new link.',
+  'Password reset is unavailable for inactive users',
   'Too many login attempts. Please try again later.',
   'Invalid email or password', 'Invalid email or password.',
   'Your account is inactive. Please contact an administrator.',
