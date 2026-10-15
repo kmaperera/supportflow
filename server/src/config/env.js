@@ -26,6 +26,7 @@ function validateEnvironment() {
   validatePort("DB_PORT", 3306);
   require("../utils/jwt").validateJwtConfiguration();
   require("./cors").clientOrigin();
+  require('./passwordReset').resetLifetime();
   // Email is optional; reject partial configuration when it is enabled.
   if (["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "EMAIL_FROM_ADDRESS"].some(name => env[name]?.trim())) validateMailConfiguration();
 }

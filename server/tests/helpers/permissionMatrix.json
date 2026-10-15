@@ -592,5 +592,23 @@
     "path": "/api/v1/audit-logs",
     "access": "ADMIN",
     "rule": "Admin-only, including exports and aggregate counts"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/forgot-password",
+    "access": "public",
+    "rule": "Generic response; active accounts receive a single-use recovery email; IP rate limited."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/reset-password",
+    "access": "public",
+    "rule": "Valid unused unexpired opaque token and password policy required; refresh sessions revoked."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/users/:id/reset-password",
+    "access": "ADMIN",
+    "rule": "Active target only; email link, no immediate session revocation; Admin self-target allowed."
   }
 ]

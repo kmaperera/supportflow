@@ -82,6 +82,7 @@ async function changePassword(userId, currentPassword, newPassword, confirmPassw
     await connection.beginTransaction();
     await userRepository.updatePassword(userId, passwordHash, connection);
     await tokenRepository.revokeAllForUser(userId, connection);
+    await require('./passwordReset.repository').invalidateForUser(userId, connection);
     await connection.commit();
   } catch (error) {
     await connection.rollback();

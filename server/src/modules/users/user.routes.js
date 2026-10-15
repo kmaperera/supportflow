@@ -8,6 +8,8 @@ const { assignableTechniciansValidation, createUserValidation, updateUserValidat
 
 const router = express.Router();
 router.use(authenticate, authorizeRoles(USER_ROLES.ADMIN));
+router.post('/:id/reset-password', userIdValidation, require('../auth/passwordReset.validation').adminResetValidation, validate,
+  require('../auth/passwordReset.controller').adminResetPassword);
 router.get("/", require("./user.validation").listUsersValidation, validate, controller.getUsers);
 router.post("/", createUserValidation, validate, controller.createUser);
 router.get("/assignable-technicians", assignableTechniciansValidation, validate, controller.getAssignableTechnicians);

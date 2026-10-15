@@ -97,12 +97,13 @@ test('security audit records actual auth outcomes without credentials or extra n
     const signedIn = await login(); const body = await signedIn.json(); const active = cookie(signedIn);
     const repository = require('../src/modules/users/user.repository');
     const transaction = [];
+    t.mock.method(require('../src/modules/auth/passwordReset.repository'), 'invalidateForUser', async () => { transaction.push('invalidate recovery'); });
     t.mock.method(repository, 'updatePassword', async (id, hash) => { transaction.push('password'); user.password_hash = hash; user.must_change_password = 0; });
     t.mock.method(require('../src/config/database'), 'getConnection', async () => ({ async beginTransaction() {}, async commit() { transaction.push('commit'); }, async rollback() {}, release() {} }));
     const invalid = await post('/change-password', { currentPassword: 'WrongFixture123!', newPassword: 'ChangedFixture123!', confirmPassword: 'ChangedFixture123!' }, undefined, body.data.accessToken, 'PATCH');
     assert.equal(invalid.status, 400); assert.equal(count('PASSWORD_CHANGED'), 0);
     const result = await post('/change-password', { currentPassword: credentials.password, newPassword: 'ChangedFixture123!', confirmPassword: 'ChangedFixture123!' }, undefined, body.data.accessToken, 'PATCH');
-    assert.equal(result.status, 200); assert.deepEqual(transaction, ['password', 'commit']);
+    assert.equal(result.status, 200); assert.deepEqual(transaction, ['password', 'invalidate recovery', 'commit']);
     assert.equal(count('PASSWORD_CHANGED'), 1);
     assert.deepEqual(auditEvents.at(-1).metadata, { sessionsRevoked: true, forcedChange: true });
     assert.equal(auditEvents.at(-1).entityType, 'USER');

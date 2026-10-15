@@ -26,9 +26,12 @@ test("password update and refresh revocation commit together or roll back", asyn
       assert.equal(db, connection); assert.equal(id, 1); calls.push("revoke");
       if (fail) throw Error("fixture revocation failure");
     });
+    t.mock.method(require('../src/modules/auth/passwordReset.repository'), 'invalidateForUser', async (id, db) => {
+      assert.equal(db, connection); assert.equal(id, 1); calls.push('invalidate recovery');
+    });
     const changed = service.changePassword(1, "CurrentFixture123!", "NewFixture123!", "NewFixture123!");
     if (fail) await assert.rejects(changed, /fixture revocation failure/);
     else assert.deepEqual(await changed, { success: true, sessionsRevoked: true, forcedChange: false });
-    assert.deepEqual(calls, ["begin", "password", "revoke", fail ? "rollback" : "commit", "release"]);
+    assert.deepEqual(calls, fail ? ["begin", "password", "revoke", "rollback", "release"] : ["begin", "password", "revoke", 'invalidate recovery', "commit", "release"]);
   }
 });

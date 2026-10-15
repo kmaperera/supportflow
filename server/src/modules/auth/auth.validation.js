@@ -1,17 +1,20 @@
 ﻿const { body } = require("express-validator");
 
 const { bodyFields, queryFields, emptyBody, MAX_PASSWORD_LENGTH } = require('../../middleware/inputValidation');
+function newPasswordValidation() {
+  return body('newPassword').isString().withMessage('New password is required')
+    .bail().notEmpty().withMessage('New password is required')
+    .bail().isLength({ min: 8 }).withMessage('New password must be at least 8 characters')
+    .matches(/[A-Z]/).withMessage('New password must contain an uppercase letter')
+    .matches(/[a-z]/).withMessage('New password must contain a lowercase letter')
+    .matches(/[0-9]/).withMessage('New password must contain a number');
+}
 const changePasswordValidation = [
   bodyFields(['currentPassword', 'newPassword', 'confirmPassword']),
   ...['currentPassword', 'newPassword', 'confirmPassword'].map(key => body(key).isString().bail().isLength({ max: MAX_PASSWORD_LENGTH }).withMessage(key + ' must not exceed 1024 characters')),
   body("currentPassword").isString().withMessage("Current password is required")
     .bail().notEmpty().withMessage("Current password is required"),
-  body("newPassword").isString().withMessage("New password is required")
-    .bail().notEmpty().withMessage("New password is required")
-    .bail().isLength({ min: 8 }).withMessage("New password must be at least 8 characters")
-    .matches(/[A-Z]/).withMessage("New password must contain an uppercase letter")
-    .matches(/[a-z]/).withMessage("New password must contain a lowercase letter")
-    .matches(/[0-9]/).withMessage("New password must contain a number"),
+  newPasswordValidation(),
   body("confirmPassword").isString().withMessage("Password confirmation is required")
     .bail().notEmpty().withMessage("Password confirmation is required"),
 ];
@@ -26,5 +29,5 @@ const loginValidation = [
 ];
 
 const cookieActionValidation = [emptyBody(), queryFields([])];
-module.exports = { changePasswordValidation, loginValidation, cookieActionValidation };
+module.exports = { changePasswordValidation, loginValidation, cookieActionValidation, newPasswordValidation };
 

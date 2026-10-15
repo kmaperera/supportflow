@@ -53,4 +53,13 @@ function createLoginRateLimiter(env = process.env) {
   });
 }
 
-module.exports = { createApiRateLimiter, rateLimitSettings, createLoginRateLimiter, loginRateLimitSettings };
+function createPasswordRecoveryLimiter(kind) {
+  return rateLimit({ windowMs: 15 * 60 * 1000, limit: kind === 'forgot' ? 3 : 10,
+    standardHeaders: 'draft-8', legacyHeaders: false, identifier: `password-${kind}`,
+    handler: (req, res) => {
+      res.setHeader('Cache-Control', 'private, no-store');
+      res.status(429).json({ success: false, message: 'Too many password recovery attempts. Please try again later.', errors: [] });
+    },
+  });
+}
+module.exports = { createApiRateLimiter, rateLimitSettings, createLoginRateLimiter, loginRateLimitSettings, createPasswordRecoveryLimiter };

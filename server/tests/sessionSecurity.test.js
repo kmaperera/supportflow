@@ -62,6 +62,7 @@ test("token verification and session lifecycle fail closed", async t => {
   const second = await refresh.createRefreshToken(1);
   const users = require("../src/modules/users/user.repository");
   t.mock.method(users, "updatePassword", async (id, hash) => { user.password_hash = hash; user.must_change_password = 0; });
+  t.mock.method(require('../src/modules/auth/passwordReset.repository'), 'invalidateForUser', async () => {});
   t.mock.method(require("../src/config/database"), "getConnection", async () => ({
     async beginTransaction() {}, async commit() {}, async rollback() {}, release() {},
   }));
