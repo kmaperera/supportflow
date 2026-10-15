@@ -5,6 +5,7 @@ import { useAuth } from '../../auth/useAuth'
 import { ROLES } from '../../auth/roles'
 import { getRoleHome } from '../../auth/roleHome'
 import SessionActions from '../../auth/SessionActions'
+import ChangePasswordForm from '../../auth/ChangePasswordForm'
 
 const roleLabels = {
   [ROLES.ADMIN]: 'Admin',
@@ -41,6 +42,11 @@ export default function ProfilePage({ embedded = false }) {
             <div><dt className="text-sm text-slate-600 dark:text-slate-300">Role</dt><dd className="mt-2"><span className="rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-sm font-medium text-slate-800 dark:text-slate-100">{role}</span></dd></div>
             <div><dt className="text-sm text-slate-600 dark:text-slate-300">Account Status</dt><dd className="mt-2"><ActiveBadge value={user.isActive} /></dd></div>
           </dl>
+        </section>
+        <section aria-labelledby="security-heading" className="mt-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 sm:p-6">
+          <h2 id="security-heading" className="text-lg font-semibold text-slate-900 dark:text-slate-100">Security</h2>
+          <h3 className="mt-4 font-semibold text-slate-900 dark:text-slate-100">Change Password</h3>
+          <ChangePasswordForm key={user.id} />
         </section>
         <section aria-labelledby="session-heading" className="mt-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 sm:p-6">
           <h2 id="session-heading" className="text-lg font-semibold text-slate-900 dark:text-slate-100">Session actions</h2>

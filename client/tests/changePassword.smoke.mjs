@@ -8,6 +8,8 @@ try {
  assert.equal(Object.keys(validatePasswordChange({currentPassword:'',newPassword:'',confirmPassword:''})).length,3)
  for(const newPassword of ['short','lowercase1','UPPERCASE1','NoDigitsHere','OldPass1'])assert.ok(validatePasswordChange({...valid,newPassword,confirmPassword:newPassword}).newPassword)
  assert.ok(validatePasswordChange({...valid,confirmPassword:'Different1'}).confirmPassword)
+ for(const field of ['currentPassword','newPassword','confirmPassword'])assert.ok(validatePasswordChange({...valid,[field]:'a'.repeat(1025)})[field])
+ assert.deepEqual(validatePasswordChange({currentPassword:'OldPass1',newPassword:'Aa1'+'x'.repeat(1021),confirmPassword:'Aa1'+'x'.repeat(1021)}),{})
  const {default:api}=await server.ssrLoadModule('/src/api/axios.js')
  const {changePassword,getPasswordChangeErrorMessage}=await server.ssrLoadModule('/src/api/authApi.js')
  const {setAccessToken,clearAccessToken}=await server.ssrLoadModule('/src/auth/accessToken.js')

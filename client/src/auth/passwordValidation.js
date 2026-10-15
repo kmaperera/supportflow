@@ -7,5 +7,8 @@ export function validatePasswordChange({ currentPassword, newPassword, confirmPa
   } else if (newPassword === currentPassword) errors.newPassword = 'New password must be different from your current password.'
   if (!confirmPassword) errors.confirmPassword = 'Confirm your new password.'
   else if (confirmPassword !== newPassword) errors.confirmPassword = 'Passwords do not match.'
+  for (const [field, value] of Object.entries({ currentPassword, newPassword, confirmPassword })) {
+    if (typeof value === 'string' && Array.from(value).length > 1024) errors[field] = 'Use at most 1024 characters.'
+  }
   return errors
 }

@@ -1,7 +1,13 @@
 // Normal App entry + real HTTP/MySQL. Email delivery is captured in memory.
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
-const require=createRequire(import.meta.url),fixture=await require('../../server/tests/helpers/lifecycleWorkflowFixture')()
+const require=createRequire(import.meta.url)
+const browserOrigin=process.env.TEST_CLIENT_ORIGIN||'http://localhost:5173'
+// Isolate the test frontend from an already-running developer frontend.
+const corsConfig=require('../../server/src/config/cors'),originalPolicy=corsConfig.corsPolicy
+corsConfig.corsPolicy=(env=process.env)=>originalPolicy({...env,CLIENT_URL:browserOrigin})
+const fixture=await require('../../server/tests/helpers/lifecycleWorkflowFixture')()
+process.env.CLIENT_URL=browserOrigin
 const [employee,,tech,admin]=fixture.users,port=process.env.KEYBOARD_CDP_PORT||'9246',mails=[],requests=[],faults=[]
 let ws,target,stage='setup',checks=0,failMail=false
 const recovery=require('../../server/src/modules/auth/passwordReset.service')
@@ -13,7 +19,7 @@ try{
  const pause=ms=>new Promise(r=>setTimeout(r,ms))
  async function evaluate(expression){const result=await send('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(result.exceptionDetails)throw Error('Browser evaluation failed');return result.result.value}
  async function until(expression){for(let i=0;i<400;i++){try{if(await evaluate(expression))return}catch(e){if(e.code!==-32000)throw e}await pause(50)}throw Error('Expected browser state not reached')}
- async function goto(path){const old=await evaluate('window.recoveryRealm');await send('Page.navigate',{url:'http://localhost:5173'+path});await until(`window.recoveryRealm&&window.recoveryRealm!==${JSON.stringify(old??null)}&&document.readyState==='complete'`)}
+ async function goto(path){const old=await evaluate('window.recoveryRealm');await send('Page.navigate',{url:browserOrigin+path});await until(`window.recoveryRealm&&window.recoveryRealm!==${JSON.stringify(old??null)}&&document.readyState==='complete'`)}
  const text=value=>until(`document.body?.textContent.includes(${JSON.stringify(value)})`)
  const fill=async(selector,value)=>{await until(`document.querySelector(${JSON.stringify(selector)})&&!document.querySelector(${JSON.stringify(selector)}).matches(':disabled')`);await evaluate(`document.querySelector(${JSON.stringify(selector)}).focus();document.querySelector(${JSON.stringify(selector)}).select()`);await send('Input.insertText',{text:value})}
  const click=async(label,scope='document')=>{const selector=`[...${scope}.querySelectorAll('button')].find(b=>(b.textContent.trim()===${JSON.stringify(label)}||b.textContent.trim().startsWith(${JSON.stringify(label+' ')}))&&!b.disabled)`;await until(`Boolean(${selector})`);await evaluate(`${selector}.click()`)}
@@ -30,7 +36,7 @@ try{
  await goto('/reset-password?token='+employeeToken);await submit('#recovery-newPassword');await until('document.querySelector("#recovery-newPassword").getAttribute("aria-invalid")==="true"');const next='Recovered-'+fixture.run+'A1!';await fill('#recovery-newPassword',next);await fill('#recovery-confirmPassword','Mismatch123!');await submit('#recovery-newPassword');await text('Passwords do not match.');assert.equal(count('/auth/reset-password'),0)
  await click('Show new password');assert.equal(await evaluate('document.querySelector("#recovery-newPassword").type'),'text');await click('Hide new password')
  for(const width of [320,375,430]){await send('Emulation.setDeviceMetricsOverride',{width,height:850,deviceScaleFactor:1,mobile:false});assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+2'))}
- await evaluate('document.querySelector("button[aria-label^=Switch]").click()');assert.equal(await evaluate('document.documentElement.classList.contains("dark")'),true)
+ const wasDark=await evaluate('document.documentElement.classList.contains("dark")');await evaluate('document.querySelector("button[aria-label^=Switch]").click()');assert.equal(await evaluate('document.documentElement.classList.contains("dark")'),!wasDark)
  const originalReset=recovery.resetPassword;recovery.resetPassword=async(...args)=>{await pause(250);return originalReset(...args)}
  try{await fill('#recovery-confirmPassword',next);await evaluate('const form=document.querySelector("#recovery-newPassword").closest("form");form.requestSubmit();form.requestSubmit();true');await until('document.querySelector("#recovery-newPassword")?.disabled');await text('Password reset successfully.');assert.equal(count('/auth/reset-password'),1)}finally{recovery.resetPassword=originalReset}
  checkpoint('Old password denied, chosen password works, reused link rejected')

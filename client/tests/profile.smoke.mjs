@@ -18,6 +18,12 @@ try {
     } }
     const html = render(state)
     assert.match(html, /My Profile/)
+    assert.match(html, /Security/)
+    assert.match(html, /Change Password/)
+    for (const field of ['currentPassword', 'newPassword', 'confirmPassword']) {
+      assert.ok(html.includes(`id="${field}"`))
+      assert.ok(html.includes(`for="${field}"`))
+    }
     assert.ok(!html.includes('appearance-heading'))
     assert.match(html, /Switch to (light|dark) mode/)
     assert.match(html, /Malith Perera/)
@@ -43,6 +49,11 @@ try {
   assert.ok(!render({ isAuthenticated: false, isInitializing: true }).includes('My Profile'))
   assert.ok(!render({ isAuthenticated: true, user: { role: 'UNKNOWN' } }).includes('My Profile'))
   assert.ok(!render({ isAuthenticated: false, isInitializing: false }, '/employee/profile').includes('My Profile'))
+  for (const role of ['EMPLOYEE', 'TECHNICIAN', 'ADMIN']) {
+    const html = render({ isAuthenticated: true, isInitializing: false, user: { id: 1, role, firstName: 'Fixture', email: 'profile@example.test', isActive: true, mustChangePassword: false } }, `/${role.toLowerCase()}/profile`)
+    assert.match(html, /Change Password/)
+    assert.equal((html.match(/id="currentPassword"/g) || []).length, 1)
+  }
   console.log('Profile rendering, role-home links, safe fields and access guard matrix passed.')
 } finally {
   await server.close()
