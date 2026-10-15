@@ -5,7 +5,7 @@ const cookieApp = require("./helpers/cookieApp");
 function attributes(header, production, cleared = false) {
   assert.match(header, /^refreshToken=/);
   assert.match(header, /; HttpOnly/);
-  assert.match(header, /; SameSite=Lax/);
+  assert.ok(header.includes(`; SameSite=${production ? 'None' : 'Lax'}`));
   assert.match(header, /; Path=\/api\/v1\/auth/);
   assert.equal(header.includes("; Secure"), production);
   assert.doesNotMatch(header, /; Domain=|; Max-Age=/);
@@ -26,6 +26,10 @@ test("actual cookie issuance, rotation, failure, revocation and deletion in deve
   for (const environment of ["development", "production"]) {
     process.env.NODE_ENV = environment;
     const secure = environment === "production";
+    assert.equal((await post('/refresh')).status, 401);
+    const expired = require('jsonwebtoken').sign({ type: 'refresh' }, process.env.JWT_REFRESH_SECRET,
+      { subject: '1', expiresIn: -1, algorithm: 'HS256' });
+    assert.equal((await post('/refresh', undefined, `refreshToken=${expired}`)).status, 401);
     const login = await post("/login", credentials);
     assert.equal(login.status, 200);
     const header = login.headers.get("set-cookie");
