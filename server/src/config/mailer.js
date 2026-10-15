@@ -35,7 +35,8 @@ async function verifyMailerConnection() {
   try {
     await transport.verify();
     return true;
-  } catch {
+  } catch (error) {
+    require('../utils/emailDiagnostic').logEmailFailure('verify', error);
     throw new ApiError(502, "Email server connection verification failed");
   }
 }

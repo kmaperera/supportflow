@@ -1,5 +1,6 @@
 const mailer = require("../config/mailer");
 const ApiError = require("../utils/ApiError");
+const { logEmailFailure } = require('../utils/emailDiagnostic');
 
 function stringValue(value, name, required = false) {
   if (value === undefined && !required) return undefined;
@@ -17,12 +18,15 @@ async function sendEmail({ to, subject, text, html, replyTo } = {}) {
   if ([to, subject, replyTo].some(value => value && /[\r\n]/.test(value))) {
     throw new ApiError(422, "Email headers must not contain line breaks");
   }
-  const transport = mailer.getMailerTransporter();
-  const from = mailer.getDefaultFrom();
+  let stage = 'configuration';
   try {
+    const transport = mailer.getMailerTransporter();
+    const from = mailer.getDefaultFrom();
+    stage = 'send';
     const info = await transport.sendMail({ from, to, subject, text, html, replyTo });
     return { messageId: info.messageId, accepted: info.accepted, rejected: info.rejected };
-  } catch {
+  } catch (error) {
+    logEmailFailure(stage, error);
     throw new ApiError(502, "Email delivery failed");
   }
 }

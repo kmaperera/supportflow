@@ -48,11 +48,14 @@ async function sendInstructions(userId, context, adminRequest = false) {
 // Complete all work before responding, including delivery-failure invalidation.
 // HTTP status/body remain generic for missing, inactive and delivery failures.
 async function requestPasswordReset(emailAddress, context = {}) {
+  let stage = 'audit';
   try {
     await audit.log({ actorUserId: null, action: A.PASSWORD_RESET_REQUESTED, entityType: E.AUTH, entityId: null, ipAddress: context.ipAddress });
+    stage = 'user_lookup';
     const user = await users.findByEmail(emailAddress.trim().toLowerCase());
+    stage = 'token_or_delivery';
     if (active(user)) await sendInstructions(user.id, context);
-  } catch { console.error('Password reset request delivery failed'); }
+  } catch { console.error('Password reset request delivery failed', { stage }); }
 }
 // Compatibility with existing test cleanup; no detached requests remain.
 async function drainPendingRequests() {}

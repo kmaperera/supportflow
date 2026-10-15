@@ -72,9 +72,9 @@ test('password recovery HTTP contracts, opaque tokens, rollback and privacy', as
     failMail=true;await assert.rejects(service.sendInstructions(2,{actorUserId:3},true),{statusCode:502});assert.ok(records.filter(r=>r.user_id===2).every(r=>r.used));failMail=false;
   });
   await t.test('public SMTP failure stays generic, invalidates delivery token and logs no credentials',async()=>{
-    const messages=[];const diagnostic=t.mock.method(console,'error',(...args)=>messages.push(args.join(' ')));
+    const messages=[];const diagnostic=t.mock.method(console,'error',(...args)=>messages.push(args));
     failMail=true;let status,body;await require('../src/modules/auth/passwordReset.controller').forgotPassword({body:{email:users[0].email},ip:'127.0.0.1'}, {status(value){status=value;return this},json(value){body=value}});
-    assert.equal(status,200);assert.deepEqual(body,{success:true,message:service.GENERIC_MESSAGE});await service.drainPendingRequests();assert.ok(records.filter(r=>r.user_id===1).every(r=>r.used));assert.deepEqual(messages,['Password reset request delivery failed']);failMail=false;diagnostic.mock.restore();
+    assert.equal(status,200);assert.deepEqual(body,{success:true,message:service.GENERIC_MESSAGE});await service.drainPendingRequests();assert.ok(records.filter(r=>r.user_id===1).every(r=>r.used));assert.deepEqual(messages,[['Password reset request delivery failed',{stage:'token_or_delivery'}]]);failMail=false;diagnostic.mock.restore();
   });
   await t.test('revocation failure rolls back password/token/audit; successful reset is single-use',async()=>{
     await service.sendInstructions(2,{actorUserId:3},true);const token=raw();failRevoke=true;await assert.rejects(service.resetPassword(token,newPassword),/Private database fault/);assert.equal(users[1].password_hash,initialHash);assert.ok(await repo.findUsable(createHash('sha256').update(token).digest('hex')));failRevoke=false;
