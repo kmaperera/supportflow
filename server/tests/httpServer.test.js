@@ -21,18 +21,34 @@ test('root entry exports one HTTP/socket server without listening; REST and webs
   const origin = `http://127.0.0.1:${server.address().port}`;
   const client = require('socket.io-client').io(origin, { transports: ['websocket'],
     auth: { token: require('../src/utils/jwt').generateAccessToken(actor) },
-    extraHeaders: { Origin: process.env.CLIENT_URL }, reconnection: false });
+    extraHeaders: { Origin: process.env.CLIENT_URL }, reconnection: false, autoConnect: false });
   try {
     const response = await fetch(origin + '/api/v1/health');
     assert.equal(response.status, 200);
+    const root = await fetch(origin + '/');
+    assert.equal(root.status, 200);
+    assert.equal((await root.json()).message, 'SupportFlow API is running');
     await new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('Websocket timeout')), 3000);
       client.once('connect', () => { clearTimeout(timer); resolve(); });
       client.once('connect_error', error => { clearTimeout(timer); reject(error); });
+      client.connect();
     });
     assert.equal(client.io.engine.transport.name, 'websocket');
     assert.ok(io.sockets.adapter.rooms.has('user:7'));
   } finally { client.disconnect(); await new Promise(resolve => io.close(resolve)); }
+});
+
+test('Vercel explicitly builds the shared Node server and routes all paths to it', () => {
+  const config = require('../vercel.json');
+  assert.deepEqual(config.builds, [{ src: 'server.js', use: '@vercel/node' }]);
+  assert.equal(config.outputDirectory, undefined);
+  assert.equal(config.routes.length, 1);
+  const route = config.routes[0];
+  assert.equal(route.dest, '/server.js');
+  for (const path of ['/', '/api/v1/health', '/api/v1/auth/refresh', '/socket.io/', '/socket.io/?EIO=4&transport=websocket']) {
+    assert.ok(new RegExp('^' + route.src + '$').test(path));
+  }
 });
 
 test('DB pool defaults conservatively and rejects unsafe overrides', () => {
