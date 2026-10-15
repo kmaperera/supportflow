@@ -1,5 +1,7 @@
 # SupportFlow
 
+See the [Phase 20.1 production architecture and deployment plan](docs/DEPLOYMENT_PLAN.md) for environment inventory, release prerequisites, deployment order, and rollback. Planning only; no deployment has been performed.
+
 SupportFlow is a full-stack IT Helpdesk and Ticket Management System for managing support requests, ticket workflows, technician assignments, SLA tracking, notifications, and reporting.
 
 ## Local environment setup
