@@ -1,6 +1,5 @@
 import { StateBadge } from '../../components/Badges'
 import Pagination from '../../components/Pagination'
-import { useToast } from '../../components/toastContext'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import ContentSkeleton from '../../components/ContentSkeleton'
@@ -12,17 +11,17 @@ import { getNotifications, markNotificationRead, markAllNotificationsRead } from
 import { getApiErrorMessage } from '../../api/apiError'
 import AuthFeedback from '../../auth/AuthFeedback'
 import { formatTicketDate } from '../employee/ticketFormatting'
-import { subscribeToNotifications } from '../../api/notificationRealtime'
+import { useNotificationRealtime } from '../../auth/notificationRealtimeContext'
 
 const buttonClass = 'inline-flex cursor-pointer items-center rounded-lg border border-teal-700 dark:border-teal-400 px-3 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 const labels = { TICKET_CREATED: 'Ticket created', TICKET_ASSIGNED: 'Ticket assigned', TICKET_REASSIGNED: 'Ticket reassigned', TICKET_UNASSIGNED: 'Ticket unassigned', STATUS_CHANGED: 'Status changed', PRIORITY_CHANGED: 'Priority changed', PUBLIC_COMMENT: 'New reply', TICKET_RESOLVED: 'Ticket resolved', TICKET_REOPENED: 'Ticket reopened', TICKET_CLOSED: 'Ticket closed', SLA_WARNING: 'Support deadline approaching', SLA_BREACHED: 'Support deadline exceeded' }
 
 export default function NotificationsPage() {
-  const { user, accessToken } = useAuth()
-  return <Notifications key={`${user?.id}:${user?.role}`} role={user?.role} accessToken={accessToken} />
+  const { user } = useAuth()
+  return <Notifications key={`${user?.id}:${user?.role}`} role={user?.role} />
 }
-function Notifications({ role, accessToken }) {
-  const toast = useToast()
+function Notifications({ role }) {
+  const { revision } = useNotificationRealtime()
   const technician = role === 'TECHNICIAN'
   const admin = role === 'ADMIN'
   const allowInternal = technician || admin
@@ -45,18 +44,9 @@ function Notifications({ role, accessToken }) {
     realtimeDirty.current = false
     setRequest(previous => ({ ...previous, attempt: previous.attempt + 1 }))
   }, [])
-  // SLA events have no corresponding local mutation toast. Do not echo replies,
-  // assignment or status events back to an actor who already received feedback.
-  const notifyRealtime = useCallback(notification => {
-    if (!allowInternal) return
-    if (notification.type === 'SLA_WARNING') toast.warning('A support deadline is approaching. Check your notifications.')
-    if (notification.type === 'SLA_BREACHED') toast.warning('A support deadline has been exceeded. Check your notifications.')
-  }, [allowInternal, toast])
   useEffect(() => {
-    if (!accessToken) return
-    const origin = new URL(import.meta.env.VITE_API_BASE_URL || '/', window.location.href).origin
-    return subscribeToNotifications({ token: accessToken, origin, onRefresh: refreshRealtime, onNotification: notifyRealtime })
-  }, [accessToken, refreshRealtime, notifyRealtime])
+    if (revision) refreshRealtime()
+  }, [revision, refreshRealtime])
   useEffect(() => {
     const controller = new AbortController()
     getNotifications({ page: request.page, signal: controller.signal, allowInternal }).then(data => {
