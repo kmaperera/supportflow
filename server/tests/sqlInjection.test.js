@@ -106,19 +106,26 @@ test('IDs, identity, content, metadata, dates and transaction values remain plac
   }
 });
 
-test('pagination remains bound and guards direct repository calls; suggestion structure is bounded', async t => {
+test('pagination remains bound or validated numeric SQL and guards direct calls; suggestions are bounded', async t => {
   const { calls, db } = recorder(t);
+  const userList = (limit, offset) => users.findAll({ limit, offset });
   const lists = [
     (limit, offset) => articles.findAll({ limit, offset }, db),
     (limit, offset) => notifications.findByUserId(1, { limit, offset }, db),
     (limit, offset) => audit.findAll({ filters: {}, limit, offset }, db),
-    (limit, offset) => users.findAll({ limit, offset }),
+    userList,
     (limit, offset) => tickets.findByCreator(1, { limit, offset }),
     (limit, offset) => reports.getTicketReportRows({ filters: {}, pagination: { limit, offset } }, db),
   ];
   for (const list of lists) {
-    await list(10, 20); assert.match(calls.at(-1).sql, /LIMIT \? OFFSET \?/);
-    assert.deepEqual(calls.at(-1).values.slice(-2), [10, 20]);
+    await list(10, 20);
+    if (list === userList) {
+      assert.match(calls.at(-1).sql, /LIMIT 10 OFFSET 20$/);
+      assert.deepEqual(calls.at(-1).values, []);
+    } else {
+      assert.match(calls.at(-1).sql, /LIMIT \? OFFSET \?/);
+      assert.deepEqual(calls.at(-1).values.slice(-2), [10, 20]);
+    }
     for (const [limit, offset] of [['10; SELECT 1', 0], [10, '0 OR 1=1'], [101, 0], [0, 0], [1.5, 0], [10, -1], [Infinity, 0]]) {
       const before = calls.length; await assert.rejects(() => list(limit, offset), TypeError); assert.equal(calls.length, before);
     }

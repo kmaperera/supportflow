@@ -159,12 +159,14 @@ async function findAll(options = {}) {
   const offset = options.offset ?? 0;
   if (!SORT_COLUMNS.includes(sortBy) || !["ASC", "DESC"].includes(order) ||
       !Number.isSafeInteger(limit) || limit < 1 || limit > 100 ||
-      !Number.isSafeInteger(offset) || offset < 0) {
+      !Number.isSafeInteger(offset) || offset < 0 || !Number.isSafeInteger(offset + limit)) {
     throw new TypeError("Invalid user listing options");
   }
   const [rows] = await pool.execute(
-    `SELECT ${MANAGEMENT_FIELDS} FROM users${where} ORDER BY ${sortBy} ${order}, id ${order} LIMIT ? OFFSET ?`,
-    [...values, limit, offset]
+    // TiDB may reject numeric LIMIT/OFFSET bindings in binary prepared statements.
+    // Only bounded safe integers validated above become SQL literals; filters stay bound.
+    `SELECT ${MANAGEMENT_FIELDS} FROM users${where} ORDER BY ${sortBy} ${order}, id ${order} LIMIT ${limit} OFFSET ${offset}`,
+    values
   );
   return rows;
 }
