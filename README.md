@@ -1,24 +1,143 @@
 # SupportFlow
 
-## Production deployment
+SupportFlow is a full-stack IT Helpdesk and Ticket Management System designed to manage internal technical support workflows from ticket creation to resolution.
 
-- Frontend: https://supportflow-bao6.vercel.app
-- Backend: https://supportflow-iota.vercel.app
+The system provides separate role-based experiences for Employees, Technicians, and Administrators. It includes ticket management, assignment workflows, comments, attachments, realtime notifications, SLA monitoring, knowledge-base management, analytics, reporting, and audit logging.
 
-See the [production deployment guide](docs/DEPLOYMENT.md) for Vercel setup, TiDB migrations/seeds, environment variables, Admin bootstrap, Cloudinary/Brevo, verification, limitations and troubleshooting. The [Phase 20.1 plan](docs/DEPLOYMENT_PLAN.md) is a historical snapshot.
+SupportFlow was developed as an individual portfolio project using React, Node.js, Express, TiDB, Socket.IO, Cloudinary, and JWT-based authentication.
 
-SupportFlow is a full-stack IT Helpdesk and Ticket Management System for managing support requests, ticket workflows, technician assignments, SLA tracking, notifications, and reporting.
+---
 
-## Local environment setup
+## Live Demo
 
-Copy `server/.env.example` to `server/.env` and `client/.env.example` to `client/.env`. Fill backend placeholders with your own local values; never commit actual env files. Run backend commands from `server/`; server startup resolves its env file relative to the server directory. Existing deployment environment variables take precedence.
+**Frontend:**  
+https://supportflow-bao6.vercel.app
 
-Supply database credentials and Cloudinary configuration. Supply distinct JWT signing secrets (use independently generated random values of at least 32 characters) and access/refresh lifetimes. Email is optional: leave SMTP fields and `EMAIL_FROM_ADDRESS` blank to disable it, or configure the whole group. Initial admin variables are required only by `npm run seed:admin`; use a unique password and change it after first login. Passwords and signing keys are preserved exactly, including intentional whitespace.
+**Backend Health Check:**  
+https://supportflow-iota.vercel.app/api/v1/health
 
-Only `VITE_API_BASE_URL` belongs in the client env. Every `VITE_*` value is public browser configuration. Store production secrets in the hosting provider environment or secret manager, never source control. If a credential is committed, rotate it at its provider; deleting it from a file does not remove Git history. JWT key rotation invalidates issued tokens.
+> Demo account information will be added later.
 
-See [Phase 18.13 environment-secret review](server/ENV_SECRET_REVIEW.md) for classifications, findings and verification.
+---
 
-See [Security architecture and final Phase 18 review](docs/SECURITY.md) for the final checklist, audit events, verification, known limitations and production requirements.
+## Main Features
 
-Password recovery and Admin reset require migration `022_create_password_reset_tokens_table.sql`, a trusted `CLIENT_URL`, and working SMTP configuration. Reset links expire after 15 minutes by default (`PASSWORD_RESET_TTL_MINUTES`, 5â€“30). See the [password recovery implementation and verification](server/PASSWORD_RECOVERY_REVIEW.md) for account/session policy, delivery behavior and regression commands.
+- Secure authentication and role-based authorization
+- Employee, Technician, and Admin dashboards
+- Ticket creation and tracking
+- Ticket assignment and reassignment
+- Ticket status workflow management
+- Priority and category management
+- Public ticket replies
+- Internal technician/admin notes
+- File attachments using Cloudinary
+- Realtime notifications using Socket.IO
+- Email notifications and password recovery
+- SLA response and resolution tracking
+- Knowledge-base article management
+- Dashboard analytics
+- Reports and exports
+- Audit logging
+- User activation and deactivation
+
+---
+
+## User Roles
+
+### Employee
+
+Employees can:
+
+- Create support tickets
+- View and track their own tickets
+- Add public replies
+- Upload attachments
+- View ticket status changes
+- Close and reopen supported tickets
+- Receive notifications
+- Access the knowledge base
+
+### Technician
+
+Technicians can:
+
+- View assigned tickets
+- View available ticket queues
+- Self-assign tickets
+- Update ticket status
+- Add public replies
+- Add internal notes
+- Resolve tickets
+- Monitor SLA information
+- View workload and statistics
+
+### Administrator
+
+Administrators can:
+
+- Manage users
+- Manage technicians
+- Activate and deactivate users
+- Manage ticket categories
+- Configure SLA policies
+- Assign and reassign tickets
+- View all tickets
+- Access analytics and reports
+- Manage knowledge-base content
+- View audit logs
+
+---
+
+## Technology Stack
+
+### Frontend
+
+- React
+- Vite
+- Tailwind CSS
+- React Router
+- Axios
+- TanStack Query
+- Recharts
+- Socket.IO Client
+
+### Backend
+
+- Node.js
+- Express.js
+- MySQL2
+- JWT
+- bcryptjs
+- Socket.IO
+- Nodemailer
+- Multer
+- Cloudinary
+- express-validator
+- Helmet
+- Morgan
+- CORS
+
+### Database
+
+- TiDB Cloud
+- MySQL-compatible relational database
+
+### Deployment
+
+- Vercel — Frontend
+- Vercel — Backend
+- TiDB Cloud — Production Database
+- Cloudinary — File Storage
+- Brevo SMTP — Transactional Email
+
+---
+
+## Project Structure
+
+```text
+supportflow/
+├── client/        # React frontend
+├── server/        # Node.js / Express backend
+├── docs/          # Project and deployment documentation
+├── README.md
+└── .gitignore
